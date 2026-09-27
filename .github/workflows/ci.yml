@@ -1,3 +1,4 @@
+# Run by hand: GitHub → Actions → CI → Run workflow (choose the branch).
 name: CI
 
 # Automatic only for main. development is tested by hand: Actions → CI →

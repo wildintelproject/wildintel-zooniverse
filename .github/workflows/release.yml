@@ -1,3 +1,4 @@
+# Run by hand: GitHub → Actions → Release → Run workflow (choose the branch).
 name: Release
 
 # A tag vX.Y.Z builds the packages — Linux AppImage, Windows portable .exe,

@@ -1,3 +1,4 @@
+# Run by hand: GitHub → Actions → Documentation → Run workflow (choose the branch).
 name: Documentation
 
 # Automatic for main and release tags. development's ("dev") is published by
