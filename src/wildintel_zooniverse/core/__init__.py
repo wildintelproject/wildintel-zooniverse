@@ -1,0 +1,3 @@
+"""The logic both the web app and the command-line app use — no web, no
+terminal: Trapper and Zooniverse, uploads, sessions, validation, exports…
+Long operations yield events (dicts) each interface shows its own way."""

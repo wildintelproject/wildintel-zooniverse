@@ -1,0 +1,87 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main, development]
+    tags: ['v*']
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'CHANGELOG.md'
+      - 'README.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: false
+
+env:
+  TRAPPER_SDK_REF: ${{ vars.TRAPPER_SDK_REF || 'development' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/trapper-sdk
+        with:
+          ref: ${{ env.TRAPPER_SDK_REF }}
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Versions: "dev" from the development branch, "main" from main, and
+      # "X.Y.Z" from each tag vX.Y.Z — the newest release also aliased
+      # "latest". The version selector in the site's header switches
+      # between them.
+      - name: Resolve version and alias
+        id: ver
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            echo "alias=latest"                  >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_REF_NAME" == "main" ]]; then
+            echo "version=main" >> "$GITHUB_OUTPUT"
+            echo "alias="       >> "$GITHUB_OUTPUT"
+          else
+            echo "version=dev" >> "$GITHUB_OUTPUT"
+            echo "alias="      >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy with mike
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          ALIAS="${{ steps.ver.outputs.alias }}"
+          if [ -n "$ALIAS" ]; then
+            uv run mike deploy --push --update-aliases "$VERSION" "$ALIAS"
+          else
+            uv run mike deploy --push "$VERSION"
+          fi
+
+      # What the site's root URL (the app's Help button) opens: the latest
+      # release if there's one, else main, else dev — so it never 404s.
+      - name: Set the default version
+        run: |
+          VERSIONS="$(uv run mike list --json)"
+          has() { echo "$VERSIONS" | python3 -c "import json,sys; v=json.load(sys.stdin); sys.exit(0 if any(sys.argv[1]==x['version'] or sys.argv[1] in x['aliases'] for x in v) else 1)" "$1"; }
+          for candidate in latest main dev; do
+            if has "$candidate"; then
+              uv run mike set-default --push "$candidate"
+              break
+            fi
+          done

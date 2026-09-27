@@ -1,0 +1,23 @@
+name: Trapper SDK
+description: >
+  Clones wildintel-trapper-sdk next to this repository (../wildintel-trapper-sdk), where
+  pyproject.toml's [tool.uv.sources] takes it from (checked out first into ./_trapper-sdk:
+  actions/checkout only writes inside the workspace). Drop this action once pyproject.toml
+  points at a released tag of the SDK instead.
+inputs:
+  ref:
+    description: Branch, tag or commit of the SDK.
+    required: false
+    default: development
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: wildintelproject/wildintelproject-trapper-sdk
+        ref: ${{ inputs.ref }}
+        path: _trapper-sdk
+
+    - name: Place it where pyproject.toml expects it
+      shell: bash
+      run: cp -r _trapper-sdk ../wildintel-trapper-sdk

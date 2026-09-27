@@ -1,0 +1,95 @@
+site_name: WildINTEL Zooniverse — Documentation
+site_description: User and developer documentation for WildINTEL Zooniverse
+site_url: https://wildintelproject.github.io/wildintel-zooniverse/
+repo_url: https://github.com/wildintelproject/wildintel-zooniverse
+repo_name: wildintelproject/wildintel-zooniverse
+copyright: Copyright &copy; 2026 <a href="https://wildintel.eu/">WildINTEL</a>
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  logo: img/wildIntel_logo.webp
+  favicon: img/wildIntel_logo.webp
+
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/wildintelproject
+      name: WildINTEL on GitHub
+    - icon: fontawesome/solid/globe
+      link: https://wildintel.eu/
+      name: WildINTEL website
+
+extra_css:
+  - stylesheets/extras.css
+  - stylesheets/termynal.css
+
+# The command-line manual's animated terminals, as in Typer's documentation.
+extra_javascript:
+  - javascripts/termynal.js
+  - javascripts/termynal-setup.js
+
+markdown_extensions:
+  - toc:
+      title: On this page
+      permalink: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji
+  - tables
+  - attr_list
+  - md_in_html
+  - def_list
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+  - search
+  - mike:
+      version_selector: true
+
+nav:
+  - Home: index.md
+  - User Manual:
+      - Web app: user-manual-web.md
+      - Command line: user-manual-cli.md
+  - Developer Manual: developer-manual.md
+  - Features: features.md
+  - Changelog: changelog.md
+  - About: about.md
