@@ -1,0 +1,2178 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User and developer documentation for WildINTEL Zooniverse">
+      
+      
+      
+        <link rel="canonical" href="https://wildintelproject.github.io/wildintel-zooniverse/dev/user-manual-cli/">
+      
+      
+        <link rel="prev" href="../user-manual-web/">
+      
+      
+        <link rel="next" href="../developer-manual/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../img/wildIntel_logo.webp">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Command line - WildINTEL Zooniverse — Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extras.css">
+    
+      <link rel="stylesheet" href="../stylesheets/termynal.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#wildintel-zooniverse-user-manual-command-line" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="WildINTEL Zooniverse — Documentation" class="md-header__button md-logo" aria-label="WildINTEL Zooniverse — Documentation" data-md-component="logo">
+      
+  <img src="../img/wildIntel_logo.webp" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            WildINTEL Zooniverse — Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Command line
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/wildintelproject/wildintel-zooniverse" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    wildintelproject/wildintel-zooniverse
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../user-manual-web/" class="md-tabs__link">
+          
+  
+  
+  User Manual
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../developer-manual/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Developer Manual
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../features/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Features
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../about/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="WildINTEL Zooniverse — Documentation" class="md-nav__button md-logo" aria-label="WildINTEL Zooniverse — Documentation" data-md-component="logo">
+      
+  <img src="../img/wildIntel_logo.webp" alt="logo">
+
+    </a>
+    WildINTEL Zooniverse — Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/wildintelproject/wildintel-zooniverse" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    wildintelproject/wildintel-zooniverse
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Manual
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Manual
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-manual-web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command line
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Getting started
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-finding-the-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Finding the ids
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-uploading-images-to-zooniverse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Uploading images to Zooniverse
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Uploading images to Zooniverse">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#estimate-upload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        estimate-upload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyze-sequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        analyze-sequences
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#import" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        import
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="import">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sessions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-exporting-classifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Exporting classifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Utilities
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Utilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#download_ss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        download_ss
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update-metadata
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subjects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        subjects
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-id-lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Id lists
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-coming-from-wildintel-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Coming from wildintel-tools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-where-the-app-keeps-its-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Where the app keeps its files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-manual/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Manual
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../about/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Getting started
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-finding-the-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Finding the ids
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-uploading-images-to-zooniverse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Uploading images to Zooniverse
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Uploading images to Zooniverse">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#estimate-upload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        estimate-upload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyze-sequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        analyze-sequences
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#import" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        import
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="import">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sessions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-exporting-classifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Exporting classifications
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Utilities
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Utilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#download_ss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        download_ss
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update-metadata
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#subjects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        subjects
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-id-lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Id lists
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-coming-from-wildintel-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Coming from wildintel-tools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-where-the-app-keeps-its-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Where the app keeps its files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="wildintel-zooniverse-user-manual-command-line">WildINTEL Zooniverse — User Manual (command line)<a class="headerlink" href="#wildintel-zooniverse-user-manual-command-line" title="Permanent link">&para;</a></h1>
+<p>The <code>wildintel-zooniverse</code> command does everything the <a href="../user-manual-web/">web app</a> does, from a
+terminal: upload Trapper images to Zooniverse, export the volunteers' classifications back to
+Trapper, and the utilities. Its commands and options are those of
+<a href="https://github.com/ijfvianauhu/wildintel-tools">wildintel-tools</a>' <code>zooniverse</code> app, so
+existing scripts carry over with few changes. It also has the web app's improvements: resumable
+sessions, media and subject lists, progress per deployment, and more.</p>
+<p>The command line and the web app are two faces of one application. They share <strong>the same
+settings, sessions and log</strong>. An upload started in one can be resumed in the other, and neither
+ever uploads an image twice.</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<ol>
+<li><a href="#1-installation">Installation</a></li>
+<li><a href="#2-getting-started">Getting started</a></li>
+<li><a href="#3-settings">Settings</a></li>
+<li><a href="#4-finding-the-ids">Finding the ids</a></li>
+<li><a href="#5-uploading-images-to-zooniverse">Uploading images to Zooniverse</a></li>
+<li><a href="#6-exporting-classifications">Exporting classifications</a></li>
+<li><a href="#7-utilities">Utilities</a></li>
+<li><a href="#8-id-lists">Id lists</a></li>
+<li><a href="#9-coming-from-wildintel-tools">Coming from wildintel-tools</a></li>
+<li><a href="#10-where-the-app-keeps-its-files">Where the app keeps its files</a></li>
+<li><a href="#11-troubleshooting">Troubleshooting</a></li>
+</ol>
+<hr />
+<h2 id="1-installation">1. Installation<a class="headerlink" href="#1-installation" title="Permanent link">&para;</a></h2>
+<p>The command line is in the same package as the web app — see the
+<a href="../user-manual-web/#1-installation">web manual's installation</a>. Run with no arguments, the
+package opens the web app; run with any, it's the command line:</p>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">// Linux</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">$ </span>./wildintel-zooniverse-X.Y.Z-linux-x86_64.AppImage<span class="w"> </span>--help
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">// Windows</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">$ </span>wildintel-zooniverse-X.Y.Z-windows-x64.exe<span class="w"> </span>--help
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="go">// macOS</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">$ </span>./wildintel-zooniverse<span class="w"> </span>--help
+</code></pre></div>
+
+</div>
+
+<p>Rename it, or link it into your <code>PATH</code> as <code>wildintel-zooniverse</code>, to type less. This manual
+writes it as <code>wildintel-zooniverse</code>.</p>
+<p>From the source code (see the developer manual), <code>uv run wildintel-zooniverse …</code> runs it too.</p>
+<p>Every command has its <code>--help</code>: <code>wildintel-zooniverse import --help</code>.</p>
+<h2 id="2-getting-started">2. Getting started<a class="headerlink" href="#2-getting-started" title="Permanent link">&para;</a></h2>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>TRAPPER.base_url<span class="w"> </span>https://trapper.example.org
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">✔ TRAPPER.base_url saved.</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>TRAPPER.user_name<span class="w"> </span>field.team
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">✔ TRAPPER.user_name saved.</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">// The password is asked for, and not shown</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>TRAPPER.user_password
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">TRAPPER.user_password:</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">✔ TRAPPER.user_password saved.</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>ZOONIVERSE.user_name<span class="w"> </span>field.team
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">✔ ZOONIVERSE.user_name saved.</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>ZOONIVERSE.user_password
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="go">ZOONIVERSE.user_password:</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="go">✔ ZOONIVERSE.user_password saved.</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>test-connection
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="go">✔ Trapper https://trapper.example.org as field.team — 3 research project(s)</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="go">✔ Zooniverse as field.team</span>
+</code></pre></div>
+
+</div>
+
+<p><code>test-connection</code> (or <code>tc</code>) checks both accounts. The accounts saved from the web app's
+⚙️ page already work here — and the other way round.</p>
+<p>Options every command has:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--verbose</code>, <code>-v</code> (before the command)</td>
+<td>Shows the log's messages in the terminal as it works — otherwise only warnings and errors. The log file gets them all anyway, at the settings' log level.</td>
+</tr>
+<tr>
+<td><code>--version</code></td>
+<td>The app's version.</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>The command's options.</td>
+</tr>
+</tbody>
+</table>
+<p>Commands that change something in Zooniverse ask for confirmation first; <code>--yes</code> (<code>-y</code>) skips it,
+for scripts. <strong>Ctrl+C</strong> stops a running command cleanly: what's done stays done.</p>
+<h2 id="3-settings">3. Settings<a class="headerlink" href="#3-settings" title="Permanent link">&para;</a></h2>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">// Every setting (passwords are never shown)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>config<span class="w"> </span>show
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="go">// Where the settings, the log and the documents are</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>config<span class="w"> </span>path
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="go">Settings:  /home/me/.config/wildintel-zooniverse/settings.toml</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="go">Log:</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="go">/home/me/.config/wildintel-zooniverse/logs/wildintel-zooniverse.log</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="go">Sessions:  /home/me/Documents/wildintel-zooniverse/sessions</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="go">Documents: /home/me/Documents/wildintel-zooniverse</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="go">// A value is checked before it is saved</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>SEQUENCES.max_interval<span class="w"> </span>zero
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="go">✘  Invalid SEQUENCES.max_interval: Input should be a valid integer, unable to</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="go">parse string as an integer.</span>
+</code></pre></div>
+
+</div>
+
+<p>The settings are those of the web app's ⚙️ page — see its
+<a href="../user-manual-web/#3-settings">Settings section</a> for what each one is. Their names here:</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GENERAL</code></td>
+<td><code>log_level</code> (<code>ERROR</code>, <code>WARNING</code>, <code>INFO</code>, <code>DEBUG</code>)</td>
+</tr>
+<tr>
+<td><code>TRAPPER</code></td>
+<td><code>base_url</code>, <code>user_name</code>, <code>user_password</code>, <code>download_workers</code>, <code>download_attempts</code>, <code>download_retry_delay</code></td>
+</tr>
+<tr>
+<td><code>ZOONIVERSE</code></td>
+<td><code>user_name</code>, <code>user_password</code>, <code>upload_workers</code>, <code>upload_attempts</code>, <code>upload_retry_delay</code>, <code>export_classified_by</code>, <code>export_max_file_size_mb</code></td>
+</tr>
+<tr>
+<td><code>SEQUENCES</code></td>
+<td><code>max_interval</code>, <code>images_per_sequence</code>, <code>only_classified</code>, <code>remove_middle_humans</code>, <code>remove_middle_vehicles</code> — the upload criteria's defaults</td>
+</tr>
+</tbody>
+</table>
+<p>A value is checked before it's saved: <code>config set SEQUENCES.max_interval zero</code> is refused.
+Leaving the value out asks for it (hidden for passwords). An empty value (<code>""</code>) unsets it.</p>
+<p>Any setting can also be given for a single run as an environment variable:
+<code>WILDINTEL_ZOONIVERSE_TRAPPER__DOWNLOAD_WORKERS=8 wildintel-zooniverse import …</code>.</p>
+<h2 id="4-finding-the-ids">4. Finding the ids<a class="headerlink" href="#4-finding-the-ids" title="Permanent link">&para;</a></h2>
+<p>The commands take Trapper and Zooniverse objects by id. These list them:</p>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>trapper<span class="w"> </span>research-projects
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">Research projects</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">┏━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━┓</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="go">┃ pk ┃ Name            ┃ Acronym ┃</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="go">┡━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━┩</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="go">│ 2  │ Doñana          │ DONA    │</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="go">│ 5  │ Sierra Morena   │ SMOR    │</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="go">│ 7  │ Bavarian Forest │ BFNP    │</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="go">└────┴─────────────────┴─────────┘</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>trapper<span class="w"> </span>classification-projects<span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="go">Classification projects</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="go">┏━━━━┳━━━━━━━━━━━━━┳━━━━━━━━┓</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="go">┃ pk ┃ Name        ┃ Active ┃</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="go">┡━━━━╇━━━━━━━━━━━━━╇━━━━━━━━┩</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="go">│ 10 │ Doñana 2024 │ True   │</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="go">│ 11 │ Doñana 2023 │ False  │</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="go">└────┴─────────────┴────────┘</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>trapper<span class="w"> </span>collections<span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="go">Collections</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="go">┏━━━━┳━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━┓</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="go">┃ pk ┃ Name  ┃ Status ┃ Images ┃ Classified ┃ Approved ┃</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="go">┡━━━━╇━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━┩</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="go">│ 33 │ R0033 │ Public │ 23,921 │ 21,870     │ 20,114   │</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="go">│ 31 │ R0031 │ Public │ 18,040 │ 18,040     │ 18,040   │</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="go">└────┴───────┴────────┴────────┴────────────┴──────────┘</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>trapper<span class="w"> </span>deployments<span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--collection<span class="w"> </span><span class="m">33</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="go">Deployments</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="go">┏━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┓</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="go">┃ pk ┃ Deployment        ┃ Location    ┃ Images ┃ Start      ┃ End        ┃</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="go">┡━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━┩</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="go">│ 40 │ R0033-DONA_0001_A │ DONA_0001_A │ 4,812  │ 2024-09-02 │ 2024-11-10 │</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="go">│ 41 │ R0033-DONA_0003_A │ DONA_0003_A │ 3,120  │ 2024-09-03 │ 2024-11-11 │</span>
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="go">│ 42 │ R0033-DONA_0007_B │ DONA_0007_B │ 6,254  │ 2024-09-04 │ 2024-11-12 │</span>
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="go">│ 43 │ R0033-DONA_0012_A │ DONA_0012_A │ 1,893  │ 2024-09-05 │ 2024-11-13 │</span>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="go">│ 44 │ R0033-DONA_0015_B │ DONA_0015_B │ 2,740  │ 2024-09-06 │ 2024-11-14 │</span>
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="go">│ 45 │ R0033-DONA_0021_A │ DONA_0021_A │ 5,102  │ 2024-09-07 │ 2024-11-15 │</span>
+<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="go">└────┴───────────────────┴─────────────┴────────┴────────────┴────────────┘</span>
+</code></pre></div>
+
+</div>
+
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">// Your Zooniverse projects</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>subjectsets
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">Projects (owned or collaborated on)</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="go">┏━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="go">┃ id    ┃ Name                         ┃ Slug                                  ┃</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="go">┡━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="go">│ 30567 │ European Camera Trap Project │ wildintel/european-camera-trap-projec │</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="go">│       │                              │ t                                     │</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="go">│ 12188 │ Iberian Camera Trap Project  │ wildintel/iberian-camera-trap-project │</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="go">└───────┴──────────────────────────────┴───────────────────────────────────────┘</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>subjectsets<span class="w"> </span>--project<span class="w"> </span><span class="m">30567</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="go">Subject sets</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="go">┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="go">┃ id     ┃ Name                      ┃ Subjects ┃</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="go">┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━┩</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="go">│ 134791 │ Doñana_2_R0033_33_2026-03 │ 86,878   │</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="go">│ 131022 │ Doñana_2_R0031_31_2025-12 │ 40,211   │</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="go">│ 128950 │ Pilot — autumn 2025       │ 1,250    │</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="go">└────────┴───────────────────────────┴──────────┘</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>workflows<span class="w"> </span>--project<span class="w"> </span><span class="m">30567</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="go">Workflows</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="go">┏━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┓</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="go">┃ id    ┃ Name                   ┃ Active ┃ Exportable ┃</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="go">┡━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━┩</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="go">│ 29186 │ Species identification │ True   │ True       │</span>
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="go">│ 29187 │ Species (experts)      │ True   │ True       │</span>
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="go">│ 25001 │ Tutorial               │ False  │ False      │</span>
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="go">└───────┴────────────────────────┴────────┴────────────┘</span>
+</code></pre></div>
+
+</div>
+
+<p><code>subjectsets</code> is also <code>ss</code>, and <code>workflows</code> is also <code>wf</code>.</p>
+<p>Deployments can be given by pk or by deployment id (<code>R0033-DONA_0001_A</code>), whichever is handier.</p>
+<h2 id="5-uploading-images-to-zooniverse">5. Uploading images to Zooniverse<a class="headerlink" href="#5-uploading-images-to-zooniverse" title="Permanent link">&para;</a></h2>
+<p>The upload chooses a Trapper collection's images the way the web wizard does: by sequences,
+sampling and humans and vehicles. See <a href="../user-manual-web/#step-4-filters">the web manual's Filters</a>
+for how it chooses.</p>
+<p><strong>The selection</strong> — every upload command takes:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>COLLECTION</code> (argument)</td>
+<td>The collection's pk.</td>
+</tr>
+<tr>
+<td><code>--rp</code></td>
+<td>Its research project's pk.</td>
+</tr>
+<tr>
+<td><code>--cp</code></td>
+<td>The classification project the collection is in.</td>
+</tr>
+<tr>
+<td><code>--deployments</code>, <code>--d</code></td>
+<td>Only these deployments — pk or deployment id, comma- or space-separated. By default, every deployment with images in the collection.</td>
+</tr>
+<tr>
+<td><code>--exclude-deployments</code>, <code>--ed</code></td>
+<td>Leave these out.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The criteria</strong> — the settings' <code>SEQUENCES</code> values, unless given:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--max-interval</code></td>
+<td>Max. seconds between two images of the same sequence.</td>
+</tr>
+<tr>
+<td><code>--n-images-seq</code></td>
+<td>Images kept from each sequence.</td>
+</tr>
+<tr>
+<td><code>--only-classified</code> / <code>--all-images</code></td>
+<td>Only images with an observation other than <em>unclassified</em>.</td>
+</tr>
+<tr>
+<td><code>--remove-middle-humans</code> / <code>--keep-middle-humans</code></td>
+<td>Humans in middle sequences.</td>
+</tr>
+<tr>
+<td><code>--remove-middle-vehicles</code> / <code>--keep-middle-vehicles</code></td>
+<td>Vehicles in middle sequences.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="estimate-upload">estimate-upload<a class="headerlink" href="#estimate-upload" title="Permanent link">&para;</a></h3>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>estimate-upload<span class="w"> </span><span class="m">33</span><span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="go">  Counting deployments (one at a time) ━━━━━━━━━━━━━━━━━━━ 6/6           0:00:00</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="go">Collection R0033</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="go">┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┓</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="go">┃ Deployment        ┃ Images ┃ Candidates ┃ Sequences ┃ Removed ┃ Upload ┃</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="go">┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━┩</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="go">│ R0033-DONA_0001_A │ 4,812  │ 2,983      │ 398       │ 16      │ 1,942  │</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="go">│ R0033-DONA_0003_A │ 3,120  │ 1,934      │ 258       │ 10      │ 1,260  │</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="go">│ R0033-DONA_0007_B │ 6,254  │ 3,877      │ 517       │ 21      │ 2,522  │</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="go">│ R0033-DONA_0012_A │ 1,893  │ 1,174      │ 157       │ 6       │ 767    │</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="go">│ R0033-DONA_0015_B │ 2,740  │ 1,699      │ 227       │ 9       │ 1,108  │</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="go">│ R0033-DONA_0021_A │ 5,102  │ 3,163      │ 422       │ 17      │ 2,059  │</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="go">├───────────────────┼────────┼────────────┼───────────┼─────────┼────────┤</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="go">│ Total             │ 23,921 │ 14,830     │ 1,979     │ 79      │ 9,658  │</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="go">└───────────────────┴────────┴────────────┴───────────┴─────────┴────────┘</span>
+</code></pre></div>
+
+</div>
+
+<p>How many images of each deployment an upload would send, with its counts — the web wizard's
+preview. Trapper is asked one deployment at a time; a large one takes a while.</p>
+<h3 id="analyze-sequences">analyze-sequences<a class="headerlink" href="#analyze-sequences" title="Permanent link">&para;</a></h3>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>analyze-sequences<span class="w"> </span><span class="m">33</span><span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span><span class="w"> </span>--d<span class="w"> </span>R0033-DONA_0001_A<span class="w"> </span>-o<span class="w"> </span>sequences.csv
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">  Counting deployments (one at a time) ━━━━━━━━━━━━━━━━━━━ 1/1           0:00:00</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="go">R0033-DONA_0001_A — sequences</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="go">┏━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┓</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="go">┃ # ┃ Start            ┃ Seconds ┃ Images ┃ Removed ┃ Upload ┃</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="go">┡━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━╇━━━━━━━━┩</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="go">│ 1 │ 2024-09-04 07:12 │ 88      │ 8      │ 0       │ 5      │</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="go">│ 2 │ 2024-09-04 08:12 │ 55      │ 5      │ 0       │ 5      │</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="go">│ 3 │ 2024-09-04 09:12 │ 132     │ 12     │ 12      │ 0      │</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="go">│ 4 │ 2024-09-04 10:12 │ 22      │ 2      │ 0       │ 2      │</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="go">│ 5 │ 2024-09-04 11:12 │ 66      │ 6      │ 0       │ 5      │</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="go">└───┴──────────────────┴─────────┴────────┴─────────┴────────┘</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="go">Totals</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="go">┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┓</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="go">┃ Deployment        ┃ Images ┃ Candidates ┃ Sequences ┃ Removed ┃ Upload ┃</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="go">┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━┩</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="go">│ R0033-DONA_0001_A │ 4,812  │ 2,983      │ 398       │ 16      │ 1,942  │</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="go">├───────────────────┼────────┼────────────┼───────────┼─────────┼────────┤</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="go">│ Total             │ 4,812  │ 2,983      │ 398       │ 16      │ 1,942  │</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="go">└───────────────────┴────────┴────────────┴───────────┴─────────┴────────┘</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="go">✔ 5 sequences written to sequences.csv</span>
+</code></pre></div>
+
+</div>
+
+<p>Every sequence of every deployment, and what becomes of each image of it. The CSV has
+wildintel-tools' columns (<code>media_ids</code>: the ones uploaded) plus the images left out and why:
+<code>not_sampled_media_ids</code>, <code>removed_human_media_ids</code> and <code>removed_vehicle_media_ids</code>. Without <code>-o</code>
+it's written to the documents' <code>exports/</code> folder.</p>
+<h3 id="import">import<a class="headerlink" href="#import" title="Permanent link">&para;</a></h3>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="go">// First, a dry run: everything but the upload</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>import<span class="w"> </span><span class="m">33</span><span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span><span class="w"> </span>--project<span class="w"> </span><span class="m">30567</span><span class="w"> </span>--dry-run
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="go">Dry run of the upload of collection R0033 (6 deployments) → Zooniverse project</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="go">European Camera Trap Project, subject set Doñana_2_R0033_33_2026-09 — session</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="go">5f0c2a1e-8d4b-4c61-9a57-2b3e7f1d6c90</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="go">  Total (deployments) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6/6           0:00:00</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="go">  ✓ R0033-DONA_0001_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,942/1,942   0:00:00</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="go">  ✓ R0033-DONA_0003_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,260/1,260   0:00:00</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="go">  ✓ R0033-DONA_0007_B ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2,522/2,522   0:00:00</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="go">  ✓ R0033-DONA_0012_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 767/767       0:00:00</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="go">  ✓ R0033-DONA_0015_B ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,108/1,108   0:00:00</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="go">  ✓ R0033-DONA_0021_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2,059/2,059   0:00:00</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="go">Subject set Doñana_2_R0033_33_2026-09: would be created (new)</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="go">✔ 9,658 images would be uploaded, 0 skipped (already uploaded), 0 failed, 0 left</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="go">out by the media lists.</span>
+</code></pre></div>
+
+</div>
+
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>import<span class="w"> </span><span class="m">33</span><span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span><span class="w"> </span>--project<span class="w"> </span><span class="m">30567</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="go">Upload of collection R0033 (6 deployments) → Zooniverse project European Camera</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="go">Trap Project, subject set Doñana_2_R0033_33_2026-09 — session</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="go">5f0c2a1e-8d4b-4c61-9a57-2b3e7f1d6c90</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="go">This creates the subjects in Zooniverse. Go on? [y/N]: y</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="go">  Total (deployments) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6/6           0:00:00</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="go">  ✓ R0033-DONA_0001_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,942/1,942   0:00:00</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="go">  ✓ R0033-DONA_0003_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,260/1,260   0:00:00</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="go">  ✓ R0033-DONA_0007_B ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2,522/2,522   0:00:00</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="go">  ✓ R0033-DONA_0012_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 767/767       0:00:00</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="go">  ✓ R0033-DONA_0015_B ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,108/1,108   0:00:00</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="go">  ✓ R0033-DONA_0021_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2,059/2,059   0:00:00</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="go">Subject set Doñana_2_R0033_33_2026-09: #135002 (new)</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="go">Failed</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="go">┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="go">┃ Media   ┃ Deployment        ┃ Step     ┃ Error                               ┃</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="go">┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="go">│ 4100005 │ R0033-DONA_0003_A │ download │ Trapper answered 404: the file is   │</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="go">│         │                   │          │ missing                             │</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="go">│ 4100705 │ R0033-DONA_0003_A │ download │ Trapper answered 404: the file is   │</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="go">│         │                   │          │ missing                             │</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="go">└─────────┴───────────────────┴──────────┴─────────────────────────────────────┘</span>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="go">✔ 9,656 images uploaded, 0 skipped (already uploaded), 2 failed, 0 left out by</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="go">the media lists.</span>
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="go">Resume — the images already uploaded are skipped: wildintel-zooniverse import</span>
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="go">--resume 5f0c2a1e-8d4b-4c61-9a57-2b3e7f1d6c90</span>
+</code></pre></div>
+
+</div>
+
+<p>Uploads the images to a subject set of the Zooniverse project. The selection and the criteria
+options apply, and also:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--project</code>, <code>-p</code></td>
+<td>The Zooniverse project's id — one you own or collaborate on.</td>
+</tr>
+<tr>
+<td><code>--subject-set</code>, <code>--ss</code></td>
+<td>The subject set's name. If it exists, the images are added to it; otherwise it's created. The default is wildintel-tools' <code>{research project}_{pk}_{collection}_{pk}_{YYYY-MM}</code>.</td>
+</tr>
+<tr>
+<td><code>--media</code>, <code>--m</code></td>
+<td>Upload only these Trapper media ids — see <a href="#8-id-lists">Id lists</a>.</td>
+</tr>
+<tr>
+<td><code>--exclude-media</code>, <code>--em</code></td>
+<td>Never these; this wins over <code>--media</code>.</td>
+</tr>
+<tr>
+<td><code>--skip-in-subject-set</code></td>
+<td>Also skip the images already in the subject set, whoever uploaded them. <strong>Slow</strong>: every subject of the subject set is listed first, 100 per request.</td>
+</tr>
+<tr>
+<td><code>--dry-run</code></td>
+<td>Everything but the upload. The images are fetched and chosen exactly as they will be, and the subject set is looked up, but downloads and uploads are only simulated.</td>
+</tr>
+<tr>
+<td><code>--resume ID</code></td>
+<td>Resume a session — see below.</td>
+</tr>
+<tr>
+<td><code>--yes</code>, <code>-y</code></td>
+<td>Don't ask for confirmation.</td>
+</tr>
+<tr>
+<td><code>--verbose</code></td>
+<td>Print every image as it's done.</td>
+</tr>
+</tbody>
+</table>
+<p>While it runs, it shows a bar for the total (by deployments) and one per deployment. Beside each
+deployment it shows the files being <strong>↓ downloaded</strong> from Trapper and <strong>↑ uploaded</strong> to
+Zooniverse. At the end it prints the failures (the step and why) and the totals.</p>
+<h4 id="sessions">Sessions<a class="headerlink" href="#sessions" title="Permanent link">&para;</a></h4>
+<p>Every import is a <strong>session</strong>, like the web wizard's. It records the selection, the criteria, the
+destination, the media lists and every image uploaded, the moment it is. If an import stops
+(Ctrl+C, a closed terminal, a network outage) or some images fail, it prints how to carry on:</p>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>import<span class="w"> </span>--resume<span class="w"> </span>5f0c2a1e-8d4b-4c61-9a57-2b3e7f1d6c90<span class="w"> </span>--yes
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="go">Upload of collection R0033 (6 deployments) → Zooniverse project European Camera</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="go">Trap Project, subject set Doñana_2_R0033_33_2026-09 — session</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="go">5f0c2a1e-8d4b-4c61-9a57-2b3e7f1d6c90</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="go">  Total (deployments) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6/6           0:00:00</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="go">  ✓ R0033-DONA_0001_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,942/1,942   0:00:00</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="go">  ✓ R0033-DONA_0003_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,260/1,260   0:00:00</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="go">  ✓ R0033-DONA_0007_B ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2,522/2,522   0:00:00</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="go">  ✓ R0033-DONA_0012_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 767/767       0:00:00</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="go">  ✓ R0033-DONA_0015_B ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,108/1,108   0:00:00</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="go">  ✓ R0033-DONA_0021_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2,059/2,059   0:00:00</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="go">Subject set Doñana_2_R0033_33_2026-09: #135002</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="go">✔ 3 images uploaded, 9,655 skipped (already uploaded), 0 failed, 0 left out by</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="go">the media lists.</span>
+</code></pre></div>
+
+</div>
+
+<p>Resuming uploads only what's missing, including the images that failed. It uses the session's
+own selection, criteria and destination. <code>--media</code> and <code>--exclude-media</code> replace its lists.</p>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="go">// Unfinished uploads, the web app's too</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>sessions<span class="w"> </span>list
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">┃ Session                              ┃ Run                                   ┃</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">│ 5f0c2a1e-8d4b-4c61-9a57-2b3e7f1d6c90 │ Ready to upload — collection R0033,   │</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">│                                      │ all 6 deployments →                   │</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="go">│                                      │ Doñana_2_R0033_33_2026-09 ·           │</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="go">│                                      │ 2026-09-27 10:09                      │</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="go">└──────────────────────────────────────┴───────────────────────────────────────┘</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="go">// Forget one (what it uploaded stays in Zooniverse)</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>sessions<span class="w"> </span>discard<span class="w"> </span>5f0c2a1e-8d4b-4c61-9a57-2b3e7f1d6c90
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="go">✔ Session 5f0c2a1e-8d4b-4c61-9a57-2b3e7f1d6c90 discarded.</span>
+</code></pre></div>
+
+</div>
+
+<p>The web app offers the same sessions when it starts. An upload begun here can be finished there,
+and the other way round.</p>
+<p>Each subject gets the same metadata as from the web app — see
+<a href="../user-manual-web/#what-each-subject-gets">What each subject gets</a>.</p>
+<h2 id="6-exporting-classifications">6. Exporting classifications<a class="headerlink" href="#6-exporting-classifications" title="Permanent link">&para;</a></h2>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--wf<span class="w"> </span><span class="m">29186</span><span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span><span class="w"> </span>--collection<span class="w"> </span><span class="m">33</span><span class="w"> </span>--upload
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">  ✓ Classifications export of 2026-09-20 08:14 ━━━━━━━━━━━               0:00:00</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">  ✓ 412,377 classifications of 26,114 subjects ━━━━━━━━━━━ 180/180 MB    0:00:00</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="go">  Trapper's observations (deployments)         ━━━━━━━━━━━ 6/6           0:00:00</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="go">  Voting subjects                              ━━━━━━━━━━━ 26,114/26,114 0:00:00</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="go">  Workflow                             Species identification (29186)</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="go">  Subjects                             26,114</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="go">  Exported                             24,987 subjects, 26,402 observations,</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="go">                                       27,711 CSV rows</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="go">  Skipped: not in trapper              12</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="go">  Skipped: no media id                 1</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="go">  Skipped: no valid classifications    311</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="go">  Skipped: no decision                 803</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="go">✔</span>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="go">~/Documents/wildintel-zooniverse/exports/observations_wf29186_cp10_col33_2026092</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="go">7-101500_part001.csv (14,012 rows)</span>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="go">✔</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="go">~/Documents/wildintel-zooniverse/exports/observations_wf29186_cp10_col33_2026092</span>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="go">7-101500_part002.csv (13,699 rows)</span>
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a><span class="go">✔</span>
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="go">~/Documents/wildintel-zooniverse/exports/zoo_annotations_observations_wf29186_cp</span>
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a><span class="go">10_col33_20260927-101500.csv (volunteers' annotations)</span>
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a><span class="go">Importing observations_wf29186_cp10_col33_20260927-101500_part001.csv (1/2)…</span>
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a><span class="go">  ✔ Classifications import started — Trapper task c1a2-0</span>
+<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a><span class="go">Importing observations_wf29186_cp10_col33_20260927-101500_part002.csv (2/2)…</span>
+<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a><span class="go">  ✔ Classifications import started — Trapper task c1a2-1</span>
+</code></pre></div>
+
+</div>
+
+<p>Turns a workflow's classifications into a CSV of Trapper observations. It votes each subject's
+volunteers' answers into a consensus, then matches it to the Trapper collection's images and
+their observations. See <a href="../user-manual-web/#how-classifications-are-voted">How classifications are voted</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--wf</code></td>
+<td>The workflow's id — one the app knows how to vote (<code>workflows --project</code> says which).</td>
+</tr>
+<tr>
+<td><code>--rp</code>, <code>--cp</code>, <code>--collection</code>, <code>--deployments</code></td>
+<td>The Trapper images the subjects were uploaded from.</td>
+</tr>
+<tr>
+<td><code>--output</code>, <code>-o</code></td>
+<td>The folder to write to (default: the documents' <code>exports/</code>).</td>
+</tr>
+<tr>
+<td><code>--regenerate</code></td>
+<td>Ask Zooniverse for a new classifications export first. The latest one doesn't have the classifications made since it was made. A new one can take several minutes.</td>
+</tr>
+<tr>
+<td><code>--classified-by</code></td>
+<td>The CSV's <code>classifiedBy</code> (default: the settings').</td>
+</tr>
+<tr>
+<td><code>--max-file-size</code></td>
+<td>Split the CSV into files of at most this many MB, Trapper's import limit (default: the settings').</td>
+</tr>
+<tr>
+<td><code>--save-zoo-annotations</code> / <code>--no-save-zoo-annotations</code></td>
+<td>Also write the volunteers' raw annotations, one row per annotation (on by default).</td>
+</tr>
+<tr>
+<td><code>--upload</code></td>
+<td>Then import the CSV files into the Trapper classification project (<code>--cp</code>), through its API.</td>
+</tr>
+<tr>
+<td><code>--approve</code></td>
+<td>With <code>--upload</code>: approve the imported classifications.</td>
+</tr>
+</tbody>
+</table>
+<p>It prints how many subjects were exported and how many were skipped, and why: not in Trapper, no
+media id, no valid classifications, or no consensus. Then it lists the files it wrote. Without
+<code>--upload</code>, it gives the Trapper page to import them by hand.</p>
+<h2 id="7-utilities">7. Utilities<a class="headerlink" href="#7-utilities" title="Permanent link">&para;</a></h2>
+<h3 id="download_ss">download_ss<a class="headerlink" href="#download_ss" title="Permanent link">&para;</a></h3>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>download_ss<span class="w"> </span><span class="m">128950</span><span class="w"> </span>-o<span class="w"> </span>~/subject-sets
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">  Pilot — autumn 2025 (128950) ━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,250/1,250   0:00:00</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">✔ 1,210 downloaded, 40 already there, 0 left out by the subject lists, 0 failed</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">— /home/me/subject-sets</span>
+</code></pre></div>
+
+</div>
+
+<p>Downloads subject sets' images into a folder per subject set; <code>dl_ss</code> is the same.
+Images already there are skipped unless <code>--overwrite</code>. <code>--white-list</code> and <code>--black-list</code>
+(<code>--exclude-subjects</code>) keep or leave out subjects by id — see <a href="#8-id-lists">Id lists</a>. Without
+<code>-o</code>, it's written to the documents' <code>downloads/</code> folder.</p>
+<h3 id="update-metadata">update-metadata<a class="headerlink" href="#update-metadata" title="Permanent link">&para;</a></h3>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>update-metadata<span class="w"> </span><span class="m">128950</span><span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span><span class="w"> </span>-c<span class="w"> </span><span class="m">33</span><span class="w"> </span>--dry-run
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">  Trapper's media (deployments) ━━━━━━━━━━━━━━━━━━━━━━━━━━ 6/6           0:00:00</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">  Pilot — autumn 2025 (128950)  ━━━━━━━━━━━━━━━━━━━━━━━━━━ 1,250/1,250   0:00:00</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="go">Changes (first 50)</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="go">┏━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="go">┃ Subject  ┃ Field    ┃ Now          ┃ New                                     ┃</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="go">┡━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="go">│ 98000000 │ Filename │ IMG_1000.JPG │ 4000000_x_R0033-DONA_0001_A_x_IMG_1000. │</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="go">│          │          │              │ JPG                                     │</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="go">│ 98000009 │ Filename │ IMG_1009.JPG │ 4000009_x_R0033-DONA_0001_A_x_IMG_1009. │</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="go">│ …                                                                            │</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="go">└──────────┴──────────┴──────────────┴─────────────────────────────────────────┘</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="go">✔ 139 would update, 1,110 unchanged, 1 unmatched</span>
+</code></pre></div>
+
+</div>
+
+<p>Rewrites the subjects' metadata from the Trapper collection they came from, so they're as a new
+upload would make them (<code>um</code> is the same). <code>--dry-run</code> only shows the changes. Without it, the
+command asks for confirmation (<code>--yes</code> skips it). <code>--white-list</code> and <code>--black-list</code> limit it to
+some subjects; <code>--deployments</code> limits it to some deployments' media.</p>
+<h3 id="checks">Checks<a class="headerlink" href="#checks" title="Permanent link">&para;</a></h3>
+<p>Each check goes through every subject of a subject set, prints what it found, and writes it as a
+JSON report (<code>-o FILE</code>, or in the documents' <code>reports/</code> folder):</p>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>check-subject-set<span class="w"> </span><span class="m">134791</span><span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span><span class="w"> </span>--collection<span class="w"> </span><span class="m">33</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">  Listing Doñana_2_R0033_33_2026-03 (134791) ━━━━━━━━━━━━━ 9,624/9,624   0:00:00</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">  Trapper's selection (deployments)          ━━━━━━━━━━━━━ 6/6           0:00:00</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="go">Doñana_2_R0033_33_2026-03 (134791)</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="go">  Subjects                         9,624</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="go">  Trapper images                   9,621</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="go">  Duplicated images                3</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="go">  Subjects with no media id        1</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="go">  Subjects with metadata issues    1</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="go">  Expected from Trapper            9,658</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="go">  Missing                          37</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="go">  Not expected (extra)             1</span>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="go">┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┓</span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="go">┃ Deployment        ┃ Expected ┃ Uploaded ┃ Missing ┃</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="go">┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━┩</span>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="go">│ R0033-DONA_0001_A │ 1,942    │ 1,942    │ 0       │</span>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="go">│ R0033-DONA_0003_A │ 1,260    │ 1,260    │ 0       │</span>
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="go">│ R0033-DONA_0007_B │ 2,522    │ 2,485    │ 37      │</span>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="go">│ R0033-DONA_0012_A │ 767      │ 767      │ 0       │</span>
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="go">│ R0033-DONA_0015_B │ 1,108    │ 1,108    │ 0       │</span>
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="go">│ R0033-DONA_0021_A │ 2,059    │ 2,059    │ 0       │</span>
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="go">└───────────────────┴──────────┴──────────┴─────────┘</span>
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="go">Written to</span>
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="go">/home/me/Documents/wildintel-zooniverse/reports/check_ss134791_20260927-</span>
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="go">120947.json</span>
+</code></pre></div>
+
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it finds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>check-subject-set SS</code></td>
+<td>Everything below at once. With <code>--rp</code>, <code>--cp</code> and <code>--collection</code> (and the criteria options) it also compares with Trapper: missing and extra images, per deployment.</td>
+</tr>
+<tr>
+<td><code>check-missing-media SS --rp --cp --collection</code></td>
+<td>The images an upload with these criteria would send that aren't in the subject set, and those in it that it wouldn't.</td>
+</tr>
+<tr>
+<td><code>check-duplicated-media SS</code></td>
+<td>Trapper images uploaded more than once.</td>
+</tr>
+<tr>
+<td><code>check-unmatched-subjects SS</code></td>
+<td>Subjects with no Trapper media id in their metadata.</td>
+</tr>
+<tr>
+<td><code>check_metadata SS</code></td>
+<td>Subjects whose metadata is incomplete or inconsistent. Fix them with <code>update-metadata</code>.</td>
+</tr>
+<tr>
+<td><code>uploaded_media SS</code></td>
+<td>Every Trapper image in the subject set, with its subject(s).</td>
+</tr>
+</tbody>
+</table>
+<p>A missing-media report is a media list. To upload just the missing images:</p>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>check-missing-media<span class="w"> </span><span class="m">134791</span><span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span><span class="w"> </span>--collection<span class="w"> </span><span class="m">33</span><span class="w"> </span>-o<span class="w"> </span>missing.json
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">  Listing Doñana_2_R0033_33_2026-03 (134791) ━━━━━━━━━━━━━ 9,624/9,624   0:00:00</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">  Trapper's selection (deployments)          ━━━━━━━━━━━━━ 6/6           0:00:00</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">Missing: 37 of 9,658</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">┃ Media   ┃ Deployment        ┃ File         ┃</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">│ 4300000 │ R0033-DONA_0007_B │ IMG_2200.JPG │</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="go">│ 4300017 │ R0033-DONA_0007_B │ IMG_2201.JPG │</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="go">│ 4300034 │ R0033-DONA_0007_B │ IMG_2202.JPG │</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="go">│ 4300051 │ R0033-DONA_0007_B │ IMG_2203.JPG │</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="go">│ …                                          │</span>
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="go">└─────────┴───────────────────┴──────────────┘</span>
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="go">1 image(s) in the subject set the criteria wouldn't upload.</span>
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="go">Written to missing.json</span>
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="go">Upload just the missing ones: import … --media @THAT_FILE</span>
+<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="go">// Upload just those</span>
+<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>import<span class="w"> </span><span class="m">33</span><span class="w"> </span>--rp<span class="w"> </span><span class="m">2</span><span class="w"> </span>--cp<span class="w"> </span><span class="m">10</span><span class="w"> </span>--project<span class="w"> </span><span class="m">30567</span><span class="w"> </span>--subject-set<span class="w"> </span><span class="s2">"Doñana_2_R0033_33_2026-03"</span><span class="w"> </span>--media<span class="w"> </span>@missing.json<span class="w"> </span>--yes
+<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="go">---&gt; 100%</span>
+<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a><span class="go">Upload of collection R0033 (6 deployments) → Zooniverse project European Camera</span>
+<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a><span class="go">Trap Project, subject set Doñana_2_R0033_33_2026-03 — session</span>
+<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="go">5f0c2a1e-8d4b-4c61-9a57-2b3e7f1d6c90</span>
+<a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a><span class="go">  Total (deployments) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6/6           0:00:00</span>
+<a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a><span class="go">  ✓ R0033-DONA_0001_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0/0           0:00:00</span>
+<a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a><span class="go">  ✓ R0033-DONA_0003_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0/0           0:00:00</span>
+<a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a><span class="go">  ✓ R0033-DONA_0007_B ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37/37         0:00:00</span>
+<a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a><span class="go">  ✓ R0033-DONA_0012_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0/0           0:00:00</span>
+<a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a><span class="go">  ✓ R0033-DONA_0015_B ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0/0           0:00:00</span>
+<a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a><span class="go">  ✓ R0033-DONA_0021_A ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0/0           0:00:00</span>
+<a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a><span class="go">Subject set Doñana_2_R0033_33_2026-03: #134791</span>
+<a id="__codelineno-15-32" name="__codelineno-15-32" href="#__codelineno-15-32"></a><span class="go">✔ 37 images uploaded, 0 skipped (already uploaded), 0 failed, 9,621 left out by</span>
+<a id="__codelineno-15-33" name="__codelineno-15-33" href="#__codelineno-15-33"></a><span class="go">the media lists.</span>
+</code></pre></div>
+
+</div>
+
+<h3 id="subjects">subjects<a class="headerlink" href="#subjects" title="Permanent link">&para;</a></h3>
+<div class="termy">
+
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>wildintel-zooniverse<span class="w"> </span>subjects<span class="w"> </span><span class="m">98000004</span>,98000005,98999999<span class="w"> </span>--metadata
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">2 subject(s) found</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">┏━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">┃ Subject  ┃ Trapper media ┃ Subject sets ┃ Image                              ┃</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">┡━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">│ 98000004 │ 4000004       │ 134791       │ https://panoptes-uploads.zooniver… │</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">│ 98000005 │ 4000005       │ 134791       │ https://panoptes-uploads.zooniver… │</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">└──────────┴───────────────┴──────────────┴────────────────────────────────────┘</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="gp">#</span><span class="m">98000004</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="go">  Filename: 4000004_x_R0033-DONA_0001_A_x_IMG_1004.JPG</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="go">  external_id: https://trapper.example.org/:media:4000004</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="go">  license: CC BY-NC 4.0</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="gp">#</span><span class="m">98000005</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="go">  Filename: 4000005_x_R0033-DONA_0001_A_x_IMG_1005.JPG</span>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="go">  external_id: https://trapper.example.org/:media:4000005</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="go">  license: CC BY-NC 4.0</span>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="go">Not found (or not visible to you): 98999999</span>
+</code></pre></div>
+
+</div>
+
+<p>Looks up Zooniverse subjects by id — or, with <code>--subject-set 134791 [--page 2]</code>, browses a
+subject set 50 at a time (<code>sbj</code> is the same).
+For each subject it shows the Trapper image it is, the subject sets it's in and its image URL;
+<code>--metadata</code> adds all its metadata. Ids that don't exist, or aren't visible to you, are listed
+apart.</p>
+<h2 id="8-id-lists">8. Id lists<a class="headerlink" href="#8-id-lists" title="Permanent link">&para;</a></h2>
+<p>Options that take ids — <code>--media</code>, <code>--exclude-media</code>, <code>--white-list</code>, <code>--black-list</code> and the
+<code>subjects</code> command — accept them:</p>
+<ul>
+<li><strong>typed</strong>: <code>--media 101,102,103</code> or <code>--media "101 102 103"</code>;</li>
+<li><strong>from a file</strong>: <code>--media @ids.txt</code>, which reads the file as the web app's <em>Load file…</em> does:</li>
+<li>a list of ids (one per line, or comma- or space-separated);</li>
+<li>a CSV with an id column (<code>mediaID</code>, <code>media_id</code>, <code>subject_id</code>…), such as <code>analyze-sequences</code>';</li>
+<li>a JSON report of the checks. For media, its missing images; for subjects, those it lists.</li>
+</ul>
+<p>Values that aren't ids are ignored, with a warning saying how many. When both lists are given,
+an id in the blacklist is always left out.</p>
+<h2 id="9-coming-from-wildintel-tools">9. Coming from wildintel-tools<a class="headerlink" href="#9-coming-from-wildintel-tools" title="Permanent link">&para;</a></h2>
+<p>The commands and their main options are wildintel-tools' own:</p>
+<table>
+<thead>
+<tr>
+<th>wildintel-tools</th>
+<th>Here</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>zooniverse test-connection</code> / <code>tc</code></td>
+<td><code>test-connection</code> / <code>tc</code></td>
+</tr>
+<tr>
+<td><code>zooniverse estimate-upload</code></td>
+<td><code>estimate-upload</code></td>
+</tr>
+<tr>
+<td><code>zooniverse analyze-sequences</code></td>
+<td><code>analyze-sequences</code></td>
+</tr>
+<tr>
+<td><code>zooniverse import</code></td>
+<td><code>import</code></td>
+</tr>
+<tr>
+<td><code>zooniverse export</code></td>
+<td><code>export</code></td>
+</tr>
+<tr>
+<td><code>zooniverse download_ss</code> / <code>dl_ss</code></td>
+<td><code>download_ss</code> / <code>dl_ss</code></td>
+</tr>
+<tr>
+<td><code>zooniverse update-metadata</code> / <code>um</code></td>
+<td><code>update-metadata</code> / <code>um</code></td>
+</tr>
+<tr>
+<td><code>zooniverse check-*</code>, <code>check_metadata</code>, <code>uploaded_media</code></td>
+<td>the same</td>
+</tr>
+<tr>
+<td><code>zooniverse subjectsets</code> / <code>ss</code>, <code>workflows</code> / <code>wf</code>, <code>subjects</code> / <code>sbj</code></td>
+<td>the same</td>
+</tr>
+</tbody>
+</table>
+<p>The differences:</p>
+<ul>
+<li><strong>The settings</strong> are the app's own <code>settings.toml</code>, shared with the web app, and not
+  wildintel-tools'. Set them once with <code>config set</code>.</li>
+<li><strong>Imports are sessions</strong>: resumable with <code>--resume</code>, and never uploading an image twice.</li>
+<li><strong>Trapper is asked one deployment at a time.</strong> This avoids the timeouts of large collections.</li>
+<li><strong>Several images at a time</strong>, downloaded and uploaded in parallel, with retries (see the
+  settings).</li>
+<li><strong>Id lists</strong> accept files and reports (<code>@FILE</code>).</li>
+<li><strong>Deployments</strong> can be given by deployment id as well as by pk.</li>
+<li><strong><code>export --upload</code></strong> imports the CSVs into Trapper through its API.</li>
+<li><code>trapper …</code>, <code>sessions …</code> and <code>config …</code> are new.</li>
+</ul>
+<h2 id="10-where-the-app-keeps-its-files">10. Where the app keeps its files<a class="headerlink" href="#10-where-the-app-keeps-its-files" title="Permanent link">&para;</a></h2>
+<p>The same as the web app's — see <a href="../user-manual-web/#7-where-the-app-keeps-its-files">its table</a>,
+or run <code>wildintel-zooniverse config path</code>. The command line's reports are in the documents'
+<code>reports/</code> folder.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code>settings.toml</code> holds your Trapper and Zooniverse passwords, in plain text. Keep it private.</p>
+</div>
+<h2 id="11-troubleshooting">11. Troubleshooting<a class="headerlink" href="#11-troubleshooting" title="Permanent link">&para;</a></h2>
+<div class="admonition tip">
+<p class="admonition-title">Reporting a problem</p>
+<p>Run the command again with <code>--verbose</code> before it (<code>wildintel-zooniverse -v import …</code>), or
+set <code>GENERAL.log_level</code> to <code>DEBUG</code>. Attach the log (<code>config path</code> says where) to the report,
+with the command you ran. Passwords are never written to the log.</p>
+</div>
+<p><strong>"Missing Trapper URL, username, password"</strong> — set them with <code>config set</code>.</p>
+<p><strong>"No collection 33 in classification project 10."</strong> — the ids don't match: list them with
+<code>trapper …</code> (see <a href="#4-finding-the-ids">Finding the ids</a>).</p>
+<p><strong>An import stopped, or some images failed.</strong> — Run the <code>--resume</code> command it printed. What was
+already uploaded is skipped.</p>
+<p><strong>"Workflow … can't be exported."</strong> — The app has no extractor or voter for it yet. Ask a
+developer to add one (see the developer manual).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 <a href="https://wildintel.eu/">WildINTEL</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/wildintelproject" target="_blank" rel="noopener" title="WildINTEL on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://wildintel.eu/" target="_blank" rel="noopener" title="WildINTEL website" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M351.9 280H161c2.9 64.5 17.2 123.9 37.5 167.4 11.4 24.5 23.7 41.8 35.1 52.4 11.2 10.5 18.9 12.2 22.9 12.2s11.7-1.7 22.9-12.2c11.4-10.6 23.7-28 35.1-52.4 20.3-43.5 34.6-102.9 37.5-167.4zm-191-48h190.9c-2.8-64.5-17.1-123.9-37.4-167.4-11.4-24.4-23.7-41.8-35.1-52.4C268.1 1.7 260.4 0 256.4 0s-11.7 1.7-22.9 12.2c-11.4 10.6-23.7 28-35.1 52.4-20.3 43.5-34.6 102.9-37.5 167.4m-48 0c3.5-85.6 25.6-165.1 57.9-217.3C78.7 47.3 10.9 131.2 1.5 232zM1.5 280c9.4 100.8 77.2 184.7 169.3 217.3-32.3-52.2-54.4-131.7-57.9-217.3zm398.4 0c-3.5 85.6-25.6 165.1-57.9 217.3 92.1-32.7 159.9-116.5 169.3-217.3zm111.4-48C501.9 131.2 434.1 47.3 342 14.7c32.3 52.2 54.4 131.7 57.9 217.3z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../javascripts/termynal.js"></script>
+      
+        <script src="../javascripts/termynal-setup.js"></script>
+      
+    
+  </body>
+</html>

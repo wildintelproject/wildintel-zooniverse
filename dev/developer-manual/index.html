@@ -1,0 +1,1949 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User and developer documentation for WildINTEL Zooniverse">
+      
+      
+      
+        <link rel="canonical" href="https://wildintelproject.github.io/wildintel-zooniverse/dev/developer-manual/">
+      
+      
+        <link rel="prev" href="../user-manual-cli/">
+      
+      
+        <link rel="next" href="../features/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../img/wildIntel_logo.webp">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Developer Manual - WildINTEL Zooniverse — Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extras.css">
+    
+      <link rel="stylesheet" href="../stylesheets/termynal.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#wildintel-zooniverse-developer-manual" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="WildINTEL Zooniverse — Documentation" class="md-header__button md-logo" aria-label="WildINTEL Zooniverse — Documentation" data-md-component="logo">
+      
+  <img src="../img/wildIntel_logo.webp" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            WildINTEL Zooniverse — Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Developer Manual
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/wildintelproject/wildintel-zooniverse" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    wildintelproject/wildintel-zooniverse
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../user-manual-web/" class="md-tabs__link">
+          
+  
+  
+  User Manual
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Developer Manual
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../features/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Features
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../about/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="WildINTEL Zooniverse — Documentation" class="md-nav__button md-logo" aria-label="WildINTEL Zooniverse — Documentation" data-md-component="logo">
+      
+  <img src="../img/wildIntel_logo.webp" alt="logo">
+
+    </a>
+    WildINTEL Zooniverse — Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/wildintelproject/wildintel-zooniverse" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    wildintelproject/wildintel-zooniverse
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Manual
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Manual
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-manual-web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Web app
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-manual-cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Manual
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Manual
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-development-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Development setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-repository-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Repository layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Backend
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Backend">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#services" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Services
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#panoptes-client-and-threads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        panoptes-client and threads
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-upload-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The upload pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sessions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#streaming-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Streaming endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Frontend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. API reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-adding-a-zooniverse-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Adding a Zooniverse workflow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-building-executables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Building executables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Documentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#screenshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Screenshots
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-cicd-and-releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. CI/CD and releases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. CI/CD and releases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#documentation-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation versions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#making-a-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Making a release
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../about/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    About
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-development-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Development setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-repository-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Repository layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Backend
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Backend">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#services" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Services
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#panoptes-client-and-threads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        panoptes-client and threads
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-upload-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The upload pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sessions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#streaming-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Streaming endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-frontend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Frontend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. API reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-adding-a-zooniverse-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Adding a Zooniverse workflow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-building-executables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Building executables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Documentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#screenshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Screenshots
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-cicd-and-releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. CI/CD and releases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. CI/CD and releases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#documentation-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation versions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#making-a-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Making a release
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="wildintel-zooniverse-developer-manual">WildINTEL Zooniverse — Developer Manual<a class="headerlink" href="#wildintel-zooniverse-developer-manual" title="Permanent link">&para;</a></h1>
+<hr />
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<ol>
+<li><a href="#1-architecture">Architecture</a></li>
+<li><a href="#2-development-setup">Development setup</a></li>
+<li><a href="#3-repository-layout">Repository layout</a></li>
+<li><a href="#4-backend">Backend</a></li>
+<li><a href="#5-frontend">Frontend</a></li>
+<li><a href="#6-api-reference">API reference</a></li>
+<li><a href="#7-adding-a-zooniverse-workflow">Adding a Zooniverse workflow</a></li>
+<li><a href="#8-testing">Testing</a></li>
+<li><a href="#9-building-executables">Building executables</a></li>
+<li><a href="#10-documentation">Documentation</a></li>
+<li><a href="#11-cicd-and-releases">CI/CD and releases</a></li>
+</ol>
+<hr />
+<h2 id="1-architecture">1. Architecture<a class="headerlink" href="#1-architecture" title="Permanent link">&para;</a></h2>
+<p>One Python package, <code>wildintel_zooniverse</code>, with a <strong>core</strong> and two faces on top of it:</p>
+<ul>
+<li><strong>web</strong> — a <strong>FastAPI</strong> backend serving a <strong>React</strong> frontend, both on the user's own computer;</li>
+<li><strong>cli</strong> — the <code>wildintel-zooniverse</code> command (<strong>Typer</strong> + rich): wildintel-tools' <code>zooniverse</code>
+  commands.</li>
+</ul>
+<p>The core's services do the work and know nothing of either: long operations return <strong>generators
+of event dicts</strong>, which the web routers stream to the browser as NDJSON and the command line
+renders as progress bars. Both use the same <code>settings.toml</code>, sessions and log. Released as a
+single executable (PyInstaller) that runs the web app — starting the server and opening the
+browser — or, given any argument, the command line.</p>
+<pre class="mermaid"><code>flowchart LR
+    subgraph Computer["User's computer"]
+        UI["React frontend&lt;br/&gt;(browser)"] -- "JSON / NDJSON over HTTP" --&gt; API["FastAPI backend"]
+        API --&gt; FS[("settings.toml&lt;br/&gt;sessions/&lt;br/&gt;downloads/, exports/")]
+    end
+    API -- "wildintel-trapper-sdk (httpx)" --&gt; T["Trapper"]
+    API -- "panoptes-client" --&gt; Z["Zooniverse (Panoptes API)"]
+    API -- "httpx" --&gt; M["Image files&lt;br/&gt;(Trapper storage, Zooniverse CDN)"]</code></pre>
+<p>(The command line takes the backend's place in the diagram: it calls the same services
+directly, in the same process, without HTTP.)</p>
+<ul>
+<li><strong>No server-side login session.</strong> Every request carries the credentials it needs; blank ones
+  fall back to the saved ones in <code>settings.toml</code>. Passwords never go back to the browser.</li>
+<li><strong>Long operations stream.</strong> Previews, uploads, downloads, validations, metadata updates and
+  exports answer with <code>application/x-ndjson</code>: one JSON event per line, as the work progresses,
+  ending with <code>{"type": "done", …}</code> — or <code>{"type": "error", "detail": …}</code> if it fails midway (the
+  HTTP 200 is already sent by then). Errors found before starting — bad credentials, a missing
+  session, a folder that can't be created — are plain HTTP errors instead. The request going
+  away (the user pressing <strong>Stop</strong>, or closing the tab) stops the work.</li>
+<li><strong>Wizard sessions are persisted</strong> as JSON manifests on disk (see
+  <a href="#sessions">Sessions</a>), so an upload can be resumed after closing the app.</li>
+</ul>
+<p>Stack: Python ≥ 3.12, FastAPI, pydantic 2, Dynaconf, tenacity, panoptes-client,
+<a href="https://github.com/wildintelproject/wildintelproject-trapper-sdk">wildintel-trapper-sdk</a>;
+React 19, TypeScript, Vite, Tailwind CSS 4, Vitest, oxlint.</p>
+<h2 id="2-development-setup">2. Development setup<a class="headerlink" href="#2-development-setup" title="Permanent link">&para;</a></h2>
+<p>Requirements: <a href="https://docs.astral.sh/uv/">uv</a>, Node.js ≥ 18 (20 in CI), git.</p>
+<p>The Trapper SDK is used from a <strong>sibling clone</strong> while both are developed together
+(<code>pyproject.toml</code>'s <code>[tool.uv.sources]</code>), so clone both side by side:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/wildintelproject/wildintel-zooniverse
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>wildintel-zooniverse
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./setup.sh<span class="w">                                </span><span class="c1"># see below</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>uv<span class="w"> </span>run<span class="w"> </span>wzcli<span class="w"> </span>dev<span class="w">                           </span><span class="c1"># backend :8768 + frontend :5175, hot reload</span>
+</code></pre></div>
+<p><code>setup.sh</code> checks git, installs uv if it's missing, clones the SDK next to the project
+(<code>../wildintel-trapper-sdk</code>, branch <code>development</code>) if it isn't there, and installs the backend's
+(<code>uv sync</code>) and the frontend's (<code>npm install</code>) dependencies — skipping the frontend, with a
+warning, without Node.js 18+. It can be run again at any time.</p>
+<p>Open <a href="http://localhost:5175">http://localhost:5175</a>. The backend's own OpenAPI docs are at
+<a href="http://localhost:8768/docs">http://localhost:8768/docs</a>. In dev mode, edits in the SDK clone reload the backend too.</p>
+<p><code>uv run wildintel-zooniverse …</code> runs the user's command line — see the
+<a href="../user-manual-cli/">command-line manual</a>. <code>wzcli</code> (<code>src/wildintel_zooniverse/wzcli.py</code>) is the
+development one:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>uv run wzcli dev</code></td>
+<td>Backend and frontend together, hot reload.</td>
+</tr>
+<tr>
+<td><code>uv run wzcli backend serve [dev\|prod\|debug] [-p PORT]</code></td>
+<td>The backend alone. <code>debug</code> waits for a debugger (debugpy) on port 5678.</td>
+</tr>
+<tr>
+<td><code>uv run wzcli backend test [-v] [-k …]</code></td>
+<td>Backend tests (pytest).</td>
+</tr>
+<tr>
+<td><code>uv run wzcli frontend dev\|build\|preview\|test\|lint</code></td>
+<td>Frontend via npm (installing its dependencies first if needed).</td>
+</tr>
+<tr>
+<td><code>uv run wzcli docs serve\|build</code></td>
+<td>This documentation (<code>build</code> is strict, as in CI).</td>
+</tr>
+<tr>
+<td><code>uv run wzcli package build [-f FORMAT] [-v VERSION]</code></td>
+<td>This system's package into <code>dist/</code> — see <a href="#9-building-executables">Building executables</a>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Why not <code>cli</code></p>
+<p>wildintel-trapper-sdk, installed in the same environment, already has a top-level <code>cli</code>
+module and <code>cli</code> command; a second one would shadow it — or be shadowed — depending on the
+install order. Hence <code>wzcli</code>.</p>
+</div>
+<p>The backend port is <code>WILDINTEL_ZOONIVERSE_WEB_PORT</code> (8768 — one above wildintel-publisher's,
+so both run side by side); the log level <code>WILDINTEL_ZOONIVERSE_WEB_LOG_LEVEL</code>. Both can also go
+in <code>src/wildintel_zooniverse/web/.env</code> or <code>~/.config/wildintel_zooniverse_web/.env</code> (see
+<code>web/settings.py</code>).</p>
+<div class="admonition note">
+<p class="admonition-title">Two kinds of settings</p>
+<p><code>web/settings.py</code> is the <strong>server's</strong> (port, log level, CORS — environment variables).
+<code>core/config.py</code> is the <strong>app's</strong> own <code>settings.toml</code> (accounts, transfer tuning, defaults —
+the ⚙️ page, and <code>wildintel-zooniverse config</code>).</p>
+</div>
+<h2 id="3-repository-layout">3. Repository layout<a class="headerlink" href="#3-repository-layout" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>wildintel-zooniverse/
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>├── src/wildintel_zooniverse/
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>│   ├── core/
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>│   │   ├── config.py            # the app's settings.toml (pydantic + Dynaconf)
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>│   │   ├── logging_setup.py     # the log file and console
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>│   │   ├── id_parsing.py        # id lists from text, CSVs and reports (the frontend's mediaIds.ts)
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>│   │   ├── version.py
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>│   │   ├── schemas/requests.py  # request/response models — also the CLI's selection model
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>│   │   └── services/            # the actual work (see below)
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>│   ├── web/
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>│   │   ├── main.py              # FastAPI app: routers + the built frontend as static files
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>│   │   ├── app_entry.py         # executable entry point: the web app — or, with arguments, the CLI
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>│   │   ├── settings.py          # the server's settings (env vars / .env)
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>│   │   └── api/routers/         # one router per area — thin: resolve credentials, map errors, stream
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>│   ├── cli/
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>│   │   ├── app.py               # the Typer app: config, sessions, lookups…
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>│   │   ├── commands_upload.py   # estimate-upload, analyze-sequences, import
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>│   │   ├── commands_zooniverse.py  # export, download_ss, update-metadata, check-*…
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>│   │   ├── common.py            # credentials, id options, the Trapper selection from ids, errors
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>│   │   └── render.py            # event streams → rich progress bars
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>│   └── wzcli.py                 # the development CLI (uv run wzcli …)
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>├── tests/unit/                  # pytest — Trapper and Zooniverse always faked
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>├── frontend/
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>│   └── src/
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>│       ├── api.ts               # every backend call, and the NDJSON stream reader
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>│       ├── types.ts             # the backend's models, in TypeScript
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>│       ├── pages/               # Wizard, Settings, Utils and each tool's page
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>│       ├── components/          # forms and panels shared by pages
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>│       └── test/                # Vitest setup and fixtures
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>├── docs/                        # this documentation (MkDocs Material)
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>├── .github/workflows/           # CI, docs, release
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>├── wildintel-zooniverse.spec    # PyInstaller
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>├── setup.sh                     # installs everything for development
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>├── mkdocs.yml
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>└── CHANGELOG.md
+</code></pre></div>
+<h2 id="4-backend">4. Backend<a class="headerlink" href="#4-backend" title="Permanent link">&para;</a></h2>
+<h3 id="services">Services<a class="headerlink" href="#services" title="Permanent link">&para;</a></h3>
+<p>In <code>core/services/</code> — shared by the web routers and the command line.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>trapper_service</code></td>
+<td>Trapper navigation (projects → collection → deployments) and per-deployment fetches: media for sampling (<code>selections_stream</code>), media names for metadata (<code>media_index_stream</code>), observation ids for exports (<code>observation_index_stream</code>). Always one deployment at a time: a big collection times out in one request, and several at once make Trapper answer 500.</td>
+</tr>
+<tr>
+<td><code>sampling</code></td>
+<td>The image selection — candidates, sequences, middle-sequence filter, sampling. Pure functions.</td>
+</tr>
+<tr>
+<td><code>zooniverse_service</code></td>
+<td>Everything panoptes-client: login, projects, subject sets, subjects, workflows, exports, creating/updating subjects.</td>
+</tr>
+<tr>
+<td><code>upload_service</code></td>
+<td>The upload pipeline (dry run and real) — see below.</td>
+</tr>
+<tr>
+<td><code>session_store</code></td>
+<td>Wizard sessions on disk.</td>
+</tr>
+<tr>
+<td><code>retry</code></td>
+<td><code>RetryPolicy</code> — tenacity with exponential backoff, cancellable.</td>
+</tr>
+<tr>
+<td><code>subject_download_service</code></td>
+<td>Download subject sets.</td>
+</tr>
+<tr>
+<td><code>validation_service</code></td>
+<td>Validation &amp; audit.</td>
+</tr>
+<tr>
+<td><code>metadata_service</code></td>
+<td>Update metadata.</td>
+</tr>
+<tr>
+<td><code>classifications_export_service</code></td>
+<td>Retrieve classifications — the CSV.</td>
+</tr>
+<tr>
+<td><code>trapper_import_service</code></td>
+<td>Importing those CSVs into Trapper, through its API.</td>
+</tr>
+<tr>
+<td><code>id_lists</code></td>
+<td><code>IdLists</code> — the whitelist/blacklist of media or subject ids (the blacklist wins).</td>
+</tr>
+<tr>
+<td><code>subjects_service</code></td>
+<td>The <em>Subjects</em> tool: lookup by id, and a subject set's pages.</td>
+</tr>
+<tr>
+<td><code>annotations/</code></td>
+<td>Per-workflow extractors and voters (see <a href="#7-adding-a-zooniverse-workflow">section 7</a>).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="panoptes-client-and-threads">panoptes-client and threads<a class="headerlink" href="#panoptes-client-and-threads" title="Permanent link">&para;</a></h3>
+<p>panoptes-client keeps the <em>current</em> client <strong>per thread</strong> (<code>Panoptes._local</code> is a
+<code>threading.local</code>), while FastAPI runs each sync request on any thread of its pool. So:</p>
+<ul>
+<li><code>zooniverse_service._connected()</code> keeps one logged-in client per credentials, and makes it
+  current for the calling thread (<code>with client:</code>) on every call.</li>
+<li>Worker pools (uploads, metadata updates) give <strong>each thread its own client</strong>
+  (<code>new_client</code>), so no two threads refresh the same OAuth token at once.</li>
+<li>Lazy listings (<code>Subject.where(...)</code>) fetch later pages with <code>Panoptes.client()</code> — iterate them
+  through <code>_iter_with(client, …)</code>, which makes the client current for each page.</li>
+<li>panoptes-client only saves attributes that were <strong>assigned</strong>: <code>subject.metadata = {...}</code>, never
+  <code>subject.metadata[k] = v</code>.</li>
+</ul>
+<h3 id="the-upload-pipeline">The upload pipeline<a class="headerlink" href="#the-upload-pipeline" title="Permanent link">&para;</a></h3>
+<p><code>upload_service.run_stream()</code>, deployment by deployment:</p>
+<pre class="mermaid"><code>flowchart LR
+    T["Trapper:&lt;br/&gt;deployment's media +&lt;br/&gt;observations"] --&gt; S["sampling"] --&gt; D["download pool&lt;br/&gt;(N threads)"]
+    D -- "file on disk" --&gt; U["upload pool&lt;br/&gt;(M threads)"]
+    U --&gt; R[("uploaded.jsonl")]
+    U --&gt; Z["Zooniverse subject"]</code></pre>
+<ul>
+<li>A <code>Transfer</code> does the two steps: <code>ZooniverseTransfer</code> for real, <code>DryRunTransfer</code> simulated.</li>
+<li><code>_Pipeline</code> runs downloads and uploads on pools of their own, bounded by a semaphore: at most
+  N + M files on disk. Each image yields <code>step</code> events as each step starts, then one <code>image</code>
+  event.</li>
+<li>Each step goes through <code>RetryPolicy.call()</code>; <code>download_retryable</code> / <code>upload_retryable</code> say
+  which errors are worth retrying. Stopping sets a cancel event: retries waiting give up, no new
+  attempt starts.</li>
+<li>Each uploaded image is appended to the session's <code>uploaded.jsonl</code> by its worker, right away;
+  a new run skips those.</li>
+</ul>
+<h3 id="sessions">Sessions<a class="headerlink" href="#sessions" title="Permanent link">&para;</a></h3>
+<p><code>session_store</code> keeps <code>Documents/wildintel-zooniverse/sessions/&lt;task_id&gt;/session.json</code>, merged
+section by section as the wizard goes: <code>selected</code> → <code>filtered</code> → <code>destination</code> → <code>uploading</code> →
+<code>done</code>. Only <code>done</code> means finished (its directory is removed on the next listing); anything
+else is offered back on startup. Writes are atomic (<code>.tmp</code> + rename). No credentials, ever.</p>
+<h3 id="logging">Logging<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h3>
+<p><code>logging_setup</code> sets up a console handler and a rotating file handler
+(<code>~/.config/wildintel-zooniverse/logs/wildintel-zooniverse.log</code>, 5 MB × 5) on the root logger,
+at the level of <strong>⚙️ → General</strong> (<code>GENERAL.log_level</code> in <code>settings.toml</code>) — or of
+<code>WILDINTEL_ZOONIVERSE_WEB_LOG_LEVEL</code>, which wins when set. Saving the settings calls
+<code>apply_level()</code>: no restart needed.</p>
+<ul>
+<li>Every module logs to <code>logging.getLogger(__name__)</code>. <strong>Info</strong> for what the user started and how
+  it ended (a run, its totals); <strong>Debug</strong> for each step (each image ↓/↑, each Trapper query, each
+  subject); <strong>Warning</strong> for what failed but was handled — with
+  <code>exc_info=logging_setup.debugging()</code>, so tracebacks appear at Debug only.</li>
+<li>The executable runs uvicorn with <code>log_config=None</code>, so its logs go through the same handlers;
+  in development (<code>wzcli</code>) uvicorn keeps its own console output, and gets the file handler too.</li>
+<li>The access log hides <code>/api/health</code> (polled every 10 s) below Debug; <code>httpcore</code>, <code>urllib3</code>
+  and similar stay at Info even at Debug.</li>
+<li>panoptes-client calls <code>logging.basicConfig()</code> on import; <code>configure()</code> removes that stray
+  console handler so nothing is printed twice.</li>
+</ul>
+<h3 id="streaming-endpoints">Streaming endpoints<a class="headerlink" href="#streaming-endpoints" title="Permanent link">&para;</a></h3>
+<p>The pattern every NDJSON endpoint follows:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">events</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>              <span class="c1"># checks up front — errors raise here → HTTP error</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">lines</span><span class="p">():</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>            <span class="k">yield</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">event</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>          <span class="c1"># midway — the 200 is already sent</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="k">yield</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"error"</span><span class="p">,</span> <span class="s2">"detail"</span><span class="p">:</span> <span class="o">...</span><span class="p">})</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="k">finally</span><span class="p">:</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="n">events</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>                 <span class="c1"># stops the work when the client goes away</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="k">return</span> <span class="n">StreamingResponse</span><span class="p">(</span><span class="n">lines</span><span class="p">(),</span> <span class="n">media_type</span><span class="o">=</span><span class="s2">"application/x-ndjson"</span><span class="p">)</span>
+</code></pre></div>
+<p>Services return a generator whose <code>finally</code> shuts its thread pools down.</p>
+<h2 id="5-frontend">5. Frontend<a class="headerlink" href="#5-frontend" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>App.tsx</code> — the top bar, and which page shows: welcome, unfinished sessions, the wizard, or
+  settings (shown over the rest, which stays mounted — nothing in progress is lost).</li>
+<li><code>pages/WizardPage.tsx</code> — the upload wizard's steps. Its forms stay mounted (hidden) once
+  shown, so <strong>Back</strong> keeps their state. <em>Retrieve classifications</em> and <em>Utils</em> open their own
+  pages in place of the wizard.</li>
+<li><code>api.ts</code> — every call. <code>streamNdjson()</code> reads an NDJSON response line by line, handing each
+  event to a callback; resolves on <code>done</code>, rejects on <code>error</code>, and aborts with an
+  <code>AbortSignal</code>.</li>
+<li>Progress panels reduce the stream's events into their state with a <code>reduce(run, event)</code>
+  function — <code>UploadRunPanel</code>, <code>DownloadSubjectSetsPage</code>, <code>ValidationPage</code>, … follow the same
+  shape.</li>
+<li>Shared pieces: <code>TrapperSelectionForm</code>, <code>UploadCriteriaForm</code>, <code>ZooniverseProjectPicker</code>,
+  <code>ProgressBar</code>, <code>OptionCards</code>.</li>
+</ul>
+<h2 id="6-api-reference">6. API reference<a class="headerlink" href="#6-api-reference" title="Permanent link">&para;</a></h2>
+<p>The full, live reference is FastAPI's own, at <code>/docs</code> while the backend runs. In short:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/health</code>, <code>/api/version</code></td>
+<td>Health check; the running version.</td>
+</tr>
+<tr>
+<td>GET, PUT</td>
+<td><code>/api/settings</code></td>
+<td>The ⚙️ settings (never passwords; a blank one keeps the saved one).</td>
+</tr>
+<tr>
+<td>GET, DELETE</td>
+<td><code>/api/settings/log</code></td>
+<td>The current log file; deleting it (and its rotated copies) starts a new one.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/trapper/config</code></td>
+<td>Saved Trapper server and user.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/trapper/test-connection</code></td>
+<td>Checks — and saves — Trapper credentials.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/trapper/research-projects</code>, <code>…/classification-projects</code>, <code>…/collections</code>, <code>…/deployments</code></td>
+<td>Trapper navigation.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/trapper/upload-preview</code></td>
+<td><em>NDJSON</em> — per-deployment counts of what the criteria keep.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/zooniverse/config</code></td>
+<td>Saved Zooniverse user.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/zooniverse/test-connection</code></td>
+<td>Checks — and saves — Zooniverse credentials.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/zooniverse/projects</code>, <code>…/subject-sets</code>, <code>…/workflows</code></td>
+<td>Zooniverse navigation.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/zooniverse/workflow-export</code></td>
+<td>A workflow's latest classifications export.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/sessions</code></td>
+<td>Unfinished sessions.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/sessions/selection</code>, <code>…/criteria</code>, <code>…/destination</code></td>
+<td>Saves a wizard step into its session.</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/sessions/{task_id}</code></td>
+<td>Discards a session.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/upload/dry-run</code>, <code>/api/upload/start</code></td>
+<td><em>NDJSON</em> — the upload, simulated or real.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/zooniverse/subjects/lookup</code>, <code>…/subjects/page</code></td>
+<td>The Subjects utility: subjects by id; a page of a subject set's.</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/zooniverse/download-defaults</code></td>
+<td>The default downloads folder.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/zooniverse/download-subject-sets</code></td>
+<td><em>NDJSON</em> — Download subject sets.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/validation/subject-set</code></td>
+<td><em>NDJSON</em> — Validation &amp; audit.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/metadata/update</code></td>
+<td><em>NDJSON</em> — Update metadata (<code>dry_run</code> by default).</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/export/defaults</code></td>
+<td>The export's default folder, "classified by" and CSV size.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/export/classifications</code></td>
+<td><em>NDJSON</em> — Retrieve classifications (the CSV).</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/export/import</code></td>
+<td><em>NDJSON</em> — imports the CSVs into Trapper (the SDK's <code>import_classifications</code>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="7-adding-a-zooniverse-workflow">7. Adding a Zooniverse workflow<a class="headerlink" href="#7-adding-a-zooniverse-workflow" title="Permanent link">&para;</a></h2>
+<p>A workflow's classifications can only be exported with an <strong>extractor</strong> and a <strong>voter</strong> of its
+own — its questions and species are its own. In <code>src/wildintel_zooniverse/core/services/annotations/</code>:</p>
+<ol>
+<li><strong>Extractor</strong> (<code>extractor.py</code>) — subclass <code>AnnotationsExtractor</code> and map every Zooniverse
+   choice of the workflow to its Trapper name in <code>zoo_to_trapper</code>. <code>NOANIMAL</code> →
+   <code>"blank"</code>, <code>HUMANORVEHICLE</code> → <code>"human"</code>, <code>OTHERSPECIES</code> → <code>"animal"</code>,
+   <code>UNRECOGNIZABLE</code> → <code>"unknown"</code>; species → scientific names. Override <code>extract_matches</code> if
+   its annotations aren't the usual survey-task shape.</li>
+<li><strong>Voter</strong> (<code>voter.py</code>) — usually reuse <code>Workflow29186AnnotationsVoter</code> or
+   <code>Workflow29187AnnotationsVoter</code> (a subclass is enough); write one if it votes differently.</li>
+<li><strong>Register</strong> both in <code>registry.WORKFLOWS</code>, with a label.</li>
+<li><strong>Test</strong> it in <code>tests/unit/test_annotations.py</code> — a few typical classifications and
+   the observations they must give.</li>
+</ol>
+<p>Neither the frontend nor the command line needs a change: the workflow becomes <em>exportable</em> in
+their lists.</p>
+<h2 id="8-testing">8. Testing<a class="headerlink" href="#8-testing" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w">                           </span><span class="c1"># backend (or: uv run wzcli backend test)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span><span class="nb">test</span><span class="w">                 </span><span class="c1"># frontend (Vitest)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nb">cd</span><span class="w"> </span>frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npx<span class="w"> </span>tsc<span class="w"> </span>-b<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>lint
+</code></pre></div>
+<ul>
+<li><strong>Backend</strong> — <code>tests/unit/</code>, FastAPI's <code>TestClient</code>. Trapper (<code>core.services.trapper_service._client</code>)
+  and panoptes-client are <strong>always faked</strong>: no test touches the network. <code>conftest.py</code> points
+  <code>HOME</code> and the config/documents folders at a temporary directory, so tests never touch a real
+  <code>settings.toml</code> or sessions.</li>
+<li><strong>Command line</strong> — <code>tests/unit/test_cli.py</code>, Typer's <code>CliRunner</code>, with the core's services
+  patched: the commands must turn their options into the calls the web app makes.</li>
+<li><strong>Frontend</strong> — each page/component has a <code>*.test.tsx</code> next to it; <code>api</code> is mocked with
+  <code>vi.mock</code>, and streaming calls are driven by the test (<code>send()</code> an event, <code>finish()</code>).</li>
+</ul>
+<h2 id="9-building-executables">9. Building executables<a class="headerlink" href="#9-building-executables" title="Permanent link">&para;</a></h2>
+<p>The frontend is built first, then PyInstaller bundles the package with it (as <code>static</code>), from
+the spec every platform uses, <code>wildintel-zooniverse.spec</code> at the root:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span><span class="w"> </span>frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>ci<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>..
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pyinstaller<span class="w"> </span>wildintel-zooniverse.spec<span class="w"> </span>--distpath<span class="w"> </span>build/dist<span class="w"> </span>--workpath<span class="w"> </span>build/work<span class="w">               </span><span class="c1"># one file (.exe, .dmg)</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nv">WZ_ONEDIR</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>pyinstaller<span class="w"> </span>wildintel-zooniverse.spec<span class="w"> </span>--distpath<span class="w"> </span>build/dist<span class="w"> </span>--workpath<span class="w"> </span>build/work<span class="w">   </span><span class="c1"># a folder (AppImage)</span>
+</code></pre></div>
+<p>Its entry point, <code>web/app_entry.py</code>, starts the web app when run with no arguments and the
+command line when run with any: one executable is both.</p>
+<p>The version shown by the app comes from <code>src/wildintel_zooniverse/_version.py</code>
+(<code>__version__ = "X.Y.Z"</code>), which the release workflow writes from the tag; without it, the
+installed package's (<code>pyproject.toml</code>), else <code>dev</code>. It's not committed.</p>
+<p><code>uv run wzcli package build</code> does all of that for the current system — the frontend, the
+executable with the version (<code>--version</code>, or the current git tag, or <code>0.0.0-dev</code>), and the
+package — into <code>dist/</code>: an AppImage on Linux (needs
+<a href="https://github.com/AppImage/appimagetool/releases">appimagetool</a> on the <code>PATH</code>), the portable
+<code>.exe</code> on Windows, the <code>.dmg</code> on macOS.</p>
+<p>Each release builds three packages, each on its own system (PyInstaller doesn't
+cross-compile):</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Built on</th>
+<th>From</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wildintel-zooniverse-X.Y.Z-linux-x86_64.AppImage</code></td>
+<td>Ubuntu 22.04 — runs on distributions with glibc 2.35 or newer</td>
+<td>the folder build, packed with <a href="https://github.com/AppImage/AppImageKit">appimagetool</a></td>
+</tr>
+<tr>
+<td><code>wildintel-zooniverse-X.Y.Z-windows-x64.exe</code></td>
+<td>Windows</td>
+<td>the one-file build, portable</td>
+</tr>
+<tr>
+<td><code>wildintel-zooniverse-X.Y.Z-macos-arm64.dmg</code></td>
+<td>macOS (Apple Silicon)</td>
+<td>the one-file build, in a disk image</td>
+</tr>
+</tbody>
+</table>
+<p>None is signed: Windows SmartScreen and macOS Gatekeeper warn about them the first time.</p>
+<h2 id="10-documentation">10. Documentation<a class="headerlink" href="#10-documentation" title="Permanent link">&para;</a></h2>
+<p>This site: MkDocs Material, in <code>docs/</code> (<code>mkdocs.yml</code>), versioned with
+<a href="https://github.com/jimporter/mike">mike</a>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>uv<span class="w"> </span>run<span class="w"> </span>mkdocs<span class="w"> </span>serve<span class="w">          </span><span class="c1"># http://127.0.0.1:8000, live reload</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>uv<span class="w"> </span>run<span class="w"> </span>mkdocs<span class="w"> </span>build<span class="w"> </span>--strict
+</code></pre></div>
+<p><code>docs/changelog.md</code> includes <code>CHANGELOG.md</code>: keep release notes there only.</p>
+<h3 id="screenshots">Screenshots<a class="headerlink" href="#screenshots" title="Permanent link">&para;</a></h3>
+<p>The web manual's screenshots (<code>docs/img/screenshots/</code>) are generated, not taken by hand:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uv<span class="w"> </span>run<span class="w"> </span>wzcli<span class="w"> </span>docs<span class="w"> </span>screenshots<span class="w">                  </span><span class="c1"># builds the frontend, then every screenshot</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>uv<span class="w"> </span>run<span class="w"> </span>wzcli<span class="w"> </span>docs<span class="w"> </span>screenshots<span class="w"> </span><span class="nb">export</span><span class="w"> </span>subjects<span class="w">  </span><span class="c1"># only these</span>
+</code></pre></div>
+<p><code>tools/screenshots/capture.py</code> serves the built frontend and drives it with Playwright, through
+the same steps a user takes. <code>tools/screenshots/mock_api.js</code> replaces <code>fetch</code> in the page with a
+fake backend that uses sample data: no Trapper, no Zooniverse, no account. Streaming endpoints
+send their events and can be held open (<code>hold: true</code>), so a screenshot shows a run midway.
+Screenshots are 1100 px wide, in dark mode, with an <code>en-GB</code> locale. Long pages are cropped to the
+part that matters (<code>save(…, top=, bottom=)</code>).</p>
+<p>When the UI changes, run it again and review the images. When a new step or label breaks a
+screenshot, it's reported as failed, and <code>_failed-NAME.png</code> shows where it stopped. Playwright
+uses the system's Chrome or Chromium if it finds one, otherwise its own
+(<code>uv run playwright install chromium</code>).</p>
+<h2 id="11-cicd-and-releases">11. CI/CD and releases<a class="headerlink" href="#11-cicd-and-releases" title="Permanent link">&para;</a></h2>
+<p>The repository is <a href="https://github.com/wildintelproject/wildintel-zooniverse">https://github.com/wildintelproject/wildintel-zooniverse</a>. For now it has a
+single branch, <strong><code>development</code></strong>; the workflows already handle a <code>main</code> branch for when there is
+one.</p>
+<p><strong>A push to <code>development</code> runs nothing</strong>: its tests, documentation and packages are run by hand,
+from GitHub's <strong>Actions</strong> tab → the workflow → <strong>Run workflow</strong>, choosing the branch.</p>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Runs on its own</th>
+<th>By hand</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ci.yml</code></td>
+<td>Pushes and pull requests to <code>main</code></td>
+<td>✓</td>
+<td>Backend tests; frontend type check, lint, tests and build; docs build.</td>
+</tr>
+<tr>
+<td><code>docs.yml</code></td>
+<td>Docs changes on <code>main</code>, <code>v*</code> tags</td>
+<td>✓</td>
+<td>Publishes this site to GitHub Pages with mike — see <a href="#documentation-versions">Documentation versions</a>.</td>
+</tr>
+<tr>
+<td><code>release.yml</code></td>
+<td><code>v*</code> tags</td>
+<td>✓</td>
+<td>Runs the tests, builds the packages — Linux AppImage (x86_64), Windows portable <code>.exe</code> (x64), macOS <code>.dmg</code> (Apple Silicon) — and publishes a GitHub release, or (by hand) the rolling <strong>dev</strong> pre-release.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">The Trapper SDK in CI</p>
+<p><code>pyproject.toml</code> takes the SDK from <code>../wildintel-trapper-sdk</code>. Every workflow clones it
+there first, from GitHub, at the ref in the repository variable <strong><code>TRAPPER_SDK_REF</code></strong>
+(<code>development</code> if unset) — so whatever this app needs from the SDK must be <strong>pushed</strong>
+there. Once the SDK has a release with it, point <code>[tool.uv.sources]</code> at its tag instead
+and drop that step.</p>
+</div>
+<h3 id="documentation-versions">Documentation versions<a class="headerlink" href="#documentation-versions" title="Permanent link">&para;</a></h3>
+<p>The site is versioned with mike; the selector in its header switches between versions:</p>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Published from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dev</code></td>
+<td><code>docs.yml</code> run by hand on <code>development</code></td>
+</tr>
+<tr>
+<td><code>main</code></td>
+<td>every docs change on <code>main</code> (or run by hand on it)</td>
+</tr>
+<tr>
+<td><code>X.Y.Z</code></td>
+<td>the tag <code>vX.Y.Z</code> — the newest one also aliased <code>latest</code></td>
+</tr>
+</tbody>
+</table>
+<p>The root URL (<a href="https://wildintelproject.github.io/wildintel-zooniverse/">https://wildintelproject.github.io/wildintel-zooniverse/</a>, the app's <strong>? Help</strong>)
+opens the default version: <code>latest</code> once there's a release, else <code>main</code>, else <code>dev</code> — so it never
+404s, whichever branches exist.</p>
+<h3 id="making-a-release">Making a release<a class="headerlink" href="#making-a-release" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Move the notes under <strong>Upcoming release</strong> in <code>CHANGELOG.md</code> to a new
+   <code>### [X.Y.Z](…compare/vA.B.C...vX.Y.Z) - YYYY-MM-DD</code> section, and bump <code>version</code> in
+   <code>pyproject.toml</code>.</li>
+<li>Tag it — on <code>development</code>, the only branch for now; on <code>main</code> once there is one:
+   <code>git tag vX.Y.Z &amp;&amp; git push origin vX.Y.Z</code>.</li>
+<li><code>release.yml</code> builds everything and creates the release, its notes taken from that
+   <code>CHANGELOG.md</code> section; <code>docs.yml</code> publishes the docs as <code>X.Y.Z</code>, aliased <code>latest</code> — the new
+   default version.</li>
+</ol>
+<p>Running <code>release.yml</code> by hand on <code>development</code> (<em>Run workflow</em>) refreshes the <strong>dev</strong>
+pre-release: the <code>dev</code> tag is moved to that commit, and its notes are <strong>Upcoming release</strong>. The
+version defaults to <code>0.0.0-dev+&lt;commit&gt;</code>; give another one if you want.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 <a href="https://wildintel.eu/">WildINTEL</a>
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/wildintelproject" target="_blank" rel="noopener" title="WildINTEL on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://wildintel.eu/" target="_blank" rel="noopener" title="WildINTEL website" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M351.9 280H161c2.9 64.5 17.2 123.9 37.5 167.4 11.4 24.5 23.7 41.8 35.1 52.4 11.2 10.5 18.9 12.2 22.9 12.2s11.7-1.7 22.9-12.2c11.4-10.6 23.7-28 35.1-52.4 20.3-43.5 34.6-102.9 37.5-167.4zm-191-48h190.9c-2.8-64.5-17.1-123.9-37.4-167.4-11.4-24.4-23.7-41.8-35.1-52.4C268.1 1.7 260.4 0 256.4 0s-11.7 1.7-22.9 12.2c-11.4 10.6-23.7 28-35.1 52.4-20.3 43.5-34.6 102.9-37.5 167.4m-48 0c3.5-85.6 25.6-165.1 57.9-217.3C78.7 47.3 10.9 131.2 1.5 232zM1.5 280c9.4 100.8 77.2 184.7 169.3 217.3-32.3-52.2-54.4-131.7-57.9-217.3zm398.4 0c-3.5 85.6-25.6 165.1-57.9 217.3 92.1-32.7 159.9-116.5 169.3-217.3zm111.4-48C501.9 131.2 434.1 47.3 342 14.7c32.3 52.2 54.4 131.7 57.9 217.3z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../javascripts/termynal.js"></script>
+      
+        <script src="../javascripts/termynal-setup.js"></script>
+      
+    
+  </body>
+</html>
