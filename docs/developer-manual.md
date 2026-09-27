@@ -412,11 +412,14 @@ The repository is <https://github.com/wildintelproject/wildintel-zooniverse>. Fo
 single branch, **`development`**; the workflows already handle a `main` branch for when there is
 one.
 
-| Workflow | When | What |
-|---|---|---|
-| `ci.yml` | Pushes and pull requests to `development` (and `main`, once it exists) | Backend tests; frontend type check, lint, tests and build; docs build. |
-| `docs.yml` | Docs changes on `development`/`main`, `v*` tags, by hand | Publishes this site to GitHub Pages with mike — see [Documentation versions](#documentation-versions). |
-| `release.yml` | `v*` tags, pushes to `development`, by hand | Runs the tests, builds the packages — Linux AppImage (x86_64), Windows portable `.exe` (x64), macOS `.dmg` (Apple Silicon) — and publishes a GitHub release, or the rolling **dev** pre-release. |
+**A push to `development` runs nothing**: its tests, documentation and packages are run by hand,
+from GitHub's **Actions** tab → the workflow → **Run workflow**, choosing the branch.
+
+| Workflow | Runs on its own | By hand | What |
+|---|---|---|---|
+| `ci.yml` | Pushes and pull requests to `main` | ✓ | Backend tests; frontend type check, lint, tests and build; docs build. |
+| `docs.yml` | Docs changes on `main`, `v*` tags | ✓ | Publishes this site to GitHub Pages with mike — see [Documentation versions](#documentation-versions). |
+| `release.yml` | `v*` tags | ✓ | Runs the tests, builds the packages — Linux AppImage (x86_64), Windows portable `.exe` (x64), macOS `.dmg` (Apple Silicon) — and publishes a GitHub release, or (by hand) the rolling **dev** pre-release. |
 
 !!! warning "The Trapper SDK in CI"
     `pyproject.toml` takes the SDK from `../wildintel-trapper-sdk`. Every workflow clones it
@@ -431,8 +434,8 @@ The site is versioned with mike; the selector in its header switches between ver
 
 | Version | Published from |
 |---|---|
-| `dev` | every docs change on `development` |
-| `main` | every docs change on `main` |
+| `dev` | `docs.yml` run by hand on `development` |
+| `main` | every docs change on `main` (or run by hand on it) |
 | `X.Y.Z` | the tag `vX.Y.Z` — the newest one also aliased `latest` |
 
 The root URL (<https://wildintelproject.github.io/wildintel-zooniverse/>, the app's **? Help**)
@@ -450,6 +453,6 @@ opens the default version: `latest` once there's a release, else `main`, else `d
    `CHANGELOG.md` section; `docs.yml` publishes the docs as `X.Y.Z`, aliased `latest` — the new
    default version.
 
-Every push to `development` refreshes the **dev** pre-release (the `dev` tag is moved to it),
-its notes being **Upcoming release**. Run `release.yml` by hand (*Run workflow*) to build a
-dev release with a version of your choice.
+Running `release.yml` by hand on `development` (*Run workflow*) refreshes the **dev**
+pre-release: the `dev` tag is moved to that commit, and its notes are **Upcoming release**. The
+version defaults to `0.0.0-dev+<commit>`; give another one if you want.

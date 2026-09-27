@@ -1,8 +1,10 @@
 name: Documentation
 
+# Automatic for main and release tags. development's ("dev") is published by
+# hand: Actions → Documentation → Run workflow, on development.
 on:
   push:
-    branches: [main, development]
+    branches: [main]
     tags: ['v*']
     paths:
       - 'docs/**'

@@ -2,18 +2,17 @@ name: Release
 
 # A tag vX.Y.Z builds the packages — Linux AppImage, Windows portable .exe,
 # macOS .dmg — and publishes the X.Y.Z release, its notes taken from
-# CHANGELOG.md. A push to development (or running it by hand) refreshes the
-# rolling "dev" pre-release instead.
+# CHANGELOG.md. Running it by hand (Actions → Release → Run workflow) refreshes
+# the rolling "dev" pre-release instead — never on a push to a branch.
 on:
   push:
     tags: ['v*']
-    branches: [development]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version (e.g. 0.1.0)'
+        description: 'Version (e.g. 0.1.0) — blank: 0.0.0-dev+<commit>'
         required: false
-        default: '0.0.0-dev'
+        default: ''
 
 env:
   TRAPPER_SDK_REF: ${{ vars.TRAPPER_SDK_REF || 'development' }}
@@ -29,7 +28,7 @@ jobs:
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          elif [ -n "${{ inputs.version }}" ]; then
             echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
           else
             echo "version=0.0.0-dev+${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
@@ -189,7 +188,7 @@ jobs:
           files: release-assets/*
           body_path: release_notes.txt
 
-      # ── Dev pre-release (development / by hand) ────────────────────────────
+      # ── Dev pre-release (run by hand) ──────────────────────────────────────
       - name: Move the dev tag
         if: "!startsWith(github.ref, 'refs/tags/')"
         run: |
