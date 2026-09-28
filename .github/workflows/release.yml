@@ -111,12 +111,9 @@ jobs:
         run: Set-MpPreference -DisableRealtimeMonitoring $true
       - name: Build executable
         # A folder for the AppImage; a single file elsewhere — into build/dist.
-        # DEBUG on Windows: if it hangs again, the log shows what it was doing.
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then export WZ_ONEDIR=1; fi
-          LOG_LEVEL=INFO
-          if [ "$RUNNER_OS" = "Windows" ]; then LOG_LEVEL=DEBUG; fi
-          uv run pyinstaller wildintel-zooniverse.spec --noconfirm --log-level "$LOG_LEVEL" --distpath build/dist --workpath build/work
+          uv run pyinstaller wildintel-zooniverse.spec --noconfirm --log-level INFO --distpath build/dist --workpath build/work
 
       # ── Linux: AppImage ─────────────────────────────────────────────────────
       - name: Build AppImage
