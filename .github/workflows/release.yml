@@ -60,6 +60,7 @@ jobs:
   build:
     name: ${{ matrix.name }}
     needs: [version, test]
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -67,8 +68,12 @@ jobs:
           # 22.04: an older glibc, so the AppImage runs on more distributions.
           - name: Linux (.AppImage)
             os: ubuntu-22.04
+          # Pinned (not windows-latest): the Windows Server 2025 image has
+          # Defender real-time scanning aggressively enough to hang PyInstaller
+          # for hours (it writes hundreds of loose DLL/pyd files). Revisit once
+          # that's fixed upstream.
           - name: Windows (portable .exe)
-            os: windows-latest
+            os: windows-2022
           - name: macOS (.dmg)
             os: macos-latest
     runs-on: ${{ matrix.os }}
@@ -100,6 +105,12 @@ jobs:
       - run: uv sync --frozen --group dev
       - name: Write version file
         run: echo "__version__ = \"$VERSION\"" > src/wildintel_zooniverse/_version.py
+      # Defender's real-time scan of PyInstaller's many loose DLL/pyd files can
+      # turn a two-minute build into a multi-hour hang on Windows runners.
+      - name: Exclude the workspace from Windows Defender
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Add-MpPreference -ExclusionPath "${{ github.workspace }}"
       - name: Build executable
         # A folder for the AppImage; a single file elsewhere — into build/dist.
         run: |
