@@ -125,12 +125,9 @@ jobs:
         # Cygwin/MSYS process table (fixed at 50 slots) can run out and kill
         # one of them ("TP_NUM_C_BUFS too small: 50") — native process
         # creation through pwsh doesn't go through that layer.
-        # DEBUG: it's hanging again (the 30-minute job timeout kills it) —
-        # this is what shows where, since INFO stays silent through the
-        # whole collect_submodules pass.
         if: runner.os == 'Windows'
         shell: pwsh
-        run: uv run pyinstaller wildintel-zooniverse.spec --noconfirm --log-level DEBUG --distpath build/dist --workpath build/work
+        run: uv run pyinstaller wildintel-zooniverse.spec --noconfirm --log-level INFO --distpath build/dist --workpath build/work
 
       # ── Linux: AppImage ─────────────────────────────────────────────────────
       - name: Build AppImage

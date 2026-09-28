@@ -12,39 +12,33 @@ from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_submodules, copy_metadata
 
-# The Windows build has hung more than once inside PyInstaller's own isolated
-# subprocess calls (collect_submodules, and find_binary_dependencies's "import
-# every collected package to catch add_dll_directory side effects" pass) —
-# neither logs which package/call is in flight, even at --log-level DEBUG, so
-# a hang gives no clue where. Trace every such call on Windows so the next one
-# does.
+# find_binary_dependencies (build_main.py) imports every collected package
+# in an isolated subprocess, to catch dynamic library search path changes —
+# that subprocess is a plain, unfrozen Python using the real build venv,
+# where python-magic is still installed, so importing panoptes_client
+# reaches its own `try: import magic`, which hangs on Windows searching for
+# libmagic.dll (Windows has no such library — see magic/loader.py). Excluding
+# magic from the bundle (below) doesn't help *here*, only in the frozen exe.
+#
+# Piggyback on PyInstaller's own Qt-bindings suppression: find_binary_dependencies's
+# setup() sets sys.modules[name] = None for each suppressed name in the
+# isolated child before importing each collected package — add magic to that
+# list too, so its import fails fast there, which panoptes_client.subject
+# already treats as "not available" (falls back to mimetypes).
 if sys.platform == "win32":
     import PyInstaller.isolated._parent as _isolated_parent
 
     _original_call = _isolated_parent.Python.call
 
-    def _traced_call(self, function, *args, **kwargs):
-        # find_binary_dependencies's own setup() (build_main.py) suppresses
-        # Qt bindings before importing each collected package, by setting
-        # sys.modules[name] = None in the isolated child — add magic to that
-        # list too. Excluding it from the bundle (below) doesn't help *here*:
-        # this isolated subprocess is a plain, unfrozen Python using the real
-        # build venv, where python-magic is still installed, so importing
-        # panoptes_client still reaches its own `try: import magic`, which
-        # hangs searching for libmagic.dll (Windows has no such library —
-        # see magic/loader.py). This makes that import fail fast instead,
-        # which panoptes_client.subject already treats as "not available".
+    def _suppress_magic_in_setup(self, function, *args, **kwargs):
         if (
             function.__name__ == "setup" and getattr(function, "__module__", None) == "PyInstaller.building.build_main"
             and args
         ):
             args = ([*args[0], "magic"], *args[1:])
-        print(f"[isolated] -> {function.__name__}{args!r}", flush=True)
-        result = _original_call(self, function, *args, **kwargs)
-        print(f"[isolated] <- {function.__name__} done", flush=True)
-        return result
+        return _original_call(self, function, *args, **kwargs)
 
-    _isolated_parent.Python.call = _traced_call
+    _isolated_parent.Python.call = _suppress_magic_in_setup
 
 ONEDIR = os.environ.get("WZ_ONEDIR") == "1"
 NAME = "wildintel-zooniverse"
