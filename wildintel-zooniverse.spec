@@ -94,7 +94,11 @@ a = Analysis(
     pathex=["src"],
     datas=datas,
     hiddenimports=hiddenimports,
-    excludes=["pytest", "tkinter"],
+    # magic (python-magic, panoptes-client's optional dependency): panoptes_client.subject
+    # already falls back to mimetypes when it's missing (an ImportError) — excluding it
+    # avoids libmagic's own DLL search hanging PyInstaller's Windows build (Windows has no
+    # libmagic; see magic/loader.py's win32 candidates, tried one by one with ctypes.CDLL).
+    excludes=["pytest", "tkinter", "magic"],
 )
 pyz = PYZ(a.pure)
 
