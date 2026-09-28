@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { api } from '../api'
 import type { TrapperCredentials } from '../api'
+import Combobox from './Combobox'
 import type { ClassificationProject, Collection, Deployment, ResearchProject, TrapperSelection } from '../types'
 
 const inputClass = 'w-full px-3 py-2 text-sm rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono'
@@ -257,16 +258,13 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
           <StepHeading n={2}>Research project</StepHeading>
           <div className="mb-6">
             <label className={labelClass} htmlFor="trapper-research-project">Research project</label>
-            <select
+            <Combobox
               id="trapper-research-project" disabled={researchProjects.items.length === 0}
-              className={selectClass(researchProjects.items.length === 0)}
-              value={researchProjects.selected} onChange={(e) => handleResearchProjectChange(e.target.value)}
-            >
-              <option value="">{researchProjects.items.length === 0 ? 'No research projects found' : 'Select a research project…'}</option>
-              {researchProjects.items.map((p) => (
-                <option key={p.pk} value={String(p.pk)}>{p.acronym ? `${p.acronym} — ${p.name}` : p.name}</option>
-              ))}
-            </select>
+              options={researchProjects.items.map((p) => ({ value: String(p.pk), label: p.acronym ? `${p.acronym} — ${p.name}` : p.name }))}
+              value={researchProjects.selected} onChange={handleResearchProjectChange}
+              placeholder={researchProjects.items.length === 0 ? 'No research projects found' : 'Select a research project…'}
+              clearLabel="Clear research project"
+            />
           </div>
         </>
       )}
@@ -278,21 +276,18 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
           <StepHeading n={3}>Classification project</StepHeading>
           <div className="mb-6">
             <label className={labelClass} htmlFor="trapper-classification-project">Classification project</label>
-            <select
+            <Combobox
               id="trapper-classification-project"
               disabled={classificationProjects.loading || classificationProjects.items.length === 0}
-              className={selectClass(classificationProjects.loading || classificationProjects.items.length === 0)}
-              value={classificationProjects.selected} onChange={(e) => handleClassificationProjectChange(e.target.value)}
-            >
-              <option value="">
-                {classificationProjects.loading ? 'Loading classification projects…'
+              options={classificationProjects.items.map((p) => ({ value: String(p.pk), label: `${p.name}${p.is_active ? '' : ' (inactive)'}` }))}
+              value={classificationProjects.selected} onChange={handleClassificationProjectChange}
+              placeholder={
+                classificationProjects.loading ? 'Loading classification projects…'
                   : classificationProjects.items.length === 0 ? 'No classification projects found'
-                    : 'Select a classification project…'}
-              </option>
-              {classificationProjects.items.map((p) => (
-                <option key={p.pk} value={String(p.pk)}>{p.name}{p.is_active ? '' : ' (inactive)'}</option>
-              ))}
-            </select>
+                    : 'Select a classification project…'
+              }
+              clearLabel="Clear classification project"
+            />
             {classificationProjects.error && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{classificationProjects.error}</p>}
             <p className={hintClass}>Its approved classifications decide which images are sent to Zooniverse.</p>
           </div>

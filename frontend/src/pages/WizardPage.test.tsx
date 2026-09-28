@@ -59,8 +59,10 @@ async function reachImagesStep() {
 
 async function chooseImages() {
   await userEvent.click(screen.getByRole('button', { name: /test connection/i }))
-  await userEvent.selectOptions(await screen.findByLabelText('Research project'), '2')
-  await userEvent.selectOptions(await screen.findByLabelText('Classification project'), '10')
+  await userEvent.type(await screen.findByLabelText('Research project'), 'Doñana')
+  await userEvent.click(await screen.findByRole('option', { name: 'DONA — Doñana' }))
+  await userEvent.type(await screen.findByLabelText('Classification project'), 'Main')
+  await userEvent.click(await screen.findByRole('option', { name: 'Main CP' }))
   await userEvent.selectOptions(await screen.findByLabelText('Collection'), '33')
   await screen.findByText('R0033-DONA_0001_A')
 }

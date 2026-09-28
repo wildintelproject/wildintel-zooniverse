@@ -28,11 +28,18 @@ beforeEach(() => {
   mockedApi.trapperDeployments.mockResolvedValue({ results: DEPLOYMENTS })
 })
 
+/** Types into a Combobox to filter it, then clicks the matching option. */
+async function chooseCombo(label: string, query: string, optionName: string) {
+  const input = await screen.findByLabelText(label)
+  await userEvent.type(input, query)
+  await userEvent.click(await screen.findByRole('option', { name: optionName }))
+}
+
 async function walkToDeployments() {
   await waitFor(() => expect(screen.getByLabelText('Trapper URL')).toHaveValue('https://trapper.example.org'))
   await userEvent.click(screen.getByRole('button', { name: /test connection/i }))
-  await userEvent.selectOptions(await screen.findByLabelText('Research project'), '2')
-  await userEvent.selectOptions(await screen.findByLabelText('Classification project'), '10')
+  await chooseCombo('Research project', 'Doñana', 'DONA — Doñana')
+  await chooseCombo('Classification project', 'Main', 'Main CP')
   await userEvent.selectOptions(await screen.findByLabelText('Collection'), '33')
   await screen.findByText('R0033-DONA_0001_A')
 }
@@ -81,7 +88,7 @@ describe('TrapperSelectionForm', () => {
     render(<TrapperSelectionForm onSelectionChange={onSelectionChange} />)
     await walkToDeployments()
 
-    await userEvent.selectOptions(screen.getByLabelText('Classification project'), '')
+    await userEvent.click(screen.getByRole('button', { name: 'Clear classification project' }))
     expect(screen.queryByLabelText('Collection')).not.toBeInTheDocument()
     expect(screen.queryByText('R0033-DONA_0001_A')).not.toBeInTheDocument()
     expect(onSelectionChange).toHaveBeenLastCalledWith(null)
@@ -94,8 +101,8 @@ describe('TrapperSelectionForm', () => {
     render(<TrapperSelectionForm onSelectionChange={vi.fn()} />)
     await waitFor(() => expect(screen.getByLabelText('Trapper URL')).toHaveValue('https://trapper.example.org'))
     await userEvent.click(screen.getByRole('button', { name: /test connection/i }))
-    await userEvent.selectOptions(await screen.findByLabelText('Research project'), '2')
-    await userEvent.selectOptions(await screen.findByLabelText('Classification project'), '10')
+    await chooseCombo('Research project', 'Doñana', 'DONA — Doñana')
+    await chooseCombo('Classification project', 'Main', 'Main CP')
     await userEvent.selectOptions(await screen.findByLabelText('Collection'), '33')
 
     await userEvent.type(await screen.findByLabelText('Filter deployments'), 'SITE_1')
