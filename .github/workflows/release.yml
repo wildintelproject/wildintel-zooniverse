@@ -68,12 +68,8 @@ jobs:
           # 22.04: an older glibc, so the AppImage runs on more distributions.
           - name: Linux (.AppImage)
             os: ubuntu-22.04
-          # Pinned (not windows-latest): the Windows Server 2025 image has
-          # Defender real-time scanning aggressively enough to hang PyInstaller
-          # for hours (it writes hundreds of loose DLL/pyd files). Revisit once
-          # that's fixed upstream.
           - name: Windows (portable .exe)
-            os: windows-2022
+            os: windows-latest
           - name: macOS (.dmg)
             os: macos-latest
     runs-on: ${{ matrix.os }}
@@ -106,16 +102,21 @@ jobs:
       - name: Write version file
         run: echo "__version__ = \"$VERSION\"" > src/wildintel_zooniverse/_version.py
       # Defender's real-time scan of PyInstaller's many loose DLL/pyd files can
-      # turn a two-minute build into a multi-hour hang on Windows runners.
-      - name: Exclude the workspace from Windows Defender
+      # turn a two-minute build into a multi-hour hang on Windows runners. A
+      # path exclusion alone didn't stop it (still hung on windows-2022), so
+      # turn real-time monitoring off outright for this job.
+      - name: Disable Windows Defender real-time protection
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Add-MpPreference -ExclusionPath "${{ github.workspace }}"
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
       - name: Build executable
         # A folder for the AppImage; a single file elsewhere — into build/dist.
+        # DEBUG on Windows: if it hangs again, the log shows what it was doing.
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then export WZ_ONEDIR=1; fi
-          uv run pyinstaller wildintel-zooniverse.spec --noconfirm --distpath build/dist --workpath build/work
+          LOG_LEVEL=INFO
+          if [ "$RUNNER_OS" = "Windows" ]; then LOG_LEVEL=DEBUG; fi
+          uv run pyinstaller wildintel-zooniverse.spec --noconfirm --log-level "$LOG_LEVEL" --distpath build/dist --workpath build/work
 
       # ── Linux: AppImage ─────────────────────────────────────────────────────
       - name: Build AppImage
