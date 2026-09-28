@@ -8,7 +8,7 @@ describe('sequencesCsv', () => {
       ...PREVIEW_ROWS[0],
       sequence_detail: [{
         number: 1, start: '2024-09-04T12:00:00', end: '2024-09-04T12:00:40', duration_s: 40, images: 4,
-        uploaded: [1, 4], not_sampled: [2], removed_human: [3], removed_vehicle: [], collapsed_empty: [],
+        order: [1, 2, 3, 4], uploaded: [1, 4], not_sampled: [2], removed_human: [3], removed_vehicle: [], collapsed_empty: [],
       }],
     }, { ...PREVIEW_ROWS[1] }])
 

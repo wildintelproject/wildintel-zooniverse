@@ -70,6 +70,11 @@ class SequenceDetail:
             "number": self.number, "start": self.start.isoformat(), "end": self.end.isoformat(),
             "duration_s": round((self.end - self.start).total_seconds()),
             "images": len(self.images),
+            # Every media id, in time order, whatever became of it — the
+            # per-status lists below are each internally in time order too,
+            # but grouped, so they can't be used to show the sequence as it
+            # actually happened.
+            "order": [image.media_id for image, _ in self.images],
             **by_status,
         }
 

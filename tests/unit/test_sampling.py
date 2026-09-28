@@ -127,6 +127,10 @@ def test_detail_says_what_became_of_every_image_of_every_sequence():
     assert (sequence["start"], sequence["end"], sequence["duration_s"]) == (
         (T0 + timedelta(seconds=1000)).isoformat(), (T0 + timedelta(seconds=1050)).isoformat(), 50,
     )
+    # "order" is every media id in time order, whatever became of it — not
+    # grouped by status like the fields above (10 uploaded, 11 removed_human,
+    # 12 removed_vehicle, 13/14 not_sampled, 15 uploaded, in that time order).
+    assert sequence["order"] == [10, 11, 12, 13, 14, 15]
     # The same selection as without detail.
     plain = select_deployment("D1", images, criteria)
     assert (_ids(plain.selected), plain.removed_middle) == (_ids(result.selected), result.removed_middle) == ([1, 2, 10, 15, 20], 2)

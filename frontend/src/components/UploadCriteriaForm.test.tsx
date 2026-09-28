@@ -134,9 +134,9 @@ describe('UploadCriteriaForm', () => {
       ...PREVIEW_ROWS[0],
       sequence_detail: [
         { number: 1, start: '2024-09-04T12:00:00', end: '2024-09-04T12:00:40', duration_s: 40, images: 3,
-          uploaded: [1, 3], not_sampled: [2], removed_human: [], removed_vehicle: [], collapsed_empty: [] },
+          order: [1, 2, 3], uploaded: [1, 3], not_sampled: [2], removed_human: [], removed_vehicle: [], collapsed_empty: [] },
         { number: 2, start: '2024-09-04T13:00:00', end: '2024-09-04T13:00:10', duration_s: 10, images: 1,
-          uploaded: [], not_sampled: [], removed_human: [4], removed_vehicle: [], collapsed_empty: [] },
+          order: [4], uploaded: [], not_sampled: [], removed_human: [4], removed_vehicle: [], collapsed_empty: [] },
       ],
     })
     preview.finish()
@@ -146,6 +146,8 @@ describe('UploadCriteriaForm', () => {
     expect(within(sequences).getAllByRole('row')).toHaveLength(3) // header + 2
 
     await userEvent.click(within(sequences).getByText(/▸ 1/))
+    // In time order (1, 2, 3), not grouped by status (1, 3 uploaded, then 2).
+    expect(within(sequences).getAllByRole('link').map((el) => el.textContent)).toEqual(['1', '2', '3'])
     const image = screen.getByRole('link', { name: '2' })
     expect(image).toHaveAttribute('title', 'Not sampled')
     expect(image).toHaveAttribute('href', 'https://trapper.example.org/storage/resource/media/2/pfile/')

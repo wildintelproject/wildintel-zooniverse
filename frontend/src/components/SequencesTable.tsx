@@ -30,11 +30,10 @@ function duration(seconds: number): string {
 function SequenceImages({ sequence, trapperUrl }: { sequence: SequenceDetail; trapperUrl: string }) {
   const fateOf = new Map<number, Fate>()
   for (const { key } of FATES) for (const id of sequence[key]) fateOf.set(id, key)
-  const ids = [...fateOf.keys()]
   const base = trapperUrl.replace(/\/+$/, '')
   return (
     <div className="flex flex-wrap gap-1 py-1.5">
-      {ids.map((id) => {
+      {sequence.order.map((id) => {
         const fate = FATES.find((f) => f.key === fateOf.get(id))!
         return (
           <a

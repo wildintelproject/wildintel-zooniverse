@@ -84,6 +84,10 @@ export interface SequenceDetail {
   end: string
   duration_s: number
   images: number
+  /** Every media id, in time order, whatever became of it — the fields
+   * below group the same ids by status instead, each internally in time
+   * order but not interleaved with the others. */
+  order: number[]
   uploaded: number[]
   /** The sequence has more images than are kept from each. */
   not_sampled: number[]
