@@ -7,9 +7,29 @@
 #
 # The frontend is bundled as "static" (see main._static_dir).
 import os
+import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_submodules, copy_metadata
+
+# The Windows build has hung more than once inside PyInstaller's own isolated
+# subprocess calls (collect_submodules, and find_binary_dependencies's "import
+# every collected package to catch add_dll_directory side effects" pass) —
+# neither logs which package/call is in flight, even at --log-level DEBUG, so
+# a hang gives no clue where. Trace every such call on Windows so the next one
+# does.
+if sys.platform == "win32":
+    import PyInstaller.isolated._parent as _isolated_parent
+
+    _original_call = _isolated_parent.Python.call
+
+    def _traced_call(self, function, *args, **kwargs):
+        print(f"[isolated] -> {function.__name__}{args!r}", flush=True)
+        result = _original_call(self, function, *args, **kwargs)
+        print(f"[isolated] <- {function.__name__} done", flush=True)
+        return result
+
+    _isolated_parent.Python.call = _traced_call
 
 ONEDIR = os.environ.get("WZ_ONEDIR") == "1"
 NAME = "wildintel-zooniverse"
