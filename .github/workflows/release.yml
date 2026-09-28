@@ -109,11 +109,21 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: Set-MpPreference -DisableRealtimeMonitoring $true
-      - name: Build executable
+      - name: Build executable (Linux/macOS)
         # A folder for the AppImage; a single file elsewhere — into build/dist.
+        if: runner.os != 'Windows'
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then export WZ_ONEDIR=1; fi
           uv run pyinstaller wildintel-zooniverse.spec --noconfirm --log-level INFO --distpath build/dist --workpath build/work
+      - name: Build executable (Windows)
+        # pwsh, not bash: PyInstaller's collect_submodules spawns a child
+        # python.exe per package to import it in isolation, and Git Bash's
+        # Cygwin/MSYS process table (fixed at 50 slots) can run out and kill
+        # one of them ("TP_NUM_C_BUFS too small: 50") — native process
+        # creation through pwsh doesn't go through that layer.
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: uv run pyinstaller wildintel-zooniverse.spec --noconfirm --log-level INFO --distpath build/dist --workpath build/work
 
       # ── Linux: AppImage ─────────────────────────────────────────────────────
       - name: Build AppImage
