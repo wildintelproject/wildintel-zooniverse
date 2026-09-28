@@ -55,6 +55,8 @@ export interface UploadCriteria {
   only_classified: boolean
   remove_middle_humans: boolean
   remove_middle_vehicles: boolean
+  /** A sequence left with only "empty" images is reduced to its second one. */
+  collapse_empty_sequences: boolean
 }
 
 export const DEFAULT_CRITERIA: UploadCriteria = {
@@ -63,6 +65,7 @@ export const DEFAULT_CRITERIA: UploadCriteria = {
   only_classified: true,
   remove_middle_humans: true,
   remove_middle_vehicles: false,
+  collapse_empty_sequences: false,
 }
 
 export interface PreviewCounts {
@@ -87,6 +90,8 @@ export interface SequenceDetail {
   /** Removed from a middle sequence. */
   removed_human: number[]
   removed_vehicle: number[]
+  /** All but the second image of an all-"empty" sequence. */
+  collapsed_empty: number[]
 }
 
 export type DeploymentCounts = PreviewCounts & {

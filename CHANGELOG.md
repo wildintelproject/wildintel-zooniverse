@@ -37,6 +37,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Settings** page (⚙️): Trapper and Zooniverse accounts, parallel transfers and retries, the
   export's defaults, and the sequence criteria new uploads start from.
 - Option to also remove **vehicles** from middle sequences.
+- Option to **collapse empty sequences**: a sequence left with only "empty" images is reduced to
+  its second one — wildintel-tools' own `collapse_empty_sequences`.
 - **Analyze sequences** on the filters step: each deployment's sequences and what becomes of each
   image (uploaded, not sampled, removed as a human or a vehicle), with a CSV download —
   wildintel-tools' `analyze-sequences`, with the upload's own criteria.

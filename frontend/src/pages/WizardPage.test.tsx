@@ -154,6 +154,7 @@ describe('WizardPage', () => {
 
     expect(mockedApi.saveCriteria).toHaveBeenCalledWith('task-1', {
       max_interval: 90, images_per_sequence: 3, only_classified: true, remove_middle_humans: true, remove_middle_vehicles: true,
+      collapse_empty_sequences: false,
     })
     expect(await screen.findByText('Where to upload them')).toBeInTheDocument()
 

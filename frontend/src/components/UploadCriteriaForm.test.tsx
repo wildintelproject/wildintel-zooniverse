@@ -134,9 +134,9 @@ describe('UploadCriteriaForm', () => {
       ...PREVIEW_ROWS[0],
       sequence_detail: [
         { number: 1, start: '2024-09-04T12:00:00', end: '2024-09-04T12:00:40', duration_s: 40, images: 3,
-          uploaded: [1, 3], not_sampled: [2], removed_human: [], removed_vehicle: [] },
+          uploaded: [1, 3], not_sampled: [2], removed_human: [], removed_vehicle: [], collapsed_empty: [] },
         { number: 2, start: '2024-09-04T13:00:00', end: '2024-09-04T13:00:10', duration_s: 10, images: 1,
-          uploaded: [], not_sampled: [], removed_human: [4], removed_vehicle: [] },
+          uploaded: [], not_sampled: [], removed_human: [4], removed_vehicle: [], collapsed_empty: [] },
       ],
     })
     preview.finish()

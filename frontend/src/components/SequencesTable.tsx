@@ -4,13 +4,14 @@ import type { DeploymentCounts, SequenceDetail } from '../types'
 /** Sequences shown per deployment — the CSV has them all. */
 const SHOWN_SEQUENCES = 500
 
-type Fate = 'uploaded' | 'not_sampled' | 'removed_human' | 'removed_vehicle'
+type Fate = 'uploaded' | 'not_sampled' | 'removed_human' | 'removed_vehicle' | 'collapsed_empty'
 
 const FATES: { key: Fate; label: string; className: string }[] = [
   { key: 'uploaded', label: 'Uploaded', className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300' },
   { key: 'not_sampled', label: 'Not sampled', className: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' },
   { key: 'removed_human', label: 'Removed: human', className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300' },
   { key: 'removed_vehicle', label: 'Removed: vehicle', className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300' },
+  { key: 'collapsed_empty', label: 'Collapsed: empty', className: 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300' },
 ]
 
 function time(iso: string): string {
@@ -68,13 +69,13 @@ export default function SequencesTable({ deployment, trapperUrl }: { deployment:
             <th className="py-1 px-2 font-medium">Start</th>
             <th className="py-1 px-2 font-medium">Duration</th>
             <th className="py-1 px-2 font-medium text-right">Images</th>
-            <th className="py-1 px-2 font-medium text-right" title="Humans/vehicles removed from a middle sequence">Removed</th>
+            <th className="py-1 px-2 font-medium text-right" title="Humans/vehicles removed from a middle sequence, or collapsed as an all-empty sequence">Removed</th>
             <th className="py-1 pl-2 font-medium text-right">Upload</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
           {sequences.slice(0, SHOWN_SEQUENCES).map((s) => {
-            const removed = s.removed_human.length + s.removed_vehicle.length
+            const removed = s.removed_human.length + s.removed_vehicle.length + s.collapsed_empty.length
             return (
               <Fragment key={s.number}>
                 <tr
@@ -112,11 +113,11 @@ export default function SequencesTable({ deployment, trapperUrl }: { deployment:
 export function sequencesCsv(deployments: DeploymentCounts[]): string {
   const header = [
     'deploymentID', 'sequence_n', 'total_images', 'media_ids', 'first_date', 'last_date', 'duration_s',
-    'not_sampled_media_ids', 'removed_human_media_ids', 'removed_vehicle_media_ids',
+    'not_sampled_media_ids', 'removed_human_media_ids', 'removed_vehicle_media_ids', 'collapsed_empty_media_ids',
   ]
   const rows = deployments.flatMap((d) => (d.sequence_detail ?? []).map((s) => [
     d.deployment_id, s.number, s.images, s.uploaded.join('|'), s.start, s.end, s.duration_s,
-    s.not_sampled.join('|'), s.removed_human.join('|'), s.removed_vehicle.join('|'),
+    s.not_sampled.join('|'), s.removed_human.join('|'), s.removed_vehicle.join('|'), s.collapsed_empty.join('|'),
   ]))
   const cell = (v: unknown) => {
     const text = String(v)

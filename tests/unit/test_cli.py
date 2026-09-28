@@ -114,14 +114,14 @@ def test_an_unknown_deployment_is_an_error(fake_trapper):
 
 def test_analyze_sequences_writes_the_csv(fake_trapper, tmp_path):
     sequence = {"number": 1, "start": "2024-09-04T12:00:00", "end": "2024-09-04T12:01:00", "duration_s": 60, "images": 3,
-                "uploaded": [1, 2], "not_sampled": [3], "removed_human": [], "removed_vehicle": []}
+                "uploaded": [1, 2], "not_sampled": [3], "removed_human": [], "removed_vehicle": [], "collapsed_empty": []}
     out = tmp_path / "seq.csv"
     with patch.object(trapper_service, "preview_stream", return_value=iter([_summary("R0033-DONA_0001_A", 2, [sequence])])):
         result = runner.invoke(app, ["analyze-sequences", *SELECTION, "--d", "4", "-o", str(out)])
     assert result.exit_code == 0, result.output
     lines = out.read_text().splitlines()
     assert lines[0].startswith("deploymentID,sequence_n")
-    assert lines[1] == "R0033-DONA_0001_A,1,3,1|2,2024-09-04T12:00:00,2024-09-04T12:01:00,60,3,,"
+    assert lines[1] == "R0033-DONA_0001_A,1,3,1|2,2024-09-04T12:00:00,2024-09-04T12:01:00,60,3,,,"
 
 
 # ── import ────────────────────────────────────────────────────────────────────

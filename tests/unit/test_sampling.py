@@ -65,6 +65,42 @@ def test_nothing_is_removed_with_two_sequences_or_fewer():
     assert _ids(result.selected) == [1, 2]
 
 
+def test_empty_sequences_are_kept_whole_by_default():
+    images = [_img(1, 0, "empty"), _img(2, 10, "empty"), _img(3, 20, "empty")]
+    result = select_deployment("D1", images, UploadCriteria())
+    assert _ids(result.selected) == [1, 2, 3]
+
+
+def test_collapse_empty_sequences_reduces_an_all_empty_sequence_to_its_second_image():
+    # First sequence: all "empty" — collapsed even though it's not a middle
+    # one. Second: a single "animal" image, its own sequence.
+    images = [_img(1, 0, "empty"), _img(2, 10, "empty"), _img(3, 20, "empty"), _img(4, 1000, "animal")]
+    result = select_deployment("D1", images, UploadCriteria(collapse_empty_sequences=True))
+    assert _ids(result.selected) == [2, 4]
+
+
+def test_collapse_empty_sequences_leaves_mixed_sequences_alone():
+    images = [_img(1, 0, "empty"), _img(2, 10, "animal"), _img(3, 20, "empty")]
+    result = select_deployment("D1", images, UploadCriteria(collapse_empty_sequences=True))
+    assert _ids(result.selected) == [1, 2, 3]
+
+
+def test_a_single_image_empty_sequence_is_not_collapsed():
+    images = [_img(1, 0, "empty"), _img(2, 1000, "animal")]
+    result = select_deployment("D1", images, UploadCriteria(collapse_empty_sequences=True))
+    assert _ids(result.selected) == [1, 2]
+
+
+def test_collapse_runs_on_what_remains_after_middle_humans_vehicles_are_removed():
+    images = [
+        _img(1, 0, "animal"),  # first sequence, kept whole
+        _img(2, 1000, "human"), _img(3, 1001, "empty"), _img(4, 1002, "empty"),  # middle: human removed, then all empty
+        _img(5, 2000, "animal"),  # last sequence, kept whole
+    ]
+    result = select_deployment("D1", images, UploadCriteria(collapse_empty_sequences=True))
+    assert _ids(result.selected) == [1, 4, 5]
+
+
 def _fates(result):
     return [{k: d.to_dict()[k] for k in ("number", "images", "uploaded", "not_sampled", "removed_human", "removed_vehicle")}
             for d in result.sequences_detail]
@@ -95,6 +131,13 @@ def test_detail_says_what_became_of_every_image_of_every_sequence():
     plain = select_deployment("D1", images, criteria)
     assert (_ids(plain.selected), plain.removed_middle) == (_ids(result.selected), result.removed_middle) == ([1, 2, 10, 15, 20], 2)
     assert plain.sequences_detail is None
+
+
+def test_detail_reports_collapsed_empty_images():
+    images = [_img(1, 0, "empty"), _img(2, 10, "empty"), _img(3, 20, "empty"), _img(4, 1000, "animal")]
+    result = select_deployment("D1", images, UploadCriteria(collapse_empty_sequences=True), detail=True)
+    first = result.sequences_detail[0].to_dict()
+    assert (first["uploaded"], first["collapsed_empty"]) == ([2], [1, 3])
 
 
 def test_a_middle_sequence_left_empty_is_still_listed():

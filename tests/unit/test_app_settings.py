@@ -40,7 +40,8 @@ def test_defaults_are_wildintel_tools_own_and_never_show_a_password():
                                   "export_classified_by": "zooniverse@wildintel-project.org",
                                   "export_max_file_size_mb": 1.5}
     assert data["SEQUENCES"] == {"max_interval": 90, "images_per_sequence": 5, "only_classified": True,
-                                 "remove_middle_humans": True, "remove_middle_vehicles": False}
+                                 "remove_middle_humans": True, "remove_middle_vehicles": False,
+                                 "collapse_empty_sequences": False}
 
 
 def test_saving_writes_settings_toml():

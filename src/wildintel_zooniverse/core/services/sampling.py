@@ -10,11 +10,14 @@ selection wildintel-tools' TrapperZooniverseConnector makes
      "vehicle") observation are removed from every sequence but the first
      and the last — the camera being set up and collected. A sequence left
      empty is dropped. With 2 sequences or fewer, nothing is removed.
-  4. Sampling: each sequence keeps images_per_sequence images, evenly spaced
+  4. Collapse empty sequences: with collapse_empty_sequences, a sequence
+     (any of them, not just the middle ones) left with more than one image,
+     all of them "empty", is reduced to its second image.
+  5. Sampling: each sequence keeps images_per_sequence images, evenly spaced
      (first and last always included); shorter ones are kept whole.
 
 Only remove_middle_vehicles is new here — wildintel-tools filters humans
-alone.
+alone. collapse_empty_sequences is wildintel-tools' own too.
 
 With detail=True, select_deployment also says what became of every
 sequence and image — wildintel-tools' analyze-sequences, but with the very
@@ -46,6 +49,7 @@ UPLOADED = "uploaded"
 NOT_SAMPLED = "not_sampled"      # the sequence has more than images_per_sequence
 REMOVED_HUMAN = "removed_human"  # a middle sequence's image with a human
 REMOVED_VEHICLE = "removed_vehicle"
+COLLAPSED_EMPTY = "collapsed_empty"  # an all-"empty" sequence's image but its second
 
 
 @dataclass
@@ -57,7 +61,9 @@ class SequenceDetail:
     images: list[tuple[Candidate, str]]
 
     def to_dict(self) -> dict:
-        by_status: dict[str, list[int]] = {UPLOADED: [], NOT_SAMPLED: [], REMOVED_HUMAN: [], REMOVED_VEHICLE: []}
+        by_status: dict[str, list[int]] = {
+            UPLOADED: [], NOT_SAMPLED: [], REMOVED_HUMAN: [], REMOVED_VEHICLE: [], COLLAPSED_EMPTY: [],
+        }
         for image, status in self.images:
             by_status[status].append(image.media_id)
         return {
@@ -120,6 +126,15 @@ def sample_sequence(sequence: list[Candidate], n: int) -> list[Candidate]:
     return [sequence[round(i * step)] for i in range(n)]
 
 
+def collapse_empty_sequence(sequence: list[Candidate]) -> list[Candidate]:
+    """wildintel-tools' own: a sequence of more than one image, every one of
+    them classified "empty", is reduced to its second image — applied to
+    every sequence, not just the middle ones."""
+    if len(sequence) > 1 and all("empty" in c.observation_types for c in sequence):
+        return [sequence[1]]
+    return sequence
+
+
 def _removed_as(c: Candidate, removed_types: set[str]) -> str | None:
     found = c.observation_types & removed_types
     if not found:
@@ -147,6 +162,14 @@ def select_deployment(
         middle = filtering and 0 < i < len(sequences) - 1
         fate = {c.media_id: (_removed_as(c, removed_types) if middle else None) for c in seq}
         remaining = [c for c in seq if fate[c.media_id] is None]
+        if criteria.collapse_empty_sequences:
+            collapsed = collapse_empty_sequence(remaining)
+            if collapsed is not remaining:
+                kept_id = collapsed[0].media_id
+                for c in remaining:
+                    if c.media_id != kept_id:
+                        fate[c.media_id] = COLLAPSED_EMPTY
+                remaining = collapsed
         removed += len(seq) - len(remaining)
         sampled = sample_sequence(remaining, criteria.images_per_sequence) if remaining else []
         result.selected.extend(sampled)

@@ -160,12 +160,14 @@ def resolve_selection(
 def criteria(
     max_interval: int | None, n_images_seq: int | None, only_classified: bool | None,
     remove_middle_humans: bool | None, remove_middle_vehicles: bool | None,
+    collapse_empty_sequences: bool | None = None,
 ) -> UploadCriteria:
     """The settings' own criteria (SEQUENCES), with what the options change."""
     base = config.load_settings().SEQUENCES.model_dump()
     given = {
         "max_interval": max_interval, "images_per_sequence": n_images_seq, "only_classified": only_classified,
         "remove_middle_humans": remove_middle_humans, "remove_middle_vehicles": remove_middle_vehicles,
+        "collapse_empty_sequences": collapse_empty_sequences,
     }
     return UploadCriteria(**{**base, **{k: v for k, v in given.items() if v is not None}})
 

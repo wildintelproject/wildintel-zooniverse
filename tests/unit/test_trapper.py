@@ -214,5 +214,6 @@ def test_upload_preview_details_each_deployments_sequences_when_asked(fake_trapp
     assert deployment["sequence_detail"] == [{
         "number": 1, "start": "2024-09-04T12:00:00", "end": "2024-09-04T12:01:00", "duration_s": 60,
         "images": 2, "uploaded": [1, 2], "not_sampled": [], "removed_human": [], "removed_vehicle": [],
+        "collapsed_empty": [],
     }]
     assert done == {"type": "done"}

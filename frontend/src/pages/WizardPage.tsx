@@ -91,6 +91,10 @@ function CriteriaSummary({ criteria }: { criteria: UploadCriteria }) {
         <dd className="text-zinc-800 dark:text-zinc-200">{criteria.only_classified ? 'Classified only' : 'Classified or not'}</dd>
         <dt className="text-zinc-500 dark:text-zinc-400">Middle sequences</dt>
         <dd className="text-zinc-800 dark:text-zinc-200">{removed.length ? `Without ${removed.join(' or ')}` : 'Nothing removed'}</dd>
+        <dt className="text-zinc-500 dark:text-zinc-400">Empty sequences</dt>
+        <dd className="text-zinc-800 dark:text-zinc-200">
+          {criteria.collapse_empty_sequences ? 'Collapsed to their second image' : 'Kept whole'}
+        </dd>
       </dl>
     </div>
   )

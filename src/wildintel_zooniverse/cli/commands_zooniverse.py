@@ -14,8 +14,8 @@ from wildintel_zooniverse.cli.common import (
     zooniverse_credentials,
 )
 from wildintel_zooniverse.cli.commands_upload import (
-    ClassificationProject, Deployments, ExcludeDeployments, ImagesPerSequence, MaxInterval, MiddleHumans,
-    MiddleVehicles, OnlyClassified, ResearchProject,
+    ClassificationProject, CollapseEmpty, Deployments, ExcludeDeployments, ImagesPerSequence, MaxInterval,
+    MiddleHumans, MiddleVehicles, OnlyClassified, ResearchProject,
 )
 from wildintel_zooniverse.cli.common import criteria as make_criteria
 from wildintel_zooniverse.cli.render import ItemsView, progress_bars, run
@@ -294,11 +294,15 @@ def check_subject_set(
     deployments: Deployments = None, exclude_deployments: ExcludeDeployments = None,
     max_interval: MaxInterval = None, n_images_seq: ImagesPerSequence = None, only_classified: OnlyClassified = None,
     remove_middle_humans: MiddleHumans = None, remove_middle_vehicles: MiddleVehicles = None,
+    collapse_empty_sequences: CollapseEmpty = None,
     output: Output = None,
 ) -> None:
     """Every check at once: duplicated media, unmatched subjects, metadata — and, with the Trapper collection, missing and extra images."""
     trapper, selection = _selection(rp, cp, collection, deployments, exclude_deployments, required=False)
-    crit = make_criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles) if selection else None
+    crit = (
+        make_criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles, collapse_empty_sequences)
+        if selection else None
+    )
     report = _validate(subject_set, trapper, selection, crit)
     table = Table(show_header=False, box=None, padding=(0, 2), title=f"{report['subject_set']['name']} ({subject_set})", title_justify="left")
     table.add_row("Subjects", f"{report['subjects']:,}")
@@ -327,11 +331,12 @@ def check_missing_media(
     deployments: Deployments = None, exclude_deployments: ExcludeDeployments = None,
     max_interval: MaxInterval = None, n_images_seq: ImagesPerSequence = None, only_classified: OnlyClassified = None,
     remove_middle_humans: MiddleHumans = None, remove_middle_vehicles: MiddleVehicles = None,
+    collapse_empty_sequences: CollapseEmpty = None,
     output: Output = None,
 ) -> None:
     """The images an import with these criteria would upload that aren't in the subject set — and those in it it wouldn't."""
     trapper, selection = _selection(rp, cp, collection, deployments, exclude_deployments)
-    crit = make_criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles)
+    crit = make_criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles, collapse_empty_sequences)
     report = _validate(subject_set, trapper, selection, crit)
     table = Table("Media", Column("Deployment", no_wrap=True), "File", title=f"Missing: {len(report['missing']):,} of {report['expected']:,}", title_justify="left")
     for m in report["missing"][:100]:

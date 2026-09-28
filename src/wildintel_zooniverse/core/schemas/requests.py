@@ -77,6 +77,9 @@ class UploadCriteria(BaseModel):
     # deployment's first and last.
     remove_middle_humans: bool = True
     remove_middle_vehicles: bool = False
+    # A sequence left with only "empty" images (after the removals above) is
+    # reduced to its second image — wildintel-tools' own.
+    collapse_empty_sequences: bool = False
 
 
 class UploadPreviewRequest(TrapperCredentials):

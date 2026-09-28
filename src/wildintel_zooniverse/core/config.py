@@ -99,6 +99,10 @@ class SequencesSettings(BaseModel):
     remove_middle_vehicles: bool = Field(
         default=False, description="Remove vehicles from middle sequences. (SEQUENCES.remove_middle_vehicles)",
     )
+    collapse_empty_sequences: bool = Field(
+        default=False,
+        description="Reduce sequences with only 'empty' images to their second image. (SEQUENCES.collapse_empty_sequences)",
+    )
 
 
 class Settings(BaseModel):

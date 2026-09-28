@@ -83,6 +83,7 @@ interface Draft {
   onlyClassified: boolean
   removeHumans: boolean
   removeVehicles: boolean
+  collapseEmpty: boolean
 }
 
 type NumberKey = { [K in keyof Draft]: Draft[K] extends string ? K : never }[keyof Draft]
@@ -109,6 +110,7 @@ function toDraft(s: AppSettings): Draft {
     onlyClassified: s.SEQUENCES.only_classified,
     removeHumans: s.SEQUENCES.remove_middle_humans,
     removeVehicles: s.SEQUENCES.remove_middle_vehicles,
+    collapseEmpty: s.SEQUENCES.collapse_empty_sequences,
   }
 }
 
@@ -150,6 +152,7 @@ function toUpdate(d: Draft): AppSettingsUpdate | null {
     SEQUENCES: {
       max_interval: n('maxInterval'), images_per_sequence: n('imagesPerSequence'), only_classified: d.onlyClassified,
       remove_middle_humans: d.removeHumans, remove_middle_vehicles: d.removeVehicles,
+      collapse_empty_sequences: d.collapseEmpty,
     },
   }
 }
@@ -476,6 +479,9 @@ export default function SettingsPage({ onClose }: Props) {
             <Row label="Middle sequences" description="A deployment's first and last sequences (setting up and collecting the camera) keep them.">
               <CheckOption label="Remove humans" checked={draft.removeHumans} onChange={flag('removeHumans')} />
               <CheckOption label="Remove vehicles" checked={draft.removeVehicles} onChange={flag('removeVehicles')} />
+            </Row>
+            <Row label="Empty sequences" description="A sequence left with more than one image, all of them classified &ldquo;empty&rdquo;, is reduced to its second image.">
+              <CheckOption label="Collapse empty sequences" checked={draft.collapseEmpty} onChange={flag('collapseEmpty')} />
             </Row>
           </div>
         )}

@@ -189,6 +189,11 @@ export default function UploadCriteriaForm({ selection, initial, onCriteriaChang
           label="Remove vehicles from middle sequences"
           hint="Same rule, for vehicles. wildintel-tools doesn't do this — it uploads them."
         />
+        <Checkbox
+          checked={draft.collapse_empty_sequences} onChange={(v) => set('collapse_empty_sequences', v)}
+          label="Collapse empty sequences"
+          hint='A sequence left with more than one image, all of them classified "empty", is reduced to its second image.'
+        />
       </div>
 
       <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
@@ -244,7 +249,7 @@ export default function UploadCriteriaForm({ selection, initial, onCriteriaChang
                   <th className="py-1 px-2 font-medium text-right">Images</th>
                   <th className="py-1 px-2 font-medium text-right" title="Public, and classified if asked">Candidates</th>
                   <th className="py-1 px-2 font-medium text-right">Sequences</th>
-                  <th className="py-1 px-2 font-medium text-right" title="Humans/vehicles removed from middle sequences">Removed</th>
+                  <th className="py-1 px-2 font-medium text-right" title="Humans/vehicles removed from middle sequences, or collapsed as an all-empty sequence">Removed</th>
                   <th className="py-1 pl-2 font-medium text-right">Upload</th>
                 </tr>
               </thead>
@@ -275,7 +280,8 @@ export default function UploadCriteriaForm({ selection, initial, onCriteriaChang
               ? <> and they have at least one observation other than &ldquo;unclassified&rdquo;. Unclassified images are the usual difference from <strong>Images</strong>.</>
               : <> (classified or not).</>}
             {' '}Sequences are built from them, humans{draft.remove_middle_vehicles ? ' and vehicles' : ''} are then removed from all but
-            each deployment&rsquo;s first and last sequence (<strong>Removed</strong>), and finally up to {draft.images_per_sequence} images
+            each deployment&rsquo;s first and last sequence (<strong>Removed</strong>){draft.collapse_empty_sequences
+              ? <>, an all-&ldquo;empty&rdquo; sequence is reduced to its second image</> : ''}, and finally up to {draft.images_per_sequence} images
             are kept from each sequence (<strong>Upload</strong>).
           </p>
         )}

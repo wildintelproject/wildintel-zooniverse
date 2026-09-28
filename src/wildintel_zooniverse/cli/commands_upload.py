@@ -32,6 +32,7 @@ ImagesPerSequence = Annotated[Optional[int], typer.Option("--n-images-seq", min=
 OnlyClassified = Annotated[Optional[bool], typer.Option("--only-classified/--all-images", help="Only images with an observation other than unclassified (default: settings').")]
 MiddleHumans = Annotated[Optional[bool], typer.Option("--remove-middle-humans/--keep-middle-humans", help="Remove humans from middle sequences (default: settings').")]
 MiddleVehicles = Annotated[Optional[bool], typer.Option("--remove-middle-vehicles/--keep-middle-vehicles", help="Remove vehicles from middle sequences (default: settings').")]
+CollapseEmpty = Annotated[Optional[bool], typer.Option("--collapse-empty-sequences/--keep-empty-sequences", help="Reduce sequences with only 'empty' images to their second image (default: settings').")]
 
 
 def _selection(rp, cp, collection, deployments, exclude_deployments):
@@ -75,10 +76,11 @@ def estimate_upload(
     deployments: Deployments = None, exclude_deployments: ExcludeDeployments = None,
     max_interval: MaxInterval = None, n_images_seq: ImagesPerSequence = None, only_classified: OnlyClassified = None,
     remove_middle_humans: MiddleHumans = None, remove_middle_vehicles: MiddleVehicles = None,
+    collapse_empty_sequences: CollapseEmpty = None,
 ) -> None:
     """Estimate how many images of each deployment an import would upload — the web app's Preview."""
     trapper, selection = _selection(rp, cp, collection, deployments, exclude_deployments)
-    crit = criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles)
+    crit = criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles, collapse_empty_sequences)
     rows = _preview(selection, crit, trapper, detail=False)
     console.print(_counts_table(f"Collection {selection.collection.name}", rows))
 
@@ -89,7 +91,7 @@ SHOWN_SEQUENCES = 100
 
 SEQUENCE_FIELDS = [
     "deploymentID", "sequence_n", "total_images", "media_ids", "first_date", "last_date", "duration_s",
-    "not_sampled_media_ids", "removed_human_media_ids", "removed_vehicle_media_ids",
+    "not_sampled_media_ids", "removed_human_media_ids", "removed_vehicle_media_ids", "collapsed_empty_media_ids",
 ]
 
 
@@ -104,7 +106,7 @@ def sequences_csv(rows: list[dict]) -> str:
             writer.writerow([
                 d["deployment_id"], s["number"], s["images"], "|".join(map(str, s["uploaded"])), s["start"], s["end"],
                 s["duration_s"], "|".join(map(str, s["not_sampled"])), "|".join(map(str, s["removed_human"])),
-                "|".join(map(str, s["removed_vehicle"])),
+                "|".join(map(str, s["removed_vehicle"])), "|".join(map(str, s["collapsed_empty"])),
             ])
     return buf.getvalue()
 
@@ -114,11 +116,12 @@ def analyze_sequences(
     deployments: Deployments = None, exclude_deployments: ExcludeDeployments = None,
     max_interval: MaxInterval = None, n_images_seq: ImagesPerSequence = None, only_classified: OnlyClassified = None,
     remove_middle_humans: MiddleHumans = None, remove_middle_vehicles: MiddleVehicles = None,
+    collapse_empty_sequences: CollapseEmpty = None,
     output: Annotated[Optional[Path], typer.Option("--output", "-o", help="The CSV to write (default: in the app's documents folder).")] = None,
 ) -> None:
     """Every sequence of every deployment, and what becomes of each image — to a CSV."""
     trapper, selection = _selection(rp, cp, collection, deployments, exclude_deployments)
-    crit = criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles)
+    crit = criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles, collapse_empty_sequences)
     rows = _preview(selection, crit, trapper, detail=True)
     path = output_path(output, "exports", f"sequences_col{selection.collection.pk}_", ".csv")
     path.write_text(sequences_csv(rows), encoding="utf-8")
@@ -161,6 +164,7 @@ def importation(
     deployments: Deployments = None, exclude_deployments: ExcludeDeployments = None,
     max_interval: MaxInterval = None, n_images_seq: ImagesPerSequence = None, only_classified: OnlyClassified = None,
     remove_middle_humans: MiddleHumans = None, remove_middle_vehicles: MiddleVehicles = None,
+    collapse_empty_sequences: CollapseEmpty = None,
     project: Annotated[Optional[int], typer.Option("--project", "-p", help="Zooniverse project id.")] = None,
     subject_set: Annotated[Optional[str], typer.Option("--subject-set", "--ss", help="Subject set name — an existing one gets the images; default: wildintel-tools' {research project}_{pk}_{collection}_{pk}_{YYYY-MM}.")] = None,
     media: Annotated[Optional[str], typer.Option("--media", "--m", help="Only these Trapper media ids (comma/space separated, or @FILE).")] = None,
@@ -185,7 +189,7 @@ def importation(
         if project is None:
             raise fail("Give the Zooniverse --project.")
         trapper, selection = _selection(rp, cp, collection, deployments, exclude_deployments)
-        crit = criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles)
+        crit = criteria(max_interval, n_images_seq, only_classified, remove_middle_humans, remove_middle_vehicles, collapse_empty_sequences)
         projects = call(lambda: zooniverse_service.list_projects(*zoo))
         found = next((p for p in projects if p["id"] == project), None)
         if found is None:
