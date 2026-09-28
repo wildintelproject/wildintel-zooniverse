@@ -24,6 +24,21 @@ if sys.platform == "win32":
     _original_call = _isolated_parent.Python.call
 
     def _traced_call(self, function, *args, **kwargs):
+        # find_binary_dependencies's own setup() (build_main.py) suppresses
+        # Qt bindings before importing each collected package, by setting
+        # sys.modules[name] = None in the isolated child — add magic to that
+        # list too. Excluding it from the bundle (below) doesn't help *here*:
+        # this isolated subprocess is a plain, unfrozen Python using the real
+        # build venv, where python-magic is still installed, so importing
+        # panoptes_client still reaches its own `try: import magic`, which
+        # hangs searching for libmagic.dll (Windows has no such library —
+        # see magic/loader.py). This makes that import fail fast instead,
+        # which panoptes_client.subject already treats as "not available".
+        if (
+            function.__name__ == "setup" and getattr(function, "__module__", None) == "PyInstaller.building.build_main"
+            and args
+        ):
+            args = ([*args[0], "magic"], *args[1:])
         print(f"[isolated] -> {function.__name__}{args!r}", flush=True)
         result = _original_call(self, function, *args, **kwargs)
         print(f"[isolated] <- {function.__name__} done", flush=True)
