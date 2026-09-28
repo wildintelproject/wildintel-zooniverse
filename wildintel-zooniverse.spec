@@ -17,13 +17,43 @@ FRONTEND_DIST = Path(SPECPATH) / "frontend" / "dist"
 if not (FRONTEND_DIST / "index.html").is_file():
     raise SystemExit(f"{FRONTEND_DIST} has no build — run `npm run build` in frontend/ first.")
 
+# panoptes_client's own collect_submodules("panoptes_client") makes
+# PyInstaller import it in an isolated subprocess to walk it — which hangs
+# indefinitely on Windows CI runners (never on Linux/macOS; cause unknown).
+# It's a flat package (one "tests" subpackage, not needed here), so a static
+# list sidesteps the import entirely — regenerate with:
+#   python -c "from PyInstaller.utils.hooks import collect_submodules as c; print(sorted(m for m in c('panoptes_client') if not m.startswith('panoptes_client.tests')))"
+PANOPTES_CLIENT_SUBMODULES = [
+    "panoptes_client",
+    "panoptes_client.aggregation",
+    "panoptes_client.caesar",
+    "panoptes_client.classification",
+    "panoptes_client.collection",
+    "panoptes_client.collection_role",
+    "panoptes_client.exportable",
+    "panoptes_client.inaturalist",
+    "panoptes_client.organization",
+    "panoptes_client.panoptes",
+    "panoptes_client.project",
+    "panoptes_client.project_preferences",
+    "panoptes_client.project_role",
+    "panoptes_client.set_member_subject",
+    "panoptes_client.subject",
+    "panoptes_client.subject_set",
+    "panoptes_client.subject_workflow_status",
+    "panoptes_client.user",
+    "panoptes_client.utils",
+    "panoptes_client.workflow",
+    "panoptes_client.workflow_version",
+]
+
 hiddenimports = [
     *collect_submodules("uvicorn"),
     *collect_submodules("fastapi"),
     *collect_submodules("starlette"),
     *collect_submodules("dynaconf"),
     *collect_submodules("trapper_client"),
-    *collect_submodules("panoptes_client"),
+    *PANOPTES_CLIENT_SUBMODULES,
     *collect_submodules("wildintel_zooniverse"),
     # The command-line app: rich loads some of its modules lazily.
     *collect_submodules("rich"),
