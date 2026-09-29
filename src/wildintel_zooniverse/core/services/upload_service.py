@@ -121,9 +121,11 @@ def load_run(task_id: str) -> UploadRun:
 
 
 def zoo_filename(image: Candidate) -> str:
-    """wildintel-tools' own — the media id leads, so an uploaded subject can
-    be traced back to its Trapper media."""
-    return f"{image.media_id}_x_{image.deployment_id}_x_{image.file_name}"
+    """The media id leads, so an uploaded subject can be traced back to its
+    Trapper media (see metadata_service._NAME_RE, which only reads that
+    leading id back — never the deployment id, which isn't in this name:
+    Trapper's own file names already carry the deployment's location code)."""
+    return f"{image.media_id}_x_{image.file_name}"
 
 
 def subject_metadata(trapper_url: str, image: Candidate) -> dict:

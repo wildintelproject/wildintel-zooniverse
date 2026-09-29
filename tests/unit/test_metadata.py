@@ -31,7 +31,7 @@ def _ndjson(response):
 def _right(media_id):
     from wildintel_zooniverse.core.services import metadata_service
 
-    return metadata_service.expected_metadata(TRAPPER, media_id, "R0033-DONA_0001_A", f"IMG_{media_id}.JPG")
+    return metadata_service.expected_metadata(TRAPPER, media_id, f"IMG_{media_id}.JPG")
 
 
 # 101: already right. 102: an old upload — original Filename, http URLs.
@@ -89,8 +89,8 @@ def test_a_dry_run_reports_every_change_without_saving_any(fake):
     assert subjects[102]["changes"] == [
         {"field": "link", "old": "http://trapper.example.org/storage/resource/media/2/file/",
          "new": f"{TRAPPER}/storage/resource/media/2/file/"},
-        {"field": "image_name", "old": "IMG_2.JPG", "new": "2_x_R0033-DONA_0001_A_x_IMG_2.JPG"},
-        {"field": "Filename", "old": "IMG_2.JPG", "new": "2_x_R0033-DONA_0001_A_x_IMG_2.JPG"},
+        {"field": "image_name", "old": "IMG_2.JPG", "new": "2_x_IMG_2.JPG"},
+        {"field": "Filename", "old": "IMG_2.JPG", "new": "2_x_IMG_2.JPG"},
     ]
     assert lines[-1] == {"type": "done", "dry_run": True, "unchanged": 1, "unmatched": 1, "not_found": 1,
                          "would_update": 1, "updated": 0, "failed": 0, "filtered_out": 0}
@@ -103,8 +103,8 @@ def test_updating_saves_only_the_fields_that_differ(fake):
     assert _subjects(lines)[102]["status"] == "updated"
     assert fake == [(102, {
         "link": f"{TRAPPER}/storage/resource/media/2/file/",
-        "image_name": "2_x_R0033-DONA_0001_A_x_IMG_2.JPG",
-        "Filename": "2_x_R0033-DONA_0001_A_x_IMG_2.JPG",
+        "image_name": "2_x_IMG_2.JPG",
+        "Filename": "2_x_IMG_2.JPG",
     })]
     assert lines[-1]["updated"] == 1
 

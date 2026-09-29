@@ -63,8 +63,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   .exe and macOS .dmg.
 
 ### Fixed (compared with wildintel-tools)
-- Subjects' `Filename`/`image_name` are `{media id}_x_{deployment}_x_{file}` from the upload on —
-  no `update-metadata` pass needed to trace them back to Trapper.
+- Subjects' `Filename`/`image_name` are `{media id}_x_{file}` from the upload on — no
+  `update-metadata` pass needed to trace them back to Trapper.
 - *Update metadata* saves the metadata (panoptes-client only saves assigned attributes), and
   takes each image's deployment from Trapper instead of guessing it from its name.
 - Workflow 17553's voter can be loaded, and votes humans as *Homo sapiens*.

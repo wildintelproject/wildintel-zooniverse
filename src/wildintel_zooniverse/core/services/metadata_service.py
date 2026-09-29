@@ -9,9 +9,8 @@ does (Filename, then image_name, "<media id>_x_…"; then external_id,
 differ, the rest of its metadata kept.
 
 Unlike wildintel-tools, the file name comes from the Trapper selection's
-own media (one query per deployment, not one per subject), with its real
-deployment id — wildintel-tools guessed it from the resource name's first
-"-"-separated part, which for "R0033-DONA_0001_A" is just "R0033".
+own media — one query per deployment (media_index_stream), not one per
+subject.
 
 A dry run goes through every subject and reports exactly what it would
 change, without changing anything."""
@@ -52,8 +51,8 @@ def media_id_of(metadata: dict) -> int | None:
     return None
 
 
-def expected_metadata(trapper_url: str, media_id: int, deployment_id: str, file_name: str) -> dict:
-    zoo_name = f"{media_id}_x_{deployment_id}_x_{file_name}"
+def expected_metadata(trapper_url: str, media_id: int, file_name: str) -> dict:
+    zoo_name = f"{media_id}_x_{file_name}"
     return {**trapper_metadata(trapper_url, media_id, zoo_name), "Filename": zoo_name}
 
 
@@ -147,7 +146,7 @@ def update_stream(
 
     def events() -> Iterator[dict]:
         yield {"type": "trapper", "total": len(trapper.selection.deployments)}
-        media: dict[int, tuple[str, str]] = {}
+        media: dict[int, str] = {}
         for deployment_id, deployment_media in index_stream:
             media.update(deployment_media)
             yield {"type": "deployment", "deployment_id": deployment_id, "media": len(deployment_media)}
@@ -179,7 +178,7 @@ def update_stream(
                 elif media_id not in media:
                     status = "not_found"
                 else:
-                    changes = changes_for(metadata, expected_metadata(trapper.url, media_id, *media[media_id]))
+                    changes = changes_for(metadata, expected_metadata(trapper.url, media_id, media[media_id]))
                     event["changes"] = changes
                     if not changes:
                         status = "unchanged"

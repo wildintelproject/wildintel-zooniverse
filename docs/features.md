@@ -69,7 +69,7 @@ moment, and a total.
 
 Each subject gets wildintel-tools' own metadata: `external_id`, `preview`, `link`, `thumbnail`,
 `origin`, `license`, `image_name` and `Filename` — the last two named
-`{media id}_x_{deployment}_x_{file}`, so a subject can be traced back to its Trapper image.
+`{media id}_x_{file}`, so a subject can be traced back to its Trapper image.
 (wildintel-tools' upload used the original file name there, which its `update-metadata`
 command then had to fix.)
 

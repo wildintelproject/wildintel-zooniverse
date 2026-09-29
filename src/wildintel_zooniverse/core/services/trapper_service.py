@@ -269,26 +269,25 @@ def preview_stream(
     return summaries()
 
 
-def media_index_stream(url: str, username: str, password: str, selection: TrapperSelection) -> Iterator[tuple[str, dict[int, tuple[str, str]]]]:
+def media_index_stream(url: str, username: str, password: str, selection: TrapperSelection) -> Iterator[tuple[str, dict[int, str]]]:
     """Every image of each chosen deployment — not only those an upload
-    keeps — as (deployment_id, {media id: (deployment id, file name)}), one
-    deployment at a time. What a subject's Filename is rebuilt from (see
+    keeps — as (deployment_id, {media id: file name}), one deployment at a
+    time. What a subject's Filename is rebuilt from (see
     services.metadata_service).
 
-    The deployment id is the selection's own: Trapper's media may spell it
-    in another case. The connection and the collection are checked right
-    away (errors raise here)."""
+    The connection and the collection are checked right away (errors raise
+    here)."""
     client = _client(url, username, password)
     cp_pk = selection.classification_project.pk
     link_pk = _collection_link_pk(client, cp_pk, selection.collection.pk)
 
-    def index() -> Iterator[tuple[str, dict[int, tuple[str, str]]]]:
+    def index() -> Iterator[tuple[str, dict[int, str]]]:
         for d in selection.deployments:
             media = client.classification_media.where_project_media(
                 cp_pk, collection=link_pk, deployment=d.pk,
                 private_human="False", private_vehicle="False", page_size=MEDIA_PAGE_SIZE,
             )
-            index = {m.mediaID: (d.deployment_id, m.fileName) for m in media}
+            index = {m.mediaID: m.fileName for m in media}
             logger.debug("Deployment %s: %d media names fetched from Trapper", d.deployment_id, len(index))
             yield d.deployment_id, index
 

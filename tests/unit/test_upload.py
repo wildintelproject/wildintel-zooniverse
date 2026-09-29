@@ -124,9 +124,9 @@ def test_dry_run_streams_every_kept_image_and_records_the_result(fake_trapper, f
     ]
     assert _images(lines) == [
         {"type": "image", "media_id": 1, "deployment_id": "R0033-DONA_0001_A",
-         "file_name": "1_x_R0033-DONA_0001_A_x_IMG_1.JPG", "status": "uploaded", "subject_id": None},
+         "file_name": "1_x_IMG_1.JPG", "status": "uploaded", "subject_id": None},
         {"type": "image", "media_id": 2, "deployment_id": "R0033-DONA_0001_A",
-         "file_name": "2_x_R0033-DONA_0001_A_x_IMG_2.JPG", "status": "uploaded", "subject_id": None},
+         "file_name": "2_x_IMG_2.JPG", "status": "uploaded", "subject_id": None},
     ]
     # The session's own Trapper URL, since the request left it blank.
     fake_trapper.factory.assert_called_with("https://trapper.example.org/", "alice", "s3cret")
@@ -146,7 +146,7 @@ def test_each_image_says_when_its_download_and_its_upload_start(fake_trapper, fa
         own = [(line["type"], line.get("step")) for line in lines if line.get("media_id") == media_id]
         assert own == [("step", "download"), ("step", "upload"), ("image", None)]
     step = next(line for line in lines if line["type"] == "step" and line["media_id"] == 1)
-    assert (step["file_name"], step["deployment_id"]) == ("1_x_R0033-DONA_0001_A_x_IMG_1.JPG", "R0033-DONA_0001_A")
+    assert (step["file_name"], step["deployment_id"]) == ("1_x_IMG_1.JPG", "R0033-DONA_0001_A")
 
 
 def test_each_simulated_step_takes_a_while_so_it_can_be_seen(tmp_path: Path, monkeypatch):
@@ -234,7 +234,7 @@ def test_upload_creates_a_subject_per_image_and_records_each(fake_trapper, fake_
     assert [(e["media_id"], e["status"]) for e in _images(lines)] == [(1, "uploaded"), (2, "uploaded")]
     assert lines[-1] == {"type": "done", "dry_run": False, "uploaded": 2, "skipped": 0, "failed": 0, "filtered_out": 0}
     assert sorted(name for _, _, name, _ in fake_zooniverse_upload) == [
-        "1_x_R0033-DONA_0001_A_x_IMG_1.JPG", "2_x_R0033-DONA_0001_A_x_IMG_2.JPG",
+        "1_x_IMG_1.JPG", "2_x_IMG_2.JPG",
     ]
     assert {(project, subject_set) for project, subject_set, _, _ in fake_zooniverse_upload} == {(30567, 8)}
     assert session_store.read_uploaded(task_id) == {1, 2}
@@ -466,7 +466,7 @@ def test_subject_metadata_is_wildintel_tools_own():
         "thumbnail": "https://trapper.example.org/storage/resource/media/1/tfile/",
         "origin": "https://trapper.example.org/",
         "license": "http://creativecommons.org/licenses/by-nc/4.0/legalcode",
-        "image_name": "1_x_D_x_IMG_1.JPG",
+        "image_name": "1_x_IMG_1.JPG",
     }
 
 

@@ -264,7 +264,7 @@ Trapper:
 
 | Field | Value |
 |---|---|
-| `Filename`, `image_name` | `{media id}_x_{deployment}_x_{original file name}` |
+| `Filename`, `image_name` | `{media id}_x_{original file name}` |
 | `external_id` | `{Trapper URL}/:media:{media id}` |
 | `link`, `preview`, `thumbnail` | The image in Trapper: original, preview and thumbnail |
 | `origin` | The Trapper instance |
