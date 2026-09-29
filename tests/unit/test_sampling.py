@@ -91,6 +91,15 @@ def test_a_single_image_empty_sequence_is_not_collapsed():
     assert _ids(result.selected) == [1, 2]
 
 
+def test_collapse_empty_sequences_also_treats_blank_as_no_detection():
+    # Camtrap DP's own observationType vocabulary (AI classifiers like
+    # YOLO/DeepFaune) uses "blank", not "empty" — same collapse either way,
+    # and a sequence can even mix the two labels.
+    images = [_img(1, 0, "blank"), _img(2, 10, "empty"), _img(3, 20, "blank"), _img(4, 1000, "animal")]
+    result = select_deployment("D1", images, UploadCriteria(collapse_empty_sequences=True))
+    assert _ids(result.selected) == [2, 4]
+
+
 def test_collapse_runs_on_what_remains_after_middle_humans_vehicles_are_removed():
     images = [
         _img(1, 0, "animal"),  # first sequence, kept whole

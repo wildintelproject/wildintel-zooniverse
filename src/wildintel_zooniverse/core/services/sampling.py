@@ -12,7 +12,8 @@ selection wildintel-tools' TrapperZooniverseConnector makes
      empty is dropped. With 2 sequences or fewer, nothing is removed.
   4. Collapse empty sequences: with collapse_empty_sequences, a sequence
      (any of them, not just the middle ones) left with more than one image,
-     all of them "empty", is reduced to its second image.
+     all with no detection (NO_DETECTION_OBSERVATION_TYPES: "empty" or
+     Camtrap DP's own "blank"), is reduced to its second image.
   5. Sampling: each sequence keeps images_per_sequence images, evenly spaced
      (first and last always included); shorter ones are kept whole.
 
@@ -131,11 +132,18 @@ def sample_sequence(sequence: list[Candidate], n: int) -> list[Candidate]:
     return [sequence[round(i * step)] for i in range(n)]
 
 
+# wildintel-tools' own collapse_empty_sequences only checked for "empty" —
+# Camtrap DP's own observationType vocabulary (what AI classifiers such as
+# YOLO/DeepFaune actually write into Trapper) uses "blank" for the same
+# thing instead, so both count.
+NO_DETECTION_OBSERVATION_TYPES = {"empty", "blank"}
+
+
 def collapse_empty_sequence(sequence: list[Candidate]) -> list[Candidate]:
-    """wildintel-tools' own: a sequence of more than one image, every one of
-    them classified "empty", is reduced to its second image — applied to
-    every sequence, not just the middle ones."""
-    if len(sequence) > 1 and all("empty" in c.observation_types for c in sequence):
+    """A sequence of more than one image, every one of them with no
+    detection (NO_DETECTION_OBSERVATION_TYPES), is reduced to its second
+    image — applied to every sequence, not just the middle ones."""
+    if len(sequence) > 1 and all(c.observation_types & NO_DETECTION_OBSERVATION_TYPES for c in sequence):
         return [sequence[1]]
     return sequence
 
