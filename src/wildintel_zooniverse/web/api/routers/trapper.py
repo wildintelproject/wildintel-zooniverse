@@ -109,7 +109,7 @@ def upload_preview(req: UploadPreviewRequest) -> StreamingResponse:
     A bad connection or collection is still a plain HTTP error."""
     url, username, password = _resolve(req)
     summaries = _call(lambda: trapper_service.preview_stream(
-        url, username, password, req.selection, req.criteria, detail=req.detail,
+        url, username, password, req.selection, req.criteria, detail=req.detail, task_id=req.task_id,
     ))
 
     def lines() -> Iterator[str]:

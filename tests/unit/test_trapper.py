@@ -190,6 +190,35 @@ def test_upload_preview_reports_a_trapper_failure_midway_as_its_last_line(fake_t
     assert lines[-1]["detail"] == "boom"
 
 
+def test_upload_preview_with_a_task_id_only_fetches_a_deployment_once(fake_trapper):
+    fake_trapper.client.classification_media.where_project_media.side_effect = lambda *a, **k: iter([
+        _media(1, "R0033-DONA_0001_A", 0), _media(2, "R0033-DONA_0001_A", 1),
+    ])
+    fake_trapper.client.classification_results.where_project_results.side_effect = lambda *a, **k: iter([
+        _obs(1, "animal"), _obs(2, "human"),
+    ])
+    body = {**CREDS, "selection": PREVIEW_SELECTION, "criteria": {"max_interval": 60}, "task_id": "task-1"}
+
+    first = _ndjson(_client().post("/api/trapper/upload-preview", json=body))
+    assert first[0] == {"type": "deployment", "deployment_id": "R0033-DONA_0001_A", "images": 2, "candidates": 2,
+                        "sequences": 1, "removed_middle": 0, "selected": 2}
+    fake_trapper.client.classification_media.where_project_media.assert_called_once()
+    fake_trapper.client.classification_results.where_project_results.assert_called_once()
+
+    # A different criteria (removes the human), same task_id — same fetched
+    # data, read from the session's own cache this time.
+    second = _ndjson(_client().post("/api/trapper/upload-preview", json={
+        **body, "criteria": {"max_interval": 60, "remove_middle_humans": True},
+    }))
+    assert second[0]["selected"] == 2  # a single sequence: nothing removed, "middle" needs > 2
+    fake_trapper.client.classification_media.where_project_media.assert_called_once()
+    fake_trapper.client.classification_results.where_project_results.assert_called_once()
+
+    # No task_id at all: never cached, fetched again.
+    _ndjson(_client().post("/api/trapper/upload-preview", json={**body, "task_id": None}))
+    assert fake_trapper.client.classification_media.where_project_media.call_count == 2
+
+
 def test_upload_preview_of_a_collection_not_in_the_project_is_a_400(fake_trapper):
     selection = {**PREVIEW_SELECTION, "collection": {"pk": 777, "name": "Other"}}
     response = _client().post("/api/trapper/upload-preview", json={**CREDS, "selection": selection, "criteria": {}})

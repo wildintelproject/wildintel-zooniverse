@@ -86,13 +86,18 @@ interface Props {
   initial: UploadCriteria
   /** The criteria while valid, null whenever a field isn't. */
   onCriteriaChange: (criteria: UploadCriteria | null) => void
+  /** This session's task_id, once the Selection step has saved one — lets
+   * the backend cache each deployment's images/observations for the rest
+   * of the session, so re-previewing after a criteria change doesn't ask
+   * Trapper for them again. */
+  taskId?: string
 }
 
 /** Which of the selection's images get uploaded — the same selection
  * wildintel-tools makes: sequences by time gap, humans (and optionally
  * vehicles) removed from every sequence but a deployment's first and last,
  * then a few evenly spaced images kept from each. */
-export default function UploadCriteriaForm({ selection, initial, onCriteriaChange }: Props) {
+export default function UploadCriteriaForm({ selection, initial, onCriteriaChange, taskId }: Props) {
   const [draft, setDraft] = useState<Draft>({
     ...initial, max_interval: String(initial.max_interval), images_per_sequence: String(initial.images_per_sequence),
   })
@@ -133,7 +138,7 @@ export default function UploadCriteriaForm({ selection, initial, onCriteriaChang
       await api.trapperUploadPreview(
         selection, criteria,
         (row) => setPreview((p) => (p && { ...p, rows: [...p.rows, row] })),
-        controller.signal, detail,
+        controller.signal, detail, taskId,
       )
       setPreview((p) => (p && { ...p, status: 'done' }))
     } catch (e) {

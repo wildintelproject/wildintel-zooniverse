@@ -19,12 +19,13 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Iterator
+from datetime import datetime
 
 from trapper_client import TrapperClient
 
 from wildintel_zooniverse.core import config
 from wildintel_zooniverse.core.schemas.requests import TrapperSelection, UploadCriteria
-from wildintel_zooniverse.core.services import sampling
+from wildintel_zooniverse.core.services import sampling, session_store
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +152,22 @@ def _collection_link_pk(client: TrapperClient, classification_project_pk: int, c
     raise ValueError(f"Collection {collection_pk} is not in classification project {classification_project_pk}.")
 
 
+def _candidate_to_dict(c: sampling.Candidate) -> dict:
+    return {
+        "media_id": c.media_id, "deployment_id": c.deployment_id, "timestamp": c.timestamp.isoformat(),
+        "public": c.public, "observation_types": sorted(c.observation_types),
+        "file_url": c.file_url, "file_name": c.file_name,
+    }
+
+
+def _candidate_from_dict(d: dict) -> sampling.Candidate:
+    return sampling.Candidate(
+        media_id=d["media_id"], deployment_id=d["deployment_id"], timestamp=datetime.fromisoformat(d["timestamp"]),
+        public=d["public"], observation_types=set(d["observation_types"]),
+        file_url=d.get("file_url"), file_name=d.get("file_name"),
+    )
+
+
 def _fetch_deployment(client: TrapperClient, cp_pk: int, link_pk: int, deployment_pk: int) -> list[sampling.Candidate]:
     """One deployment's images in the collection, each with its observation
     types.
@@ -180,9 +197,29 @@ def _fetch_deployment(client: TrapperClient, cp_pk: int, link_pk: int, deploymen
     return list(by_media.values())
 
 
+def _fetch_deployment_cached(
+    client: TrapperClient, cp_pk: int, link_pk: int, deployment_pk: int, task_id: str | None,
+) -> list[sampling.Candidate]:
+    """_fetch_deployment, through this session's own cache (see
+    session_store.read_deployment_cache) when task_id is given: a deployment's
+    images and observations don't change while its criteria are tweaked and
+    re-previewed, or between the Filters step and the upload itself, so
+    Trapper is only asked once per deployment per session."""
+    if task_id:
+        cached = session_store.read_deployment_cache(task_id, deployment_pk)
+        if cached is not None:
+            logger.debug("Deployment %s: %d images from this session's cache", deployment_pk, len(cached))
+            return [_candidate_from_dict(c) for c in cached]
+
+    images = _fetch_deployment(client, cp_pk, link_pk, deployment_pk)
+    if task_id:
+        session_store.write_deployment_cache(task_id, deployment_pk, [_candidate_to_dict(c) for c in images])
+    return images
+
+
 def selections_stream(
     url: str, username: str, password: str, selection: TrapperSelection, criteria: UploadCriteria,
-    *, detail: bool = False,
+    *, detail: bool = False, task_id: str | None = None,
 ) -> Iterator[sampling.DeploymentSelection]:
     """The images the criteria keep of each chosen deployment, one
     deployment at a time as soon as it's fetched.
@@ -192,6 +229,10 @@ def selections_stream(
     client's timeout to return in a single response. One at a time: a few
     of these queries at once and Trapper answers 500.
 
+    With task_id, each deployment's raw images/observations are cached for
+    the rest of the session (see _fetch_deployment_cached) — only the
+    selection step (a fresh task_id) fetches them from Trapper again.
+
     The connection and the collection are checked right away (errors raise
     here); only the per-deployment fetching is deferred to the iterator."""
     client = _client(url, username, password)
@@ -200,7 +241,7 @@ def selections_stream(
 
     def selections() -> Iterator[sampling.DeploymentSelection]:
         for d in selection.deployments:
-            images = _fetch_deployment(client, cp_pk, link_pk, d.pk)
+            images = _fetch_deployment_cached(client, cp_pk, link_pk, d.pk, task_id)
             chosen = sampling.select_deployment(d.deployment_id, images, criteria, detail=detail)
             logger.debug("Deployment %s: %s", d.deployment_id, chosen.summary())
             yield chosen
@@ -210,13 +251,13 @@ def selections_stream(
 
 def preview_stream(
     url: str, username: str, password: str, selection: TrapperSelection, criteria: UploadCriteria,
-    *, detail: bool = False,
+    *, detail: bool = False, task_id: str | None = None,
 ) -> Iterator[dict]:
     """How many images of each chosen deployment the criteria keep, one
     summary per deployment as soon as it's counted — see selections_stream.
     With detail, each also lists its sequences and what became of each
     image (sampling.SequenceDetail) — wildintel-tools' analyze-sequences."""
-    selections = selections_stream(url, username, password, selection, criteria, detail=detail)
+    selections = selections_stream(url, username, password, selection, criteria, detail=detail, task_id=task_id)
 
     def summaries() -> Iterator[dict]:
         for s in selections:

@@ -129,12 +129,15 @@ export const api = {
   // the ones saved when the connection was tested.
   // With detail, each deployment also lists its sequences and what became
   // of each image — wildintel-tools' analyze-sequences.
+  // taskId (once the Selection step has saved one): each deployment's
+  // images/observations are cached for the rest of the session, so tweaking
+  // the criteria and previewing again doesn't ask Trapper for them again.
   trapperUploadPreview: (
     selection: TrapperSelection, criteria: UploadCriteria,
-    onDeployment: (counts: DeploymentCounts) => void, signal?: AbortSignal, detail = false,
+    onDeployment: (counts: DeploymentCounts) => void, signal?: AbortSignal, detail = false, taskId?: string,
   ): Promise<void> =>
     streamNdjson<PreviewEvent>(
-      '/api/trapper/upload-preview', { url: selection.url, selection, criteria, detail },
+      '/api/trapper/upload-preview', { url: selection.url, selection, criteria, detail, task_id: taskId ?? null },
       (event) => { if (event.type === 'deployment') onDeployment(event) },
       'The preview stopped before every deployment was counted.', signal,
     ),

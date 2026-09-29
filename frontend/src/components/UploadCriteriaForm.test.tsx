@@ -30,8 +30,8 @@ function controlledPreview() {
   return handle
 }
 
-function renderForm() {
-  render(<UploadCriteriaForm selection={SELECTION} initial={DEFAULT_CRITERIA} onCriteriaChange={vi.fn()} />)
+function renderForm(taskId?: string) {
+  render(<UploadCriteriaForm selection={SELECTION} initial={DEFAULT_CRITERIA} onCriteriaChange={vi.fn()} taskId={taskId} />)
 }
 
 beforeEach(() => {
@@ -61,7 +61,9 @@ describe('UploadCriteriaForm', () => {
     const preview = controlledPreview()
     renderForm()
     await userEvent.click(screen.getByRole('button', { name: /preview/i }))
-    expect(mockedApi.trapperUploadPreview).toHaveBeenCalledWith(SELECTION, DEFAULT_CRITERIA, expect.any(Function), expect.any(AbortSignal), false)
+    expect(mockedApi.trapperUploadPreview).toHaveBeenCalledWith(
+      SELECTION, DEFAULT_CRITERIA, expect.any(Function), expect.any(AbortSignal), false, undefined,
+    )
 
     preview.send(PREVIEW_ROWS[0])
     expect(await screen.findByText('R0033-DONA_0001_A')).toBeInTheDocument()
@@ -74,6 +76,15 @@ describe('UploadCriteriaForm', () => {
     expect(screen.getByText(/of 350 images would be uploaded/)).toBeInTheDocument()
     expect(screen.queryByText(/deployments counted/)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /count again/i })).toBeInTheDocument()
+  })
+
+  it('passes the session task_id along, once it has one', async () => {
+    controlledPreview()
+    renderForm('task-1')
+    await userEvent.click(screen.getByRole('button', { name: /preview/i }))
+    expect(mockedApi.trapperUploadPreview).toHaveBeenCalledWith(
+      SELECTION, DEFAULT_CRITERIA, expect.any(Function), expect.any(AbortSignal), false, 'task-1',
+    )
   })
 
   it('explains what candidates are, following the criteria', async () => {

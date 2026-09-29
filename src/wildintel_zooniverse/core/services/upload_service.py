@@ -347,7 +347,7 @@ def run_stream(
     starts."""
     settings = settings or TransferSettings.from_config()
     destination = run.destination
-    selections = trapper_service.selections_stream(*trapper, run.selection, run.criteria)
+    selections = trapper_service.selections_stream(*trapper, run.selection, run.criteria, task_id=run.task_id)
     if dry_run:
         existing = zooniverse_service.find_subject_set(*zooniverse, destination.project.id, destination.subject_set_name)
         subject_set_id, exists = (existing["id"] if existing else None), existing is not None

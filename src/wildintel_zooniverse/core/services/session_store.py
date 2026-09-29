@@ -27,6 +27,14 @@ Phases so far (upload task, Trapper source):
 A dry run of the upload (see services.upload_service) doesn't change the
 phase; its outcome is kept under "last_dry_run" (write_dry_run_result).
 
+Each deployment's images and observations, as fetched from Trapper, are
+cached under trapper_cache/<deployment pk>.json the first time this session
+asks for them (Preview, Analyze sequences, or the upload itself — see
+services.trapper_service.selections_stream) — read_deployment_cache/
+write_deployment_cache. Changing the criteria alone (sequence gap, humans/
+vehicles removed, …) never needs Trapper again for the rest of the session;
+only a new selection (a fresh task_id) does.
+
 Never writes credentials: Trapper's username/password are scrubbed by the
 caller before anything reaches this module, so resuming always asks for
 them again."""
@@ -216,3 +224,30 @@ def list_sessions() -> list[dict[str, Any]]:
 
 def discard_session(task_id: str) -> None:
     shutil.rmtree(session_dir(task_id), ignore_errors=True)
+
+
+def read_deployment_cache(task_id: str, deployment_pk: int) -> list[dict] | None:
+    """A deployment's images and observations, as trapper_service last
+    fetched them for this session — None if it hasn't been, yet.
+
+    Kept separate from session.json (which stays small and is re-read
+    often): a deployment's own file, since a big one (hundreds of thousands
+    of images) would otherwise bloat every manifest read/write."""
+    path = session_dir(task_id) / "trapper_cache" / f"{deployment_pk}.json"
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def write_deployment_cache(task_id: str, deployment_pk: int, images: list[dict]) -> None:
+    """Raises:
+        OSError: the session's directory couldn't be created/written to.
+    """
+    d = session_dir(task_id) / "trapper_cache"
+    d.mkdir(parents=True, exist_ok=True)
+    tmp = d / f"{deployment_pk}.json.tmp"
+    tmp.write_text(json.dumps(images), encoding="utf-8")
+    tmp.replace(d / f"{deployment_pk}.json")

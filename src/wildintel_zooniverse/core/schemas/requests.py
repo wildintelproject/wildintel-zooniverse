@@ -88,6 +88,11 @@ class UploadPreviewRequest(TrapperCredentials):
     # Also each deployment's sequences and what became of each image —
     # much more data, only when asked for.
     detail: bool = False
+    # This session's own task_id, if it has one yet (it does from the
+    # Selection step on) — each deployment's images/observations are then
+    # cached for the rest of the session, so tweaking the criteria and
+    # previewing again doesn't ask Trapper for them a second time.
+    task_id: Optional[str] = None
 
 
 class SaveCriteriaRequest(BaseModel):

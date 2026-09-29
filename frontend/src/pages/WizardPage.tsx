@@ -310,6 +310,7 @@ export default function WizardPage({ resumeSession }: Props) {
             {defaultsLoaded && (
               <UploadCriteriaForm
                 selection={session.selection} initial={criteria ?? defaultCriteria} onCriteriaChange={handleCriteriaChange}
+                taskId={session.task_id}
               />
             )}
             {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
