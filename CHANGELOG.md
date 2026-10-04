@@ -17,6 +17,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Upcoming release
 
 ### Added
+- **Several configs**: the settings page has a new *Config* section listing the settings files, the
+  active one marked. The **+** button creates a new file with the default values (stored in
+  `configs/` next to `settings.toml`), and each card can be activated, opened in the file manager
+  (its folder) or downloaded. The whole app, CLI included, reads and saves the active config; the
+  original `settings.toml` stays the "Default config".
+- **Update** button in the *General* section of the settings page: *Check updates* looks for a newer
+  release and, if there is one, becomes *Tap to download X.Y.Z* (the build for your OS); if the check
+  can't be done (offline...) it says so and becomes *Tap to retry*.
 - **Upload images to Zooniverse** wizard: Trapper research project → classification project →
   collection → deployments; sequence criteria with a per-deployment preview; Zooniverse project and
   subject set (reused if it exists).

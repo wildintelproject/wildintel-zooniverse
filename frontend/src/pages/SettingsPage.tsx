@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { api } from '../api'
-import type { AppSettings, AppSettingsUpdate, LogLevel } from '../types'
+import type { AppSettings, AppSettingsUpdate, ConfigInfo, LogLevel, UpdateCheck } from '../types'
 
 const hintClass = 'text-xs text-zinc-500 dark:text-zinc-400'
 const btnPrimary = 'px-6 py-2.5 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
@@ -51,6 +51,24 @@ const SlidersIcon = () => (
   <Icon>
     <path d="M4 21v-7" /><path d="M4 10V3" /><path d="M12 21v-9" /><path d="M12 8V3" />
     <path d="M20 21v-5" /><path d="M20 12V3" /><path d="M2 14h4" /><path d="M10 8h4" /><path d="M18 16h4" />
+  </Icon>
+)
+const FileIcon = () => (
+  <Icon>
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <path d="M14 2v6h6" />
+    <path d="M16 13H8" /><path d="M16 17H8" />
+  </Icon>
+)
+const FolderIcon = () => (
+  <Icon>
+    <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />
+  </Icon>
+)
+const DownloadIcon = () => (
+  <Icon>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="m7 10 5 5 5-5" /><path d="M12 15V3" />
   </Icon>
 )
 const BackIcon = () => (
@@ -122,6 +140,7 @@ function numberIn(value: string, { min, max, decimal }: Limits): number | null {
 /** Each numeric field's limits, by the section it's on. */
 const NUMBER_FIELDS: Record<SectionId, [NumberKey, Limits][]> = {
   general: [],
+  config: [],
   trapper: [['downloadWorkers', LIMITS.workers], ['downloadAttempts', LIMITS.attempts], ['downloadDelay', LIMITS.delay]],
   zooniverse: [
     ['uploadWorkers', LIMITS.workers], ['uploadAttempts', LIMITS.attempts], ['uploadDelay', LIMITS.delay],
@@ -159,13 +178,14 @@ function toUpdate(d: Draft): AppSettingsUpdate | null {
 
 // ── Layout pieces ───────────────────────────────────────────────────────
 
-type SectionId = 'general' | 'trapper' | 'zooniverse' | 'sequences'
+type SectionId = 'general' | 'trapper' | 'zooniverse' | 'sequences' | 'config'
 
 const SECTIONS: { id: SectionId; label: string; icon: () => ReactNode }[] = [
   { id: 'general', label: 'General', icon: SlidersIcon },
   { id: 'trapper', label: 'Trapper', icon: CameraIcon },
   { id: 'zooniverse', label: 'Zooniverse', icon: GlobeIcon },
   { id: 'sequences', label: 'Sequences', icon: LayersIcon },
+  { id: 'config', label: 'Config', icon: FileIcon },
 ]
 
 /** One setting: its name and what it does on the left, its controls on the
@@ -267,6 +287,150 @@ function CheckOption({ label, checked, onChange }: { label: string; checked: boo
   )
 }
 
+const outlineBtn = 'inline-flex items-center justify-center px-4 py-2 text-sm rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50'
+const iconBtn = 'w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors'
+
+type UpdateState =
+  | { kind: 'idle' } | { kind: 'checking' } | { kind: 'error'; message: string } | { kind: 'result'; check: UpdateCheck }
+
+/** One button that walks through the update check: "Check updates" → (if a newer
+ * release exists) "Tap to download vX" → or "Tap to retry" when it couldn't tell. */
+function UpdateCheckButton() {
+  const [state, setState] = useState<UpdateState>({ kind: 'idle' })
+
+  async function check() {
+    setState({ kind: 'checking' })
+    try {
+      const result = await api.checkForUpdate()
+      setState(result.error ? { kind: 'error', message: result.error } : { kind: 'result', check: result })
+    } catch (e) {
+      setState({ kind: 'error', message: e instanceof Error ? e.message : 'Could not check for updates.' })
+    }
+  }
+
+  const result = state.kind === 'result' ? state.check : null
+  const buttonClass = `${outlineBtn} w-full`
+  return (
+    <>
+      {result?.update_available ? (
+        <a href={result.download_url ?? result.release_url ?? '#'} target="_blank" rel="noreferrer" className={`${buttonClass} no-underline`}>
+          Tap to download {result.latest}
+        </a>
+      ) : (
+        <button type="button" className={buttonClass} disabled={state.kind === 'checking'} onClick={check}>
+          {state.kind === 'checking' ? 'Checking…' : state.kind === 'error' ? 'Tap to retry' : 'Check updates'}
+        </button>
+      )}
+      {state.kind === 'error' && <p className="text-xs text-red-600 dark:text-red-400 px-1">{state.message}</p>}
+      {result && !result.update_available && (
+        <p className="text-xs text-emerald-700 dark:text-emerald-400 px-1" role="status">
+          {result.current === 'dev' ? 'This is a development build — updates aren’t checked.' : `You’re up to date (version ${result.current}).`}
+        </p>
+      )}
+      {result?.update_available && (
+        <p className={`${hintClass} px-1`} role="status">Version {result.latest} is available — you have {result.current}.</p>
+      )}
+    </>
+  )
+}
+
+/** The settings files — the active one is what the app reads and saves; "+"
+ * creates another from the default values. */
+function ConfigsEditor({ onSwitched, onError }: { onSwitched: () => void; onError: (message: string) => void }) {
+  const [configs, setConfigs] = useState<ConfigInfo[] | null>(null)
+  const [adding, setAdding] = useState<{ name: string; error?: string } | null>(null)
+  const fail = (e: unknown, fallback: string) => onError(e instanceof Error ? e.message : fallback)
+
+  useEffect(() => {
+    api.configs().then(setConfigs).catch((e) => fail(e, 'Could not load the configs.'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function create() {
+    if (!adding?.name.trim()) return
+    try {
+      setConfigs(await api.addConfig(adding.name))
+      setAdding(null)
+    } catch (e) {
+      setAdding({ ...adding, error: e instanceof Error ? e.message : 'Could not create the config.' })
+    }
+  }
+
+  async function activate(id: string) {
+    try {
+      setConfigs(await api.activateConfig(id))
+      onSwitched()
+    } catch (e) {
+      fail(e, 'Could not switch config.')
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className={`${hintClass} leading-relaxed`}>
+        Each config is a settings file; the active one is what the app reads and saves. A new one starts from the
+        default values. Keep in mind these files hold your passwords as plain text.
+      </p>
+      <div className="flex items-center justify-between">
+        <span className="text-base text-zinc-800 dark:text-zinc-200">Config</span>
+        <button type="button" className={`${iconBtn} text-xl`} aria-label="Add config" title="Add a config with the default values" onClick={() => setAdding({ name: '' })}>+</button>
+      </div>
+      <div className="space-y-3">
+        {configs?.map((c, i) => (
+          <div
+            key={c.id}
+            className={`flex items-center gap-4 px-4 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 border ${c.active ? 'border-blue-500' : 'border-transparent'}`}
+          >
+            <span className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700 text-sm font-semibold shrink-0" aria-hidden="true">#{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-base truncate">{c.name}</p>
+                {c.active && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-600 text-white">ACTIVE</span>}
+              </div>
+              <p className={`${hintClass} font-mono break-all`} aria-label={`${c.name} file location`}>{c.path}</p>
+            </div>
+            {!c.active && <button type="button" className={outlineBtn} aria-label={`Activate ${c.name}`} onClick={() => activate(c.id)}>Activate</button>}
+            <button
+              type="button" className={iconBtn} aria-label={`Open ${c.name} folder`} title="Open the folder containing the config file"
+              onClick={() => api.openConfigFolder(c.id).catch((e) => fail(e, 'Could not open the folder.'))}
+            >
+              <FolderIcon />
+            </button>
+            <a
+              href={`/api/settings/configs/${encodeURIComponent(c.id)}/download`} download
+              aria-label={`Download ${c.name}`} title="Download the config file" className={iconBtn}
+            >
+              <DownloadIcon />
+            </a>
+          </div>
+        ))}
+      </div>
+      {adding && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAdding(null)}>
+          <div
+            role="dialog" aria-modal="true" aria-label="New config"
+            className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h5 className="text-lg font-semibold">New config</h5>
+            <BoxField label="Name" error={adding.error ?? null}>
+              <input
+                className={boxInput} aria-label="Config name" autoFocus value={adding.name}
+                onChange={(e) => setAdding({ name: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') create() }}
+              />
+            </BoxField>
+            <p className={hintClass}>It names the file, so keep it short.</p>
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+              <button type="button" className={outlineBtn} onClick={() => setAdding(null)}>Cancel</button>
+              <button type="button" className={btnPrimary} disabled={!adding.name.trim()} onClick={create}>Create</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── The page ────────────────────────────────────────────────────────────
 
 interface Props {
@@ -295,11 +459,14 @@ export default function SettingsPage({ onClose }: Props) {
     }
   }
 
-  useEffect(() => {
+  // Also called after switching config, which discards whatever wasn't saved.
+  function reloadSettings() {
     api.getSettings()
-      .then((s) => { setSaved(s); setDraft(toDraft(s)) })
+      .then((s) => { setSaved(s); setDraft(toDraft(s)); setStatus({ kind: 'idle' }) })
       .catch((e) => setStatus({ kind: 'error', message: e instanceof Error ? e.message : 'Could not load the settings.' }))
-  }, [])
+  }
+
+  useEffect(reloadSettings, [])
 
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((d) => (d && { ...d, [key]: value }))
@@ -369,6 +536,9 @@ export default function SettingsPage({ onClose }: Props) {
 
         {draft && saved && section === 'general' && (
           <div className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+            <Row label="Update" description="Looks for a newer version of the app.">
+              <UpdateCheckButton />
+            </Row>
             <Row
               label="Log level"
               description="How much the app writes to its log — raise it to Debug to track a problem down, then lower it again. Applied as soon as it's saved."
@@ -484,6 +654,10 @@ export default function SettingsPage({ onClose }: Props) {
               <CheckOption label="Collapse empty sequences" checked={draft.collapseEmpty} onChange={flag('collapseEmpty')} />
             </Row>
           </div>
+        )}
+
+        {section === 'config' && (
+          <ConfigsEditor onSwitched={reloadSettings} onError={(message) => setStatus({ kind: 'error', message })} />
         )}
 
         <div className="flex items-center justify-end gap-4 pt-5 mt-2 border-t border-zinc-200 dark:border-zinc-800">

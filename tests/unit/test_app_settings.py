@@ -86,3 +86,88 @@ def test_uploads_use_the_saved_settings():
     assert (settings.download_workers, settings.upload_workers) == (6, 2)
     assert settings.download_retry == upload_service.RetryPolicy(attempts=3, min_wait=10, max_wait=160)
     assert settings.upload_retry == upload_service.RetryPolicy(attempts=7, min_wait=45, max_wait=720)
+
+
+@pytest.fixture
+def config_dir(tmp_path, monkeypatch):
+    """Points the config files (default, extra ones, active pointer) at a temp dir."""
+    from wildintel_zooniverse.core import config
+
+    monkeypatch.setattr(config, "DEFAULT_CONFIG_FILE", tmp_path / "settings.toml")
+    monkeypatch.setattr(config, "CONFIGS_DIR", tmp_path / "configs")
+    monkeypatch.setattr(config, "ACTIVE_CONFIG_POINTER", tmp_path / "active-config")
+    config.save_settings(config.Settings())
+    return tmp_path
+
+
+def test_lists_the_default_config_as_the_active_one(config_dir):
+    assert _client().get("/api/settings/configs").json() == [
+        {"id": "default", "name": "Default config", "path": str(config_dir / "settings.toml"), "active": True},
+    ]
+
+
+def test_a_new_config_has_the_default_values_and_is_not_activated(config_dir):
+    client = _client()
+    assert client.put("/api/settings", json=_body()).status_code == 200
+
+    configs = client.post("/api/settings/configs", json={"name": "Project B"}).json()
+
+    assert [(c["id"], c["active"]) for c in configs] == [("default", True), ("project-b", False)]
+    assert (config_dir / "configs" / "project-b.toml").is_file()
+    assert client.get("/api/settings").json()["SEQUENCES"]["max_interval"] == 120  # the default config's own edit
+    client.post("/api/settings/configs/project-b/activate")
+    assert client.get("/api/settings").json()["SEQUENCES"]["max_interval"] != 120  # the new one starts from defaults
+
+
+def test_saving_goes_to_the_active_config_only(config_dir):
+    client = _client()
+    client.post("/api/settings/configs", json={"name": "B"})
+    client.post("/api/settings/configs/b/activate")
+
+    client.put("/api/settings", json=_body())
+
+    assert "max_interval = 120" in (config_dir / "configs" / "b.toml").read_text(encoding="utf-8")
+    assert "max_interval = 120" not in (config_dir / "settings.toml").read_text(encoding="utf-8")
+
+
+def test_two_configs_with_the_same_name_get_different_ids(config_dir):
+    client = _client()
+    client.post("/api/settings/configs", json={"name": "Same"})
+    configs = client.post("/api/settings/configs", json={"name": "Same"}).json()
+
+    assert [c["id"] for c in configs] == ["default", "same", "same-2"]
+
+
+def test_a_config_needs_a_usable_name_and_an_existing_id_to_activate(config_dir):
+    client = _client()
+
+    assert client.post("/api/settings/configs", json={"name": "  !! "}).status_code == 400
+    assert client.post("/api/settings/configs/nope/activate").status_code == 404
+    assert client.get("/api/settings/configs/nope/download").status_code == 404
+
+
+def test_a_missing_active_config_falls_back_to_the_default_one(config_dir):
+    client = _client()
+    client.post("/api/settings/configs", json={"name": "B"})
+    client.post("/api/settings/configs/b/activate")
+    (config_dir / "configs" / "b.toml").unlink()
+
+    assert [(c["id"], c["active"]) for c in client.get("/api/settings/configs").json()] == [("default", True)]
+
+
+def test_a_config_can_be_downloaded_and_its_folder_opened(config_dir, monkeypatch):
+    from wildintel_zooniverse.web.api.routers import app_settings
+
+    client = _client()
+    client.post("/api/settings/configs", json={"name": "B"})
+
+    response = client.get("/api/settings/configs/b/download")
+    assert response.status_code == 200
+    assert "b.toml" in response.headers["content-disposition"]
+    assert response.text == (config_dir / "configs" / "b.toml").read_text(encoding="utf-8")
+
+    opened = []
+    monkeypatch.setattr(app_settings, "open_folder", opened.append)
+    assert client.post("/api/settings/configs/default/open-folder").json() == {"ok": True}
+    assert client.post("/api/settings/configs/b/open-folder").json() == {"ok": True}
+    assert opened == [config_dir, config_dir / "configs"]

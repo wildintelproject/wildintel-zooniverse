@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { api } from '../api'
 import SettingsPage from './SettingsPage'
 import { APP_SETTINGS } from '../test/fixtures'
 
-vi.mock('../api', () => ({ api: { getSettings: vi.fn(), saveSettings: vi.fn(), clearLog: vi.fn() } }))
+vi.mock('../api', () => ({
+  api: {
+    getSettings: vi.fn(), saveSettings: vi.fn(), clearLog: vi.fn(),
+    checkForUpdate: vi.fn(), configs: vi.fn(), addConfig: vi.fn(), activateConfig: vi.fn(), openConfigFolder: vi.fn(),
+  },
+}))
 
 const mockedApi = vi.mocked(api)
 
@@ -133,5 +138,88 @@ describe('SettingsPage', () => {
     render(<SettingsPage onClose={onClose} />)
     await userEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(onClose).toHaveBeenCalled()
+  })
+  const CONFIGS = [
+    { id: 'default', name: 'Default config', path: '/home/me/.config/wildintel-zooniverse/settings.toml', active: true },
+  ]
+
+  it('lists the configs with their folder and download buttons', async () => {
+    mockedApi.configs.mockResolvedValue(CONFIGS)
+    mockedApi.openConfigFolder.mockResolvedValue({ ok: true })
+    render(<SettingsPage onClose={vi.fn()} />)
+    await section('Config')
+    expect(await screen.findByText('ACTIVE')).toBeInTheDocument()
+    expect(screen.getByLabelText('Default config file location')).toHaveTextContent('/home/me/.config/wildintel-zooniverse/settings.toml')
+    expect(screen.getByRole('link', { name: 'Download Default config' })).toHaveAttribute('href', '/api/settings/configs/default/download')
+    expect(screen.queryByRole('button', { name: 'Activate Default config' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Default config folder' }))
+
+    expect(mockedApi.openConfigFolder).toHaveBeenCalledWith('default')
+  })
+
+  it('adds a config from the + button, named by the user', async () => {
+    mockedApi.configs.mockResolvedValue(CONFIGS)
+    mockedApi.addConfig.mockResolvedValue([...CONFIGS, { id: 'project-b', name: 'project-b', path: '/x/configs/project-b.toml', active: false }])
+    render(<SettingsPage onClose={vi.fn()} />)
+    await section('Config')
+    await userEvent.click(await screen.findByRole('button', { name: 'Add config' }))
+    expect(screen.getByRole('button', { name: 'Create' })).toBeDisabled()
+    await userEvent.type(screen.getByLabelText('Config name'), 'Project B')
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
+
+    expect(mockedApi.addConfig).toHaveBeenCalledWith('Project B')
+    expect(await screen.findByText('project-b')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('switches to another config and reloads the settings from it', async () => {
+    const other = { id: 'b', name: 'b', path: '/x/configs/b.toml', active: false }
+    mockedApi.configs.mockResolvedValue([...CONFIGS, other])
+    mockedApi.activateConfig.mockResolvedValue([{ ...CONFIGS[0], active: false }, { ...other, active: true }])
+    render(<SettingsPage onClose={vi.fn()} />)
+    await section('Config')
+    mockedApi.getSettings.mockClear()
+    await userEvent.click(await screen.findByRole('button', { name: 'Activate b' }))
+
+    expect(mockedApi.activateConfig).toHaveBeenCalledWith('b')
+    await waitFor(() => expect(mockedApi.getSettings).toHaveBeenCalledOnce())
+    expect(screen.queryByRole('button', { name: 'Activate b' })).not.toBeInTheDocument()
+  })
+
+  const CHECK = { current: '0.1.0', latest: '0.1.0', update_available: false, release_url: null, download_url: null, error: null }
+
+  it('checks for updates and says when the app is up to date', async () => {
+    mockedApi.checkForUpdate.mockResolvedValue(CHECK)
+    render(<SettingsPage onClose={vi.fn()} />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Check updates' }))
+
+    expect(await screen.findByText(/up to date \(version 0\.1\.0\)/)).toBeInTheDocument()
+  })
+
+  it('offers the download when a newer version exists', async () => {
+    mockedApi.checkForUpdate.mockResolvedValue({
+      ...CHECK, latest: '0.2.0', update_available: true,
+      release_url: 'https://github.com/x/releases/v0.2.0', download_url: 'https://dl/app-0.2.0-linux-x86_64.AppImage',
+    })
+    render(<SettingsPage onClose={vi.fn()} />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Check updates' }))
+
+    expect(await screen.findByRole('link', { name: 'Tap to download 0.2.0' })).toHaveAttribute('href', 'https://dl/app-0.2.0-linux-x86_64.AppImage')
+  })
+
+  it('offers a retry when the check fails, and recovers on the next try', async () => {
+    mockedApi.checkForUpdate.mockResolvedValueOnce({ ...CHECK, latest: null, error: 'Could not check for updates: offline' })
+    mockedApi.checkForUpdate.mockResolvedValueOnce(CHECK)
+    render(<SettingsPage onClose={vi.fn()} />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Check updates' }))
+    expect(await screen.findByText(/offline/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Tap to retry' }))
+
+    expect(await screen.findByText(/up to date/)).toBeInTheDocument()
+    expect(screen.queryByText(/offline/)).not.toBeInTheDocument()
   })
 })

@@ -1,5 +1,5 @@
 import type {
-  AppSettings, AppSettingsUpdate, ClassificationProject, DownloadEvent, ExportEvent, MetadataEvent, Collection, Deployment, DeploymentCounts, PreviewEvent, ResearchProject, SessionSummary,
+  AppSettings, AppSettingsUpdate, ConfigInfo, UpdateCheck, ClassificationProject, DownloadEvent, ExportEvent, MetadataEvent, Collection, Deployment, DeploymentCounts, PreviewEvent, ResearchProject, SessionSummary,
   TrapperImportEvent, TrapperSelection, UploadCriteria, UploadEvent, ValidationEvent, ZooniverseDestination, ZooniverseProject, ZooniverseSubjectSet,
   ZooniverseSubjectInfo, ZooniverseWorkflow,
 } from './types'
@@ -96,6 +96,9 @@ export const api = {
   },
 
   checkVersion: () => req<{ current: string }>('/api/version'),
+
+  // Asks GitHub whether a newer release exists (only when the user presses the button).
+  checkForUpdate: () => req<UpdateCheck>('/api/version/check'),
 
   trapperGetConfig: () =>
     req<{ base_url: string | null; user_name: string | null; has_password: boolean }>('/api/trapper/config'),
@@ -290,6 +293,14 @@ export const api = {
 
   // Deletes the log file and its rotated copies — logging goes on, into a new one.
   clearLog: () => req<{ deleted: number }>('/api/settings/log', { method: 'DELETE' }),
+
+  // The settings files the user can switch to (the default settings.toml plus the
+  // ones created with addConfig); each one's file itself is downloaded straight
+  // from /api/settings/configs/<id>/download.
+  configs: () => req<ConfigInfo[]>('/api/settings/configs'),
+  addConfig: (name: string) => post<ConfigInfo[]>('/api/settings/configs', { name }),
+  activateConfig: (id: string) => post<ConfigInfo[]>(`/api/settings/configs/${encodeURIComponent(id)}/activate`, {}),
+  openConfigFolder: (id: string) => post<{ ok: boolean }>(`/api/settings/configs/${encodeURIComponent(id)}/open-folder`, {}),
 
   listSessions: () => req<SessionSummary[]>('/api/sessions'),
 

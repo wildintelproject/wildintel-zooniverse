@@ -1,11 +1,16 @@
 """FastAPI router — health check and version info."""
 from __future__ import annotations
 
+import platform
+
+import httpx
 from fastapi import APIRouter
 
 from wildintel_zooniverse.core.version import current_version
 
 router = APIRouter(tags=["health"])
+
+_GITHUB_RELEASES = "https://api.github.com/repos/wildintelproject/wildintel-zooniverse/releases"
 
 
 @router.get("/api/health")
@@ -16,3 +21,65 @@ def health() -> dict:
 @router.get("/api/version")
 def version() -> dict:
     return {"current": current_version()}
+
+
+def _parse(v: str) -> tuple[int, ...]:
+    try:
+        return tuple(int(x) for x in v.lstrip("v").split("-")[0].split(".")[:3])
+    except (ValueError, AttributeError):
+        return (0, 0, 0)
+
+
+def _platform_keyword() -> str:
+    return {"Windows": "windows", "Darwin": "macos"}.get(platform.system(), "linux")
+
+
+def _download_url(release: dict) -> str | None:
+    """The release asset built for this OS (…-linux-x86_64.AppImage,
+    …-windows-x64.exe, …-macos-arm64.dmg), else the release's own page."""
+    keyword = _platform_keyword()
+    for asset in release.get("assets") or []:
+        if keyword in asset.get("name", "").lower():
+            return asset.get("browser_download_url")
+    return release.get("html_url")
+
+
+def _latest_release(releases: list[dict]) -> dict | None:
+    """The newest vX.Y.Z release — not the rolling "dev" pre-release, nor a draft."""
+    candidates = [
+        r for r in releases
+        if r.get("tag_name", "").startswith("v") and not r.get("draft") and not r.get("prerelease")
+    ]
+    return max(candidates, key=lambda r: _parse(r["tag_name"]), default=None)
+
+
+@router.get("/api/version/check")
+async def check_for_update() -> dict:
+    """Whether a newer release exists on GitHub. "error" is set when that
+    couldn't be found out (offline, GitHub's rate limit...) — distinct from
+    "up to date", so the UI can offer a retry."""
+    current = current_version()
+    result = {
+        "current": current, "latest": None, "update_available": False,
+        "release_url": None, "download_url": None, "error": None,
+    }
+    if current == "dev":
+        return result
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(
+                _GITHUB_RELEASES, params={"per_page": 30}, headers={"Accept": "application/vnd.github+json"},
+            )
+            r.raise_for_status()
+            release = _latest_release(r.json())
+    except Exception as exc:
+        return {**result, "error": f"Could not check for updates: {exc}"}
+
+    if release is None:
+        return result
+    latest = release["tag_name"].removeprefix("v")
+    return {
+        **result, "latest": latest, "update_available": _parse(latest) > _parse(current),
+        "release_url": release.get("html_url"), "download_url": _download_url(release),
+    }

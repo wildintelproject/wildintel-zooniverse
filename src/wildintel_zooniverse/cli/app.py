@@ -76,13 +76,13 @@ def config_show() -> None:
             shown = ("(saved)" if value else "(not set)") if key in _SECRET else ("—" if value is None else str(value))
             table.add_row(f"{section}.{key}", shown)
         console.print(table)
-    console.print(f"[dim]{config.DEFAULT_CONFIG_FILE}[/dim]")
+    console.print(f"[dim]{config.active_config_file()}[/dim]")
 
 
 @config_app.command("path")
 def config_path() -> None:
     """Where settings.toml, the log and the app's documents are."""
-    console.print(f"Settings:  {config.DEFAULT_CONFIG_FILE}")
+    console.print(f"Settings:  {config.active_config_file()}")
     console.print(f"Log:       {logging_setup.log_file()}")
     console.print(f"Sessions:  {config.get_sessions_dir()}")
     console.print(f"Documents: {config.get_app_documents_dir()}")

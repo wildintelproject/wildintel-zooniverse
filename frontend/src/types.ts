@@ -204,6 +204,25 @@ export interface SessionSummary {
  * are never sent back: has_password says whether one is saved. */
 export type LogLevel = 'ERROR' | 'WARNING' | 'INFO' | 'DEBUG'
 
+/** GET /api/version/check — whether a newer release exists. `error` is set when
+ * that couldn't be found out (offline...), distinct from "up to date". */
+export interface UpdateCheck {
+  current: string
+  latest: string | null
+  update_available: boolean
+  release_url: string | null
+  download_url: string | null
+  error: string | null
+}
+
+/** One settings file the app can run on (see the backend's config.ConfigInfo). */
+export interface ConfigInfo {
+  id: string
+  name: string
+  path: string
+  active: boolean
+}
+
 export interface AppSettings {
   GENERAL: {
     log_level: LogLevel
