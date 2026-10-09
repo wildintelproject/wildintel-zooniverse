@@ -1349,7 +1349,7 @@ for scripts. <strong>Ctrl+C</strong> stops a running command cleanly: what's don
 </tr>
 <tr>
 <td><code>ZOONIVERSE</code></td>
-<td><code>user_name</code>, <code>user_password</code>, <code>upload_workers</code>, <code>upload_attempts</code>, <code>upload_retry_delay</code>, <code>export_classified_by</code>, <code>export_max_file_size_mb</code></td>
+<td><code>user_name</code>, <code>user_password</code>, <code>upload_workers</code>, <code>upload_attempts</code>, <code>upload_retry_delay</code>, <code>export_classified_by</code>, <code>export_max_file_size_mb</code>, <code>export_output_dir</code></td>
 </tr>
 <tr>
 <td><code>SEQUENCES</code></td>
@@ -1444,7 +1444,7 @@ Leaving the value out asks for it (hidden for passwords). An empty value (<code>
 <p>Deployments can be given by pk or by deployment id (<code>R0033-DONA_0001_A</code>), whichever is handier.</p>
 <h2 id="5-uploading-images-to-zooniverse">5. Uploading images to Zooniverse<a class="headerlink" href="#5-uploading-images-to-zooniverse" title="Permanent link">&para;</a></h2>
 <p>The upload chooses a Trapper collection's images the way the web wizard does: by sequences,
-sampling and humans and vehicles. See <a href="../user-manual-web/#step-4-filters">the web manual's Filters</a>
+sampling and humans and vehicles. See <a href="../user-manual-web/#step-3-filters">the web manual's Filters</a>
 for how it chooses.</p>
 <p><strong>The selection</strong> — every upload command takes:</p>
 <table>
@@ -1741,14 +1741,14 @@ and the other way round.</p>
 <a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="go">  Skipped: no valid classifications    311</span>
 <a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="go">  Skipped: no decision                 803</span>
 <a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="go">✔</span>
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="go">~/Documents/wildintel-zooniverse/exports/observations_wf29186_cp10_col33_2026092</span>
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="go">7-101500_part001.csv (14,012 rows)</span>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="go">~/Documents/wildintel-zooniverse/exports/wf29186_cp10_col33_20260927-101500/</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="go">observations_wf29186_cp10_col33_20260927-101500_part001.csv (14,012 rows)</span>
 <a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="go">✔</span>
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="go">~/Documents/wildintel-zooniverse/exports/observations_wf29186_cp10_col33_2026092</span>
-<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="go">7-101500_part002.csv (13,699 rows)</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="go">~/Documents/wildintel-zooniverse/exports/wf29186_cp10_col33_20260927-101500/</span>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="go">observations_wf29186_cp10_col33_20260927-101500_part002.csv (13,699 rows)</span>
 <a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a><span class="go">✔</span>
-<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="go">~/Documents/wildintel-zooniverse/exports/zoo_annotations_observations_wf29186_cp</span>
-<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a><span class="go">10_col33_20260927-101500.csv (volunteers' annotations)</span>
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="go">~/Documents/wildintel-zooniverse/exports/wf29186_cp10_col33_20260927-101500/</span>
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a><span class="go">zoo_annotations_observations_wf29186_cp10_col33_20260927-101500.csv (volunteers' annotations)</span>
 <a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a><span class="go">Importing observations_wf29186_cp10_col33_20260927-101500_part001.csv (1/2)…</span>
 <a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a><span class="go">  ✔ Classifications import started — Trapper task c1a2-0</span>
 <a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a><span class="go">Importing observations_wf29186_cp10_col33_20260927-101500_part002.csv (2/2)…</span>
@@ -1796,16 +1796,13 @@ their observations. See <a href="../user-manual-web/#how-classifications-are-vot
 <td><code>--save-zoo-annotations</code> / <code>--no-save-zoo-annotations</code></td>
 <td>Also write the volunteers' raw annotations, one row per annotation (on by default).</td>
 </tr>
-<tr>
-<td><code>--upload</code></td>
-<td>Then import the CSV files into the Trapper classification project (<code>--cp</code>), through its API.</td>
-</tr>
-<tr>
-<td><code>--approve</code></td>
-<td>With <code>--upload</code>: approve the imported classifications.</td>
-</tr>
 </tbody>
 </table>
+<p>Every export writes into a folder of its own inside <code>--output</code> (or the settings' export folder),
+named <code>wf{workflow}_cp{classification project}_col{collection}_{date-time}</code>.
+| <code>--save-raw-export</code> | Also keep Zooniverse's own classifications CSV, as exported, in the export's folder — it can be big (off by default). |
+| <code>--upload</code> | Then import the CSV files into the Trapper classification project (<code>--cp</code>), through its API. |
+| <code>--approve</code> | With <code>--upload</code>: approve the imported classifications. |</p>
 <p>It prints how many subjects were exported and how many were skipped, and why: not in Trapper, no
 media id, no valid classifications, or no consensus. Then it lists the files it wrote. Without
 <code>--upload</code>, it gives the Trapper page to import them by hand.</p>

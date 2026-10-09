@@ -1654,14 +1654,14 @@ at the level of <strong>⚙️ → General</strong> (<code>GENERAL.log_level</co
 <td><em>NDJSON</em> — Update metadata (<code>dry_run</code> by default).</td>
 </tr>
 <tr>
-<td>GET</td>
-<td><code>/api/export/defaults</code></td>
-<td>The export's default folder, "classified by" and CSV size.</td>
-</tr>
-<tr>
 <td>POST</td>
 <td><code>/api/export/classifications</code></td>
 <td><em>NDJSON</em> — Retrieve classifications (the CSV).</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/export/open-folder</code></td>
+<td>Opens the export folder — or, with <code>path</code>, one export's folder inside it — in the OS's file manager. Nothing outside the export folder can be opened.</td>
 </tr>
 <tr>
 <td>POST</td>
