@@ -93,11 +93,12 @@ def workflows(req: WorkflowsRequest) -> dict:
 
 @router.post("/workflow-export")
 def workflow_export(req: WorkflowExportRequest) -> dict:
-    """The workflow's latest classifications export, if any — its state and
-    when it was made (never its download URL)."""
+    """The workflow's latest classifications export, if any — its state, when
+    it was requested, when its file was made and whether a request is
+    pending (never its download URL)."""
     username, password = _resolve(req)
     export = _call(lambda: zooniverse_service.classifications_export(username, password, req.workflow_id))
-    return {"export": export and {k: export[k] for k in ("state", "updated_at")}}
+    return {"export": export and {k: export[k] for k in ("state", "pending", "updated_at", "file_date")}}
 
 
 @router.post("/subjects/lookup")

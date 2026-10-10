@@ -91,6 +91,10 @@ class ZooniverseSettings(BaseModel):
         default=1.5, gt=0, le=1000,
         description="Largest CSV to import into Trapper, in MB — bigger exports are split. (ZOONIVERSE.export_max_file_size_mb)",
     )
+    export_output_dir: Optional[str] = Field(
+        default=None,
+        description="Folder the exported CSVs are written to — blank: \"exports\" in the app's documents folder. (ZOONIVERSE.export_output_dir)",
+    )
 
 
 class SequencesSettings(BaseModel):

@@ -68,6 +68,7 @@ def export(
     classified_by: Annotated[Optional[str], typer.Option("--classified-by", help="The CSV's classifiedBy (default: settings').")] = None,
     max_file_size: Annotated[Optional[float], typer.Option("--max-file-size", min=0.01, help="Split the CSV into files of at most this many MB — Trapper's import limit (default: settings').")] = None,
     save_zoo_annotations: Annotated[bool, typer.Option("--save-zoo-annotations/--no-save-zoo-annotations", help="Also write the volunteers' annotations, one row per annotation.")] = True,
+    save_raw_export: Annotated[bool, typer.Option("--save-raw-export", help="Also keep Zooniverse's own classifications CSV, in the export's folder (it can be big).")] = False,
     upload: Annotated[bool, typer.Option("--upload", help="Then import the CSV files into Trapper's classification project, by API.")] = False,
     approve: Annotated[bool, typer.Option("--approve", help="With --upload: approve the imported classifications.")] = False,
 ) -> None:
@@ -77,7 +78,7 @@ def export(
     source = classifications_export_service.TrapperSource(*trapper, selection)
     folder = output.expanduser() if output else classifications_export_service.default_output_dir()
     events = call(lambda: classifications_export_service.export_stream(
-        zoo, workflow, source, folder, regenerate=regenerate, save_zoo_annotations=save_zoo_annotations,
+        zoo, workflow, source, folder, regenerate=regenerate, save_zoo_annotations=save_zoo_annotations, save_raw_export=save_raw_export,
         classified_by=classified_by, max_file_size_mb=max_file_size,
     ))
 
@@ -135,6 +136,8 @@ def export(
         console.print(f"[green]✔[/green] {f['path']} ({f['rows']:,} rows)")
     if result["zoo_annotations_file"]:
         console.print(f"[green]✔[/green] {result['zoo_annotations_file']['path']} (volunteers' annotations)")
+    if result["raw_export_file"]:
+        console.print(f"[green]✔[/green] {result['raw_export_file']['path']} (Zooniverse's classifications, as exported)")
     if not result["files"]:
         console.print("[yellow]No observation to export.[/yellow]")
         return

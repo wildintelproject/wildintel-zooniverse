@@ -298,8 +298,8 @@ The full, live reference is FastAPI's own, at `/docs` while the backend runs. In
 | POST | `/api/zooniverse/download-subject-sets` | *NDJSON* — Download subject sets. |
 | POST | `/api/validation/subject-set` | *NDJSON* — Validation & audit. |
 | POST | `/api/metadata/update` | *NDJSON* — Update metadata (`dry_run` by default). |
-| GET | `/api/export/defaults` | The export's default folder, "classified by" and CSV size. |
 | POST | `/api/export/classifications` | *NDJSON* — Retrieve classifications (the CSV). |
+| POST | `/api/export/open-folder` | Opens the export folder — or, with `path`, one export's folder inside it — in the OS's file manager. Nothing outside the export folder can be opened. |
 | POST | `/api/export/import` | *NDJSON* — imports the CSVs into Trapper (the SDK's `import_classifications`). |
 
 ## 7. Adding a Zooniverse workflow

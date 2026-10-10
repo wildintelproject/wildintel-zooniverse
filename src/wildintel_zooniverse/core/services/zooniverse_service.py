@@ -17,9 +17,12 @@ from __future__ import annotations
 
 import logging
 import threading
+from email.utils import parsedate_to_datetime
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+
+import httpx
 
 from panoptes_client import Panoptes, Project, Subject, SubjectSet, User, Workflow
 from panoptes_client.panoptes import PanoptesAPIException
@@ -240,22 +243,55 @@ def workflow_name(username: str, password: str, workflow_id: int) -> str:
         return Workflow.find(workflow_id).display_name
 
 
-def classifications_export(username: str, password: str, workflow_id: int) -> dict | None:
-    """The workflow's latest classifications export — its "state"
-    ("ready"/"finished" once it can be downloaded), when it was made and its
-    download "url" — or None if it has none yet."""
+# Zooniverse makes one classifications export per workflow every 24 hours.
+EXPORT_COOLDOWN_S = 24 * 60 * 60
+EXPORT_DONE_STATES = ("ready", "finished")
+
+
+def _file_date(url: str) -> str | None:
+    """When the file at the export's URL was made (its Last-Modified), or None
+    if it isn't there."""
+    try:
+        response = httpx.head(url, timeout=20, follow_redirects=True)
+        response.raise_for_status()
+        modified = response.headers.get("last-modified")
+        return parsedate_to_datetime(modified).isoformat() if modified else None
+    except (httpx.HTTPError, TypeError, ValueError):
+        return None
+
+
+def classifications_export(username: str, password: str, workflow_id: int, *, strict: bool = False) -> dict | None:
+    """The workflow's latest classifications export — or None if it has none
+    yet:
+      - "state": Zooniverse's, "ready"/"finished" once done — not to be
+        trusted alone: it can stay "creating" for days with the file there.
+      - "pending": a request that hasn't (as far as "state" says) finished.
+      - "updated_at": when the request was made (or finished).
+      - "file_date": when the file the "url" points to was made — the
+        previous export's while a new one is pending — or None if there is no
+        file. The export can be downloaded if it has one.
+      - "url": the file's, signed (it expires).
+    Zooniverse answers an error when there is none, so by default any API
+    error reads as "none yet"; `strict` raises it instead (to tell it from a
+    lost login while waiting)."""
     with _connected(username, password):
         try:
             description = Workflow.find(workflow_id).describe_export("classifications")
         except PanoptesAPIException:
+            if strict:
+                raise
             return None
     media = (description.get("media") or [None])[0]
     if not media:
         return None
+    state = (media.get("metadata") or {}).get("state")
+    url = media.get("src")
     return {
-        "state": (media.get("metadata") or {}).get("state"),
+        "state": state,
+        "pending": state not in EXPORT_DONE_STATES,
         "updated_at": media.get("updated_at") or media.get("created_at"),
-        "url": media.get("src"),
+        "file_date": _file_date(url) if url else None,
+        "url": url,
     }
 
 

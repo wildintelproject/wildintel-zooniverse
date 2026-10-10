@@ -123,7 +123,7 @@ The settings are those of the web app's ⚙️ page — see its
 |---|---|
 | `GENERAL` | `log_level` (`ERROR`, `WARNING`, `INFO`, `DEBUG`) |
 | `TRAPPER` | `base_url`, `user_name`, `user_password`, `download_workers`, `download_attempts`, `download_retry_delay` |
-| `ZOONIVERSE` | `user_name`, `user_password`, `upload_workers`, `upload_attempts`, `upload_retry_delay`, `export_classified_by`, `export_max_file_size_mb` |
+| `ZOONIVERSE` | `user_name`, `user_password`, `upload_workers`, `upload_attempts`, `upload_retry_delay`, `export_classified_by`, `export_max_file_size_mb`, `export_output_dir` |
 | `SEQUENCES` | `max_interval`, `images_per_sequence`, `only_classified`, `remove_middle_humans`, `remove_middle_vehicles` — the upload criteria's defaults |
 
 A value is checked before it's saved: `config set SEQUENCES.max_interval zero` is refused.
@@ -222,7 +222,7 @@ Deployments can be given by pk or by deployment id (`R0033-DONA_0001_A`), whiche
 ## 5. Uploading images to Zooniverse
 
 The upload chooses a Trapper collection's images the way the web wizard does: by sequences,
-sampling and humans and vehicles. See [the web manual's Filters](user-manual-web.md#step-4-filters)
+sampling and humans and vehicles. See [the web manual's Filters](user-manual-web.md#step-3-filters)
 for how it chooses.
 
 **The selection** — every upload command takes:
@@ -464,14 +464,14 @@ $ wildintel-zooniverse export --wf 29186 --rp 2 --cp 10 --collection 33 --upload
   Skipped: no valid classifications    311
   Skipped: no decision                 803
 ✔
-~/Documents/wildintel-zooniverse/exports/observations_wf29186_cp10_col33_2026092
-7-101500_part001.csv (14,012 rows)
+~/Documents/wildintel-zooniverse/exports/wf29186_cp10_col33_20260927-101500/
+observations_wf29186_cp10_col33_20260927-101500_part001.csv (14,012 rows)
 ✔
-~/Documents/wildintel-zooniverse/exports/observations_wf29186_cp10_col33_2026092
-7-101500_part002.csv (13,699 rows)
+~/Documents/wildintel-zooniverse/exports/wf29186_cp10_col33_20260927-101500/
+observations_wf29186_cp10_col33_20260927-101500_part002.csv (13,699 rows)
 ✔
-~/Documents/wildintel-zooniverse/exports/zoo_annotations_observations_wf29186_cp
-10_col33_20260927-101500.csv (volunteers' annotations)
+~/Documents/wildintel-zooniverse/exports/wf29186_cp10_col33_20260927-101500/
+zoo_annotations_observations_wf29186_cp10_col33_20260927-101500.csv (volunteers' annotations)
 Importing observations_wf29186_cp10_col33_20260927-101500_part001.csv (1/2)…
   ✔ Classifications import started — Trapper task c1a2-0
 Importing observations_wf29186_cp10_col33_20260927-101500_part002.csv (2/2)…
@@ -493,6 +493,10 @@ their observations. See [How classifications are voted](user-manual-web.md#how-c
 | `--classified-by` | The CSV's `classifiedBy` (default: the settings'). |
 | `--max-file-size` | Split the CSV into files of at most this many MB, Trapper's import limit (default: the settings'). |
 | `--save-zoo-annotations` / `--no-save-zoo-annotations` | Also write the volunteers' raw annotations, one row per annotation (on by default). |
+
+Every export writes into a folder of its own inside `--output` (or the settings' export folder),
+named `wf{workflow}_cp{classification project}_col{collection}_{date-time}`.
+| `--save-raw-export` | Also keep Zooniverse's own classifications CSV, as exported, in the export's folder — it can be big (off by default). |
 | `--upload` | Then import the CSV files into the Trapper classification project (`--cp`), through its API. |
 | `--approve` | With `--upload`: approve the imported classifications. |
 

@@ -23,6 +23,7 @@ Subjects whose media isn't in the Trapper selection are skipped — a
 workflow's export has every subject set's classifications."""
 from __future__ import annotations
 
+import contextlib
 import csv
 import io
 import json
@@ -32,7 +33,7 @@ import time
 from collections import Counter, defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -49,10 +50,16 @@ logger = logging.getLogger(__name__)
 # wildintel-tools' own columns — the ones Trapper's import reads.
 CSV_FIELDS = ["observationType", "scientificName", "count", "classifiedBy", "classificationMethod", "observationComments", "_id"]
 ZOO_CSV_FIELDS = ["subject_id", "k_majority", "scientific_name", "answers"]
-# How long to wait for a new classifications export — big workflows take
-# minutes.
-EXPORT_TIMEOUT_S = 30 * 60
+# How long to wait for a new classifications export — Zooniverse queues
+# them, and big workflows have taken hours.
+EXPORT_TIMEOUT_S = 6 * 60 * 60
 EXPORT_POLL_S = 5
+# Seconds between "still generating" events: they keep the response (and
+# whatever proxy or browser sits on it) from going idle for hours.
+EXPORT_HEARTBEAT_S = 30
+# Failed lookups in a row while waiting before giving up — a lost login or a
+# dead connection, not a hiccup.
+EXPORT_MAX_POLL_ERRORS = 5
 # Progress events every this many export rows / subjects.
 ROWS_EVERY = 5000
 SUBJECTS_EVERY = 500
@@ -63,7 +70,9 @@ SKIP_REASONS = ("not_in_trapper", "no_media_id", "no_valid_classifications", "no
 
 
 def default_output_dir() -> Path:
-    return config.get_app_documents_dir() / "exports"
+    """The settings' export folder, or "exports" in the app's documents."""
+    saved = (config.load_settings().ZOONIVERSE.export_output_dir or "").strip()
+    return Path(saved).expanduser() if saved else config.get_app_documents_dir() / "exports"
 
 
 @dataclass
@@ -197,11 +206,40 @@ def zoo_rows(extracted: list) -> list[dict]:
     ]
 
 
+def has_file(export: dict | None) -> bool:
+    """Whether the export can be downloaded: its file is there (or, with no
+    way to tell, Zooniverse says it's done)."""
+    return bool(export and export.get("url") and (export.get("file_date") or not export["pending"]))
+
+
+def file_date_of(export: dict) -> str | None:
+    return export.get("file_date") or export["updated_at"]
+
+
+def recent(export: dict) -> bool:
+    """Whether the export was requested less than Zooniverse's cooldown ago."""
+    try:
+        requested = datetime.fromisoformat(export["updated_at"].replace("Z", "+00:00"))
+    except (AttributeError, KeyError, ValueError):
+        return False
+    return (datetime.now(timezone.utc) - requested).total_seconds() < zooniverse_service.EXPORT_COOLDOWN_S
+
+
+def is_newer(current: dict, previous: dict | None) -> bool:
+    """Whether the export is a new one, not the `previous` file again: its
+    file was made at another time, or Zooniverse finished it since."""
+    if not has_file(previous):
+        return True
+    if current.get("file_date") and current["file_date"] != previous.get("file_date"):
+        return True
+    return not current["pending"] and current["updated_at"] != previous["updated_at"]
+
+
 # ── The run ─────────────────────────────────────────────────────────────
 
 def export_stream(
     zooniverse: tuple[str, str], workflow_id: int, trapper: TrapperSource, output_dir: Path, *,
-    regenerate: bool = False, save_zoo_annotations: bool = True,
+    regenerate: bool = False, save_zoo_annotations: bool = True, save_raw_export: bool = False,
     classified_by: str | None = None, max_file_size_mb: float | None = None,
 ) -> Iterator[dict]:
     """The export's events, as the router streams them:
@@ -215,6 +253,11 @@ def export_stream(
         subjects are voted.
       - {"type": "done", ...}: the files written, and the counts — see the
         end of events().
+
+    Everything an export writes goes into a folder of its own inside
+    `output_dir`, named after the workflow, the collection and the time
+    (run_dir); with `save_raw_export`, Zooniverse's own classifications CSV
+    among it.
 
     The workflow (and that it can be exported), Trapper's connection and
     collection, and the folder are checked right away (errors raise
@@ -232,28 +275,51 @@ def export_stream(
     logger.info("Exporting workflow %s (%s) against Trapper collection %s into %s (regenerate=%s)",
                 workflow_id, workflow, trapper.selection.collection.pk, output_dir, regenerate)
     cancel = threading.Event()
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    sel = trapper.selection
+    run_dir = output_dir / f"wf{workflow_id}_cp{sel.classification_project.pk}_col{sel.collection.pk}_{stamp}"
 
     def export_url() -> Iterator[dict | str]:
         """The events while the export is found (or made), then its URL."""
-        current = None if regenerate else zooniverse_service.classifications_export(*zooniverse, workflow_id)
-        if current is None or current["state"] not in ("ready", "finished"):
-            if current is None:
-                zooniverse_service.generate_classifications_export(*zooniverse, workflow_id)
-            yield {"type": "export", "state": "generating", "updated_at": None}
-            deadline = time.monotonic() + EXPORT_TIMEOUT_S
-            polls = 0
-            while True:
-                current = zooniverse_service.classifications_export(*zooniverse, workflow_id)
-                # A new export: the one described right away may still be the
-                # previous one — wait at least once.
-                if current and current["state"] in ("ready", "finished") and (not regenerate or polls > 0):
-                    break
-                if time.monotonic() > deadline:
-                    raise TimeoutError(f"Zooniverse didn't have the export ready in {EXPORT_TIMEOUT_S // 60} minutes — try again later.")
-                if cancel.wait(EXPORT_POLL_S):
-                    return
-                polls += 1
-        yield {"type": "export", "state": "ready", "updated_at": current["updated_at"]}
+        current = zooniverse_service.classifications_export(*zooniverse, workflow_id)
+        if not (regenerate or current is None) and has_file(current):
+            # Zooniverse's "state" isn't trusted: a file there is the export.
+            yield {"type": "export", "state": "ready", "updated_at": file_date_of(current)}
+            yield current["url"]
+            return
+
+        previous = current
+        # A request made less than a day ago is waited for, not repeated —
+        # Zooniverse wouldn't take another. An older one that never finished
+        # is asked again.
+        if current is None or not (current["pending"] and recent(current)):
+            zooniverse_service.generate_classifications_export(*zooniverse, workflow_id)
+        yield {"type": "export", "state": "generating", "updated_at": None}
+        started = time.monotonic()
+        deadline = started + EXPORT_TIMEOUT_S
+        last_beat = started
+        errors = 0
+        while True:
+            try:
+                current = zooniverse_service.classifications_export(*zooniverse, workflow_id, strict=True)
+                errors = 0
+            except Exception as exc:
+                errors += 1
+                logger.warning("Looking up the export failed (%d/%d): %s", errors, EXPORT_MAX_POLL_ERRORS, exc)
+                if errors >= EXPORT_MAX_POLL_ERRORS:
+                    raise
+                current = None
+            if current and has_file(current) and is_newer(current, previous):
+                break
+            now = time.monotonic()
+            if now > deadline:
+                raise TimeoutError(f"Zooniverse didn't have the export ready in {EXPORT_TIMEOUT_S // 3600} hours — try again later.")
+            if now - last_beat >= EXPORT_HEARTBEAT_S:
+                last_beat = now
+                yield {"type": "export", "state": "generating", "updated_at": None}
+            if cancel.wait(EXPORT_POLL_S):
+                return
+        yield {"type": "export", "state": "ready", "updated_at": file_date_of(current)}
         yield current["url"]
 
     def events() -> Iterator[dict]:
@@ -269,25 +335,43 @@ def export_stream(
         subjects: dict[int, SubjectClassifications] = {}
         rows = 0
         downloaded = 0
-        with httpx.stream("GET", url, timeout=httpx.Timeout(120, connect=15), follow_redirects=True) as response:
-            response.raise_for_status()
-            total = int(response.headers.get("content-length") or 0) or None
+        raw_path = run_dir / f"zooniverse_classifications_wf{workflow_id}_{stamp}.csv"
+        raw = None
+        if save_raw_export:
+            run_dir.mkdir(parents=True, exist_ok=True)
+            raw = raw_path.open("w", encoding="utf-8", newline="")
+        completed = False
+        try:
+            with httpx.stream("GET", url, timeout=httpx.Timeout(120, connect=15), follow_redirects=True) as response:
+                response.raise_for_status()
+                total = int(response.headers.get("content-length") or 0) or None
 
-            def lines() -> Iterator[str]:
-                nonlocal downloaded
-                for line in response.iter_lines():
-                    downloaded += len(line.encode("utf-8")) + 1
-                    yield line
+                def lines() -> Iterator[str]:
+                    nonlocal downloaded
+                    for line in response.iter_lines():
+                        downloaded += len(line.encode("utf-8")) + 1
+                        if raw:
+                            raw.write(line + "\n")
+                        yield line
 
-            chunk: list[dict] = []
-            for row in csv.DictReader(lines()):
-                chunk.append(row)
-                rows += 1
-                if len(chunk) >= ROWS_EVERY:
-                    _merge_all(subjects, group_rows(iter(chunk), workflow_id))
-                    chunk = []
-                    yield {"type": "classifications", "rows": rows, "bytes": downloaded, "total_bytes": total}
-            _merge_all(subjects, group_rows(iter(chunk), workflow_id))
+                chunk: list[dict] = []
+                for row in csv.DictReader(lines()):
+                    chunk.append(row)
+                    rows += 1
+                    if len(chunk) >= ROWS_EVERY:
+                        _merge_all(subjects, group_rows(iter(chunk), workflow_id))
+                        chunk = []
+                        yield {"type": "classifications", "rows": rows, "bytes": downloaded, "total_bytes": total}
+                _merge_all(subjects, group_rows(iter(chunk), workflow_id))
+            completed = True
+        finally:
+            if raw:
+                raw.close()
+                if not completed:
+                    # Stopped or failed midway: a half file isn't kept.
+                    raw_path.unlink(missing_ok=True)
+                    with contextlib.suppress(OSError):
+                        run_dir.rmdir()
         yield {"type": "classifications_done", "rows": rows, "subjects": len(subjects)}
 
         # 2. Trapper's observations.
@@ -332,9 +416,9 @@ def export_stream(
         yield {"type": "progress", "done": len(subjects)}
 
         # 4. The files.
-        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        sel = trapper.selection
-        path = output_dir / f"observations_wf{workflow_id}_cp{sel.classification_project.pk}_col{sel.collection.pk}_{stamp}.csv"
+        path = run_dir / f"observations_wf{workflow_id}_cp{sel.classification_project.pk}_col{sel.collection.pk}_{stamp}.csv"
+        if csv_rows or raw is not None:
+            run_dir.mkdir(parents=True, exist_ok=True)
         files = write_csv(csv_rows, path, CSV_FIELDS, max_file_size_mb) if csv_rows else []
         logger.info("Workflow %s exported: %d of %d subjects, %d CSV rows in %d file(s) — skipped %s",
                     workflow_id, counts["exported"], len(subjects), len(csv_rows), len(files),
@@ -346,11 +430,13 @@ def export_stream(
         yield {
             "type": "done",
             "workflow": {"id": workflow_id, "name": workflow},
-            "subjects": len(subjects), "exported": counts["exported"],
+            "subjects": len(subjects), "trapper_media": len(observations), "exported": counts["exported"],
             "observations": counts["observations"], "rows": len(csv_rows),
             "skipped": {reason: counts[reason] for reason in SKIP_REASONS},
             "samples": {reason: samples[reason] for reason in SKIP_REASONS if samples[reason]},
-            "files": files, "zoo_annotations_file": zoo_file, "output_dir": str(output_dir),
+            "files": files, "zoo_annotations_file": zoo_file,
+            "raw_export_file": {"path": str(raw_path), "bytes": raw_path.stat().st_size} if save_raw_export else None,
+            "output_dir": str(output_dir), "run_dir": str(run_dir) if run_dir.is_dir() else None,
             "trapper_import_url": trapper.url.rstrip("/") + "/media_classification/classification/import/",
         }
 

@@ -38,7 +38,7 @@ def test_defaults_are_wildintel_tools_own_and_never_show_a_password():
     assert data["ZOONIVERSE"] == {"user_name": None, "has_password": False,
                                   "upload_workers": 4, "upload_attempts": 5, "upload_retry_delay": 30,
                                   "export_classified_by": "zooniverse@wildintel-project.org",
-                                  "export_max_file_size_mb": 1.5}
+                                  "export_max_file_size_mb": 1.5, "export_output_dir": None}
     assert data["SEQUENCES"] == {"max_interval": 90, "images_per_sequence": 5, "only_classified": True,
                                  "remove_middle_humans": True, "remove_middle_vehicles": False,
                                  "collapse_empty_sequences": False}

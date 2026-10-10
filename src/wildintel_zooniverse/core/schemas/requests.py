@@ -212,6 +212,8 @@ class ExportClassificationsRequest(ZooniverseCredentials):
     regenerate: bool = False
     # Also save the volunteers' raw answers.
     save_zoo_annotations: bool = True
+    # Also keep Zooniverse's own classifications CSV, in the export's folder.
+    save_raw_export: bool = False
     # Blank: the settings' own.
     classified_by: Optional[str] = None
     max_file_size_mb: Optional[float] = Field(default=None, gt=0)
