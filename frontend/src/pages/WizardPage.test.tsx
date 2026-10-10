@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { api } from '../api'
 import WizardPage from './WizardPage'
@@ -25,7 +25,6 @@ vi.mock('../api', () => ({
     zooniverseSubjectSets: vi.fn(),
     trapperUploadPreview: vi.fn(),
     getSettings: vi.fn(),
-    exportDefaults: vi.fn(),
   },
 }))
 
@@ -54,23 +53,19 @@ beforeEach(() => {
 async function reachImagesStep() {
   await userEvent.click(screen.getByRole('button', { name: /upload images to zooniverse/i }))
   await userEvent.click(screen.getByRole('button', { name: /trapper instance/i }))
-  await waitFor(() => expect(screen.getByLabelText('Trapper URL')).toHaveValue('https://trapper.example.org'))
+  // No connection step: the saved account's research projects load by themselves.
+  await waitFor(() => expect(screen.getByLabelText('Research project')).toBeEnabled())
+  expect(screen.queryByLabelText('Trapper URL')).not.toBeInTheDocument()
 }
 
 async function chooseImages() {
-  await userEvent.click(screen.getByRole('button', { name: /test connection/i }))
   await userEvent.type(await screen.findByLabelText('Research project'), 'Doñana')
   await userEvent.click(await screen.findByRole('option', { name: 'DONA — Doñana' }))
   await userEvent.type(await screen.findByLabelText('Classification project'), 'Main')
   await userEvent.click(await screen.findByRole('option', { name: 'Main CP' }))
-  await userEvent.selectOptions(await screen.findByLabelText('Collection'), '33')
+  await userEvent.click(await screen.findByLabelText('Collection'))
+  await userEvent.click(await screen.findByRole('option', { name: /R0033/ }))
   await screen.findByText('R0033-DONA_0001_A')
-}
-
-/** The Zooniverse step's own section — the Trapper form stays mounted
- * (hidden) too, with its own Username/Test Connection. */
-function zooniverseStep() {
-  return within(screen.getByText('Where to upload them').parentElement!)
 }
 
 describe('WizardPage', () => {
@@ -81,15 +76,27 @@ describe('WizardPage', () => {
   })
 
   it('retrieving classifications opens its own page, and comes back', async () => {
-    mockedApi.exportDefaults.mockResolvedValue({ output_dir: '/exports', classified_by: 'zoo@x.org', max_file_size_mb: 1.5 })
-    render(<WizardPage />)
+      render(<WizardPage />)
     await userEvent.click(screen.getByRole('button', { name: /retrieve classifications/i }))
-    expect(screen.getByRole('heading', { name: 'Retrieve classifications' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Zooniverse project' })).toBeInTheDocument()
     expect(screen.getByText('What do you want to do?').closest('.hidden')).not.toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
-    expect(screen.queryByRole('heading', { name: 'Retrieve classifications' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Zooniverse project' })).not.toBeInTheDocument()
     expect(screen.getByText('What do you want to do?').closest('.hidden')).toBeNull()
+  })
+
+  it('says when it has something under way, and shows no step indicator on the task choice', async () => {
+    const onProgressChange = vi.fn()
+    render(<WizardPage onProgressChange={onProgressChange} />)
+    expect(onProgressChange).toHaveBeenLastCalledWith(false)
+    expect(screen.queryByText('Filters')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /upload images to zooniverse/i }))
+    expect(onProgressChange).toHaveBeenLastCalledWith(true)
+    // The indicator starts at Source — the task choice isn't one of its steps.
+    expect(screen.getByText('Source')).toBeInTheDocument()
+    expect(screen.queryByText('Task')).not.toBeInTheDocument()
   })
 
   it('opens the utilities from the first step, and comes back', async () => {
@@ -165,9 +172,9 @@ describe('WizardPage', () => {
   it('saves the Zooniverse destination and shows everything on the upload step', async () => {
     render(<WizardPage resumeSession={FILTERED_SESSION} />)
     expect(screen.getByRole('button', { name: /^next$/i })).toBeDisabled()
-    await waitFor(() => expect(zooniverseStep().getByLabelText('Username')).toHaveValue('SimSan'))
-    await userEvent.click(zooniverseStep().getByRole('button', { name: /test connection/i }))
-    await userEvent.selectOptions(await screen.findByLabelText('Zooniverse project'), '30567')
+    await waitFor(() => expect(screen.getByLabelText('Zooniverse project')).toBeEnabled())
+    await userEvent.click(screen.getByLabelText('Zooniverse project'))
+    await userEvent.click(await screen.findByRole('option', { name: /European Camera Trap Project/ }))
     await userEvent.clear(screen.getByLabelText('Subject set name'))
     await userEvent.type(screen.getByLabelText('Subject set name'), DESTINATION.subject_set_name)
     await userEvent.click(screen.getByRole('button', { name: /^next$/i }))
@@ -180,7 +187,7 @@ describe('WizardPage', () => {
     expect(screen.getByRole('button', { name: /^dry run$/i })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
-    expect(screen.getByLabelText('Zooniverse project')).toHaveValue('30567')
+    expect(screen.getByLabelText('Zooniverse project')).toHaveDisplayValue(/European Camera Trap Project/)
     expect(screen.getByLabelText('Subject set name')).toHaveValue(DESTINATION.subject_set_name)
   })
 
@@ -199,7 +206,7 @@ describe('WizardPage', () => {
     await screen.findByText('Choose which images to upload')
 
     await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
-    expect(screen.getByLabelText('Collection')).toHaveValue('33')
+    expect(screen.getByLabelText('Collection')).toHaveDisplayValue(/R0033/)
     await userEvent.click(screen.getByRole('checkbox', { name: 'R0033-DONA_0007_B' }))
     await userEvent.click(screen.getByRole('button', { name: /^next$/i }))
 
@@ -227,10 +234,8 @@ describe('WizardPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
     expect(screen.getByText('Where to upload them')).toBeInTheDocument()
-    await waitFor(() => expect(zooniverseStep().getByLabelText('Username')).toHaveValue('SimSan'))
-    await userEvent.click(zooniverseStep().getByRole('button', { name: /test connection/i }))
-    // The saved project is chosen again once connected.
-    await waitFor(() => expect(screen.getByLabelText('Zooniverse project')).toHaveValue('30567'))
+    // The saved project is chosen again once the projects load.
+    await waitFor(() => expect(screen.getByLabelText('Zooniverse project')).toHaveDisplayValue(/European Camera Trap Project/))
     expect(screen.getByLabelText('Subject set name')).toHaveValue(DESTINATION.subject_set_name)
   })
 

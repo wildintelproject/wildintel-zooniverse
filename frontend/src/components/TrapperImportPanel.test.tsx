@@ -65,10 +65,11 @@ describe('TrapperImportPanel', () => {
   it('can approve them', async () => {
     controlledImport()
     renderPanel()
-    await userEvent.click(screen.getByRole('checkbox', { name: /approve the imported classifications/i }))
+    // The choice is offered once Import is pressed, with the confirmation.
+    expect(screen.queryByRole('checkbox', { name: /approve the imported classifications/i })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Import into Trapper' }))
-    expect(screen.getByText(/, approved\?/)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: /yes, import/i }))
+    await userEvent.click(screen.getByRole('checkbox', { name: /approve the imported classifications/i }))
+    await userEvent.click(screen.getByRole('button', { name: /yes, import and approve/i }))
     expect(mockedApi.importToTrapper.mock.calls[0][3]).toBe(true)
   })
 

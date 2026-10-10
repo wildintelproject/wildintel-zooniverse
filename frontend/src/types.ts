@@ -251,6 +251,8 @@ export interface AppSettings {
     export_classified_by: string
     /** Larger exports are split into several CSVs. */
     export_max_file_size_mb: number
+    /** Where exported CSVs are written — null: "exports" in the app's documents. */
+    export_output_dir: string | null
   }
   /** The criteria a new wizard run starts from — each run can change its own. */
   SEQUENCES: UploadCriteria
@@ -343,7 +345,10 @@ export type ExportSkipReason = 'not_in_trapper' | 'no_media_id' | 'no_valid_clas
 
 export interface ExportResult {
   workflow: { id: number; name: string }
+  /** Subjects with classifications in Zooniverse's export. */
   subjects: number
+  /** Images with observations in the chosen Trapper selection. */
+  trapper_media: number
   exported: number
   observations: number
   rows: number
@@ -352,7 +357,12 @@ export interface ExportResult {
   samples: Partial<Record<ExportSkipReason, number[]>>
   files: { path: string; rows: number; bytes: number }[]
   zoo_annotations_file: { path: string; rows: number; bytes: number } | null
+  /** Zooniverse's own classifications CSV, if asked to keep it. */
+  raw_export_file: { path: string; bytes: number } | null
+  /** The settings' export folder... */
   output_dir: string
+  /** ...and this export's own folder inside it, with all its files (null: nothing was written). */
+  run_dir: string | null
   trapper_import_url: string
 }
 

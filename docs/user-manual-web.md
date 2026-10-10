@@ -68,8 +68,9 @@ The first step asks **What do you want to do?**:
 
 ![The first step: upload images, retrieve classifications, or the utilities](img/screenshots/task.png){ loading=lazy }
 
-The top bar has **? Help** — this documentation, in a new browser tab — the **⚙️ settings** button,
-and the light/dark mode switch.
+The top bar has the app's name — click it to go back to the first page (it asks first if something
+is under way; what was saved can be resumed from there) — **? Help** — this documentation, in a new
+browser tab — the **⚙️ settings** button, and the light/dark mode switch.
 
 ## 3. Settings
 
@@ -105,36 +106,38 @@ Changes apply to the next upload, dry run, download or export — not to one alr
 | Parallel uploads | Images uploaded to Zooniverse at once (4). Also used by Download subject sets and Update metadata. |
 | Attempts per upload | Including the first try (5). |
 | Seconds between retries | Before the first retry (30). |
+| Folder | Where the exports are written — each in a folder of its own inside it. Blank: `exports` in the app's documents folder (see [section 7](#7-where-the-app-keeps-its-files)). |
 | Classified by | Who exported classifications are classified by, in Trapper (`zooniverse@wildintel-project.org`). |
 | Largest CSV | Classification exports bigger than this are split into several files (1.5 MB). |
 
 ### Sequences
 
-The criteria a new upload starts from — see [Filters](#step-4-filters). Each upload can still
+The criteria a new upload starts from — see [Filters](#step-3-filters). Each upload can still
 change its own.
 
 ## 4. Uploading images to Zooniverse
 
-The upload is a wizard of six steps, shown at the top: **Task → Source → Images → Filters →
-Zooniverse → Upload**. **Back** goes to the previous step without losing what you chose.
+After choosing the task, the upload is a wizard of five steps, shown at the top: **Source → Images →
+Filters → Zooniverse → Upload**. **Back** goes to the previous step without losing what you chose.
 
-### Step 2 — Source
+### Step 1 — Source
 
 Where the images come from: a **Trapper Instance**. (*Local files* is coming soon.)
 
-### Step 3 — Images
+### Step 2 — Images
 
-1. **Connect to Trapper** — the saved server and username are filled in; type the password, or
-   leave it blank to use the saved one. **Test Connection**.
-2. **Research project**, **Classification project** and **Collection**.
-3. **Deployments** — all of the collection's deployments with images in it, each with how many
+There is no connection step: the Trapper account saved in the [settings](#3-settings) is used. Every
+dropdown can be typed in to narrow its options, and shows a spinner while they load.
+
+1. **Research project**, **Classification project** and **Collection**.
+2. **Deployments** — all of the collection's deployments with images in it, each with how many
    it has there. Keep **all**, or choose some (the filter box finds them by id or location).
 
 **Next** saves the choice into a new session.
 
 ![The Images step: connected to Trapper, a collection and its deployments chosen](img/screenshots/step-images.png){ loading=lazy }
 
-### Step 4 — Filters
+### Step 3 — Filters
 
 Which of those images are uploaded:
 
@@ -175,11 +178,13 @@ It asks Trapper the same as the preview; only the answer is bigger.
 
 ![The Filters step: the criteria, and the sequences analysed deployment by deployment](img/screenshots/step-filters.png){ loading=lazy }
 
-### Step 5 — Zooniverse
+### Step 4 — Zooniverse
 
-1. **Connect to Zooniverse** and **Test Connection**.
-2. **Zooniverse project** — only those you own or collaborate on.
-3. **Subject set** — one of two:
+There is no connection step: the Zooniverse account saved in the [settings](#3-settings) is used,
+and your projects load by themselves (the dropdown can be typed in to narrow it).
+
+1. **Zooniverse project** — only those you own or collaborate on.
+2. **Subject set** — one of two:
    - **New subject set**: its **name**, by default wildintel-tools' own,
      `{research project}_{pk}_{collection}_{pk}_{YYYY-MM}`. If the project already has a subject
      set with that name, the images are **added to it** (it says so); otherwise it's created.
@@ -192,7 +197,7 @@ It asks Trapper the same as the preview; only the answer is bigger.
 
 ![The Zooniverse step: the project, and a new subject set's name](img/screenshots/step-zooniverse.png){ loading=lazy }
 
-### Step 6 — Upload
+### Step 5 — Upload
 
 ![The Upload step: the run's summary, the media lists and the buttons](img/screenshots/step-upload.png){ loading=lazy }
 
@@ -275,25 +280,50 @@ Trapper:
 Turns the classifications volunteers made in a Zooniverse **workflow** into a CSV of
 observations, for Trapper's classification import.
 
-1. **Connect to Zooniverse**, choose the **project** and the **workflow**. Only workflows the app
-   knows how to vote can be chosen — each has its own species and questions (17553, 29186 and
-   29187). The app shows when the workflow's latest **classifications export** was made.
-   - It doesn't have the classifications made since: tick **Make a new export first** to have
-     Zooniverse make a new one (it can take several minutes for a big workflow).
-   - If the workflow has no export yet, one is made first.
-2. **Trapper images** — the collection and deployments the subjects were uploaded from: their
-   observations get the classifications. Subjects of other images (e.g. another subject set of the
-   same workflow) are skipped.
-3. **Export** options: the **folder**, **Classified by**, the **Largest CSV** size, and whether to
-   **also save the volunteers' answers** (a second CSV with every answer before voting — to see
-   how an observation was decided).
-4. **Export CSV**, and follow its phases: the export, the classifications downloaded, the Trapper
-   deployments fetched, and the subjects voted.
+It is a wizard of three steps, shown at the top: **Zooniverse → Trapper → Export**. **Back**
+goes to the previous step without losing what you chose, and from the first one to the task
+choice. It connects with the Zooniverse and Trapper accounts saved in the [settings](#3-settings):
+there is nothing to fill in or test. Every dropdown can be typed in to narrow its options, and
+shows a spinner while they load.
+
+### Step 1 — Zooniverse
+
+Choose the **project** and the **workflow**. Only workflows the app knows how to vote can be
+chosen — each has its own species and questions (17553, 29186 and 29187). The app shows when the
+workflow's latest **classifications export** was made (in UTC, marked *Available*) — the date of
+its file, which can be used even if Zooniverse still says it's being made.
+
+- It doesn't have the classifications made since: tick **Generate a new export** to have
+  Zooniverse make a new one (it can take several minutes for a big workflow, sometimes hours).
+  Zooniverse makes one export per workflow every 24 hours: until then the box is disabled.
+- If a newer export was requested and hasn't finished, the latest file is used; one that never
+  finished after 24 hours can be asked for again.
+- If the workflow has no export yet, one is made first.
+
+### Step 2 — Trapper
+
+The **research project**, **classification project**, **collection** and **deployments** the
+subjects were uploaded from: their observations get the classifications. Subjects of other images
+(e.g. another subject set of the same workflow) are skipped. Each choice gets a tick once made.
+
+### Step 3 — Export
+
+A **summary** of what you chose, and the options: whether to **also save the volunteers' answers**
+(a second CSV with every answer before voting — to see how an observation was decided) and whether
+to **import into Trapper when finished**, and whether to **also keep Zooniverse's own classifications
+CSV** as it was exported (it can be hundreds of MB; off by default). The folder, *Classified by* and the largest CSV size are
+the [settings](#3-settings)'.
+
+**Export CSV**, and follow its phases: the export, the classifications downloaded, the Trapper
+deployments fetched, and the subjects voted.
 
 ![A finished export: its phases, the results, the files written, and the import into Trapper](img/screenshots/export.png){ loading=lazy }
 
 The result shows how many subjects were exported, how many weren't and why (with examples),
-and the files written:
+and the files written — how many, their rows and size, with an **Open folder** button that opens
+them in your file manager. Each export writes into a folder of its own inside the settings' export
+folder, named after the workflow, the classification project, the collection and the time
+(`wf29186_cp46_col45_20261010-011002`), with every file it makes:
 
 | Why a subject isn't exported | Meaning |
 |---|---|
@@ -304,11 +334,11 @@ and the files written:
 
 ### Importing the CSV into Trapper
 
-The result has an **Import into Trapper** box: it imports every file of the export (a big one is
-split into `…_part001.csv`, `…_part002.csv`…) into the classification project you chose, one
-after another, as **expert classifications** — each row updating its observation. Tick **Approve
-the imported classifications** to approve them too; by default they're imported for review, as
-wildintel-tools did. It asks for confirmation first.
+Next to **Open folder**, the result has an **Import into Trapper** button: it imports every file of
+the export (a big one is split into `…_part001.csv`, `…_part002.csv`…) into the classification
+project you chose, one after another, as **expert classifications** — each row updating its
+observation. It asks for confirmation first, and there you can tick **Approve the imported
+classifications** to approve them too; by default they aren't approved.
 
 Each file shows whether Trapper took it. Trapper may import a file **in the background**: it then
 answers with a task id, and the observations can take a while to show. A file Trapper refuses

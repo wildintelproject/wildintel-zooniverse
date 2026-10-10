@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { api } from '../api'
 import ZooniverseDestinationForm, { defaultSubjectSetName } from './ZooniverseDestinationForm'
@@ -7,8 +7,6 @@ import { DESTINATION, SELECTION, SUBJECT_SETS, ZOONIVERSE_PROJECTS } from '../te
 
 vi.mock('../api', () => ({
   api: {
-    zooniverseGetConfig: vi.fn(),
-    zooniverseTestConnection: vi.fn(),
     zooniverseProjects: vi.fn(),
     zooniverseSubjectSets: vi.fn(),
   },
@@ -18,16 +16,14 @@ const mockedApi = vi.mocked(api)
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockedApi.zooniverseGetConfig.mockResolvedValue({ user_name: 'SimSan', has_password: true })
-  mockedApi.zooniverseTestConnection.mockResolvedValue({ ok: true, login: 'SimSan', display_name: 'SimSan' })
   mockedApi.zooniverseProjects.mockResolvedValue({ results: ZOONIVERSE_PROJECTS })
   mockedApi.zooniverseSubjectSets.mockResolvedValue({ results: SUBJECT_SETS })
 })
 
-async function connectAndChooseProject() {
-  await waitFor(() => expect(screen.getByLabelText('Username')).toHaveValue('SimSan'))
-  await userEvent.click(screen.getByRole('button', { name: /test connection/i }))
-  await userEvent.selectOptions(await screen.findByLabelText('Zooniverse project'), '30567')
+async function chooseProject() {
+  await waitFor(() => expect(screen.getByLabelText('Zooniverse project')).toBeEnabled())
+  await userEvent.click(screen.getByLabelText('Zooniverse project'))
+  await userEvent.click(await screen.findByRole('option', { name: /European Camera Trap Project/ }))
 }
 
 describe('ZooniverseDestinationForm', () => {
@@ -40,11 +36,12 @@ describe('ZooniverseDestinationForm', () => {
     render(<ZooniverseDestinationForm selection={SELECTION} onDestinationChange={onChange} />)
     expect(onChange).toHaveBeenLastCalledWith(null)
 
-    await connectAndChooseProject()
+    await chooseProject()
 
-    expect(mockedApi.zooniverseTestConnection).toHaveBeenCalledWith({ username: 'SimSan', password: '' })
-    expect(screen.getByText(/Connected as SimSan — 2 project/)).toBeInTheDocument()
-    expect(mockedApi.zooniverseSubjectSets).toHaveBeenCalledWith({ username: 'SimSan', password: '' }, 30567)
+    // The saved account: no credentials asked, none sent.
+    expect(screen.queryByLabelText('Username')).not.toBeInTheDocument()
+    expect(mockedApi.zooniverseProjects).toHaveBeenCalledWith({ username: '', password: '' })
+    expect(mockedApi.zooniverseSubjectSets).toHaveBeenCalledWith({ username: '', password: '' }, 30567)
     expect(onChange).toHaveBeenLastCalledWith({
       project: { id: 30567, name: 'European Camera Trap Project', slug: 'wildintel/european-camera-trap-project' },
       subject_set_name: defaultSubjectSetName(SELECTION),
@@ -54,7 +51,7 @@ describe('ZooniverseDestinationForm', () => {
 
   it('says when the subject set already exists and will get the images', async () => {
     render(<ZooniverseDestinationForm selection={SELECTION} onDestinationChange={vi.fn()} />)
-    await connectAndChooseProject()
+    await chooseProject()
     await userEvent.clear(screen.getByLabelText('Subject set name'))
     await userEvent.type(screen.getByLabelText('Subject set name'), 'Kittehs')
     expect(await screen.findByText(/already exists \(30 subjects\) — the images will be added to it/)).toBeInTheDocument()
@@ -63,7 +60,7 @@ describe('ZooniverseDestinationForm', () => {
   it('can pick one of the project\'s existing subject sets, searching them', async () => {
     const onChange = vi.fn()
     render(<ZooniverseDestinationForm selection={SELECTION} onDestinationChange={onChange} />)
-    await connectAndChooseProject()
+    await chooseProject()
     await userEvent.click(screen.getByRole('radio', { name: 'Existing subject set' }))
     expect(screen.queryByLabelText('Subject set name')).not.toBeInTheDocument()
     expect(onChange).toHaveBeenLastCalledWith(null)
@@ -92,28 +89,35 @@ describe('ZooniverseDestinationForm', () => {
   it('has no destination while the name is blank', async () => {
     const onChange = vi.fn()
     render(<ZooniverseDestinationForm selection={SELECTION} onDestinationChange={onChange} />)
-    await connectAndChooseProject()
+    await chooseProject()
     await userEvent.clear(screen.getByLabelText('Subject set name'))
     expect(onChange).toHaveBeenLastCalledWith(null)
     expect(screen.getByText('Give the subject set a name.')).toBeInTheDocument()
   })
 
-  it('chooses a saved destination again once connected', async () => {
+  it('chooses a saved destination again once the projects load', async () => {
     const onChange = vi.fn()
     render(<ZooniverseDestinationForm selection={SELECTION} initial={DESTINATION} onDestinationChange={onChange} />)
-    await waitFor(() => expect(screen.getByLabelText('Username')).toHaveValue('SimSan'))
-    await userEvent.click(screen.getByRole('button', { name: /test connection/i }))
 
     await waitFor(() => expect(onChange).toHaveBeenLastCalledWith(DESTINATION))
     expect(await screen.findByText(/already exists \(86\D?878 subjects\)/)).toBeInTheDocument()
   })
 
-  it('shows a failed connection', async () => {
-    mockedApi.zooniverseTestConnection.mockRejectedValue(new Error('Incorrect Zooniverse username or password.'))
+  it('shows a spinner while the projects load', async () => {
+    let resolve: (v: { results: typeof ZOONIVERSE_PROJECTS }) => void = () => {}
+    mockedApi.zooniverseProjects.mockReturnValue(new Promise((r) => { resolve = r }))
     render(<ZooniverseDestinationForm selection={SELECTION} onDestinationChange={vi.fn()} />)
-    await waitFor(() => expect(screen.getByLabelText('Username')).toHaveValue('SimSan'))
-    await userEvent.click(screen.getByRole('button', { name: /test connection/i }))
-    expect(await screen.findByText('Incorrect Zooniverse username or password.')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Zooniverse project')).not.toBeInTheDocument()
+
+    expect(screen.getByLabelText('Zooniverse project')).toBeDisabled()
+    expect(screen.getByRole('status', { name: 'Loading' })).toBeInTheDocument()
+    await act(async () => resolve({ results: ZOONIVERSE_PROJECTS }))
+    await waitFor(() => expect(screen.getByLabelText('Zooniverse project')).toBeEnabled())
+    expect(screen.queryByRole('status', { name: 'Loading' })).not.toBeInTheDocument()
+  })
+
+  it('shows why the projects could not be loaded', async () => {
+    mockedApi.zooniverseProjects.mockRejectedValue(new Error('Missing Zooniverse username — save it in the configuration first.'))
+    render(<ZooniverseDestinationForm selection={SELECTION} onDestinationChange={vi.fn()} />)
+    expect(await screen.findByText(/Missing Zooniverse username/)).toBeInTheDocument()
   })
 })

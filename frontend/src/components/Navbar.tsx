@@ -5,6 +5,8 @@ interface Props {
   /** Opens the settings page. */
   onOpenSettings: () => void
   settingsOpen: boolean
+  /** Back to the first page — what clicking the app's name does. */
+  onHome?: () => void
 }
 
 /** The published documentation (docs/, see mkdocs.yml's site_url). */
@@ -12,7 +14,7 @@ export const DOCS_URL = 'https://wildintelproject.github.io/wildintel-zooniverse
 
 const btnOutline = 'px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-600 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors'
 
-export default function Navbar({ version, onOpenSettings, settingsOpen }: Props) {
+export default function Navbar({ version, onOpenSettings, settingsOpen, onHome }: Props) {
   const [dark, setDark] = useState(true)
 
   useEffect(() => {
@@ -22,14 +24,19 @@ export default function Navbar({ version, onOpenSettings, settingsOpen }: Props)
   return (
     <nav className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
       <div className="max-w-screen-2xl mx-auto px-4 h-14 flex items-center">
-        <span className="font-bold text-zinc-900 dark:text-zinc-100 text-base">
-          🐾 WildINTEL Zooniverse
-        </span>
-        {version && (
-          <span className="ml-2 text-xs text-zinc-400 dark:text-zinc-500 font-mono">
-            v{version}
+        <button
+          type="button" onClick={onHome} title="Back to the first page"
+          className="flex items-center bg-transparent border-0 p-0 cursor-pointer text-left"
+        >
+          <span className="font-bold text-zinc-900 dark:text-zinc-100 text-base">
+            🐾 WildINTEL Zooniverse
           </span>
-        )}
+          {version && (
+            <span className="ml-2 text-xs text-zinc-400 dark:text-zinc-500 font-mono">
+              v{version}
+            </span>
+          )}
+        </button>
 
         <div className="ml-auto flex items-center gap-2">
           <a

@@ -60,6 +60,7 @@ describe('SettingsPage', () => {
     await section('Zooniverse')
     await userEvent.type(screen.getByLabelText('Username'), 'bob')
     await userEvent.type(screen.getByLabelText('Password'), 'pw')
+    await userEvent.type(screen.getByLabelText('Folder'), '  ~/exports  ')
     await section('Sequences')
     await userEvent.click(screen.getByRole('checkbox', { name: 'Remove vehicles' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
@@ -72,7 +73,7 @@ describe('SettingsPage', () => {
       },
       ZOONIVERSE: {
         user_name: 'bob', user_password: 'pw', upload_workers: 4, upload_attempts: 5, upload_retry_delay: 30,
-        export_classified_by: 'zooniverse@wildintel-project.org', export_max_file_size_mb: 1.5,
+        export_classified_by: 'zooniverse@wildintel-project.org', export_max_file_size_mb: 1.5, export_output_dir: '~/exports',
       },
       SEQUENCES: { ...APP_SETTINGS.SEQUENCES, remove_middle_vehicles: true },
     })

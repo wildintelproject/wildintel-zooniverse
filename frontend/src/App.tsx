@@ -20,6 +20,8 @@ export default function App() {
   // The settings page is shown over the rest, which stays mounted (just
   // hidden) — so a wizard run, or an upload in progress, isn't lost.
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // Whether the wizard has something under way — leaving it asks first.
+  const [wizardBusy, setWizardBusy] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -44,11 +46,23 @@ export default function App() {
       .catch(() => setUnfinishedSessions([]))
   }, [])
 
+  // The app's name: back to the first page — the unfinished runs, if any,
+  // otherwise the welcome. Leaving a wizard that's under way asks first;
+  // what it saved can be resumed from the first page.
+  function handleHome() {
+    if (started && wizardBusy && !window.confirm('Leave this task and go to the first page? What is already saved can be resumed from there.')) return
+    setSettingsOpen(false)
+    setStarted(false)
+    setResumeSession(null)
+    setWizardBusy(false)
+    api.listSessions().then(setUnfinishedSessions).catch(() => {})
+  }
+
   const showResumeScreen = !started && unfinishedSessions !== null && unfinishedSessions.length > 0
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <Navbar version={currentVersion} settingsOpen={settingsOpen} onOpenSettings={() => setSettingsOpen(true)} />
+      <Navbar version={currentVersion} settingsOpen={settingsOpen} onOpenSettings={() => setSettingsOpen(true)} onHome={handleHome} />
       {backendDown && (
         <div className="bg-red-50 dark:bg-red-950 border-b border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm text-center py-2">
           Backend not reachable — is the server running?
@@ -58,7 +72,7 @@ export default function App() {
         {settingsOpen && <SettingsPage onClose={() => setSettingsOpen(false)} />}
         <div className={settingsOpen ? 'hidden' : ''}>
           {started
-            ? <WizardPage resumeSession={resumeSession ?? undefined} />
+            ? <WizardPage resumeSession={resumeSession ?? undefined} onProgressChange={setWizardBusy} />
             : showResumeScreen
               ? (
                 <ResumeSessionsPage

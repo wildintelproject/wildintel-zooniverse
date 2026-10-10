@@ -59,7 +59,7 @@ export const APP_SETTINGS: AppSettings = {
   },
   ZOONIVERSE: {
     user_name: null, has_password: false, upload_workers: 4, upload_attempts: 5, upload_retry_delay: 30,
-    export_classified_by: 'zooniverse@wildintel-project.org', export_max_file_size_mb: 1.5,
+    export_classified_by: 'zooniverse@wildintel-project.org', export_max_file_size_mb: 1.5, export_output_dir: null,
   },
   SEQUENCES: DEFAULT_CRITERIA,
 }

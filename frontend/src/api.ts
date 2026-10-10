@@ -244,30 +244,35 @@ export const api = {
   zooniverseWorkflows: (creds: ZooniverseCredentials, projectId: number) =>
     post<{ results: ZooniverseWorkflow[] }>('/api/zooniverse/workflows', { ...creds, project_id: projectId }),
 
-  // The workflow's latest classifications export, or null if it has none.
+  // The workflow's latest classifications export, or null if it has none:
+  // when it was requested, when its file was made (null if there is none —
+  // not to be told from "state", which can stay "creating" with the file
+  // there) and whether a request is pending.
   zooniverseWorkflowExport: (creds: ZooniverseCredentials, workflowId: number) =>
-    post<{ export: { state: string | null; updated_at: string | null } | null }>(
+    post<{ export: WorkflowExport | null }>(
       '/api/zooniverse/workflow-export', { ...creds, workflow_id: workflowId },
     ),
 
-  exportDefaults: () => req<{ output_dir: string; classified_by: string; max_file_size_mb: number }>('/api/export/defaults'),
-
   // Writes the workflow's classifications as a Trapper observations CSV —
-  // every event goes to onEvent as streamed; aborting stops it.
+  // into the settings' folder, classified by the settings' account — every event goes to onEvent as streamed; aborting stops it.
   exportClassifications: (
     creds: ZooniverseCredentials, workflowId: number, selection: TrapperSelection,
-    options: { outputDir: string; regenerate: boolean; saveZooAnnotations: boolean; classifiedBy: string; maxFileSizeMb: number | null },
+    options: { regenerate: boolean; saveZooAnnotations: boolean; saveRawExport: boolean },
     onEvent: (event: ExportEvent) => void, signal?: AbortSignal,
   ): Promise<void> =>
     streamNdjson<ExportEvent>(
       '/api/export/classifications',
       {
         ...creds, workflow_id: workflowId, trapper: { url: selection.url, selection },
-        output_dir: options.outputDir, regenerate: options.regenerate, save_zoo_annotations: options.saveZooAnnotations,
-        classified_by: options.classifiedBy, max_file_size_mb: options.maxFileSizeMb,
+        regenerate: options.regenerate, save_zoo_annotations: options.saveZooAnnotations,
+        save_raw_export: options.saveRawExport,
       },
       onEvent, 'The export stopped before it finished.', signal,
     ),
+
+  // Opens the settings' export folder — where the CSVs are — in the file manager.
+  // An export's own folder, or — without a path — the export folder.
+  openExportFolder: (path?: string) => post<{ ok: boolean; path: string }>('/api/export/open-folder', { path: path ?? null }),
 
   // Imports an export's CSVs into Trapper — only expert classifications,
   // as wildintel-tools did; approved only if asked. Blank credentials: the
@@ -321,4 +326,11 @@ export const api = {
 
   discardSession: (taskId: string) =>
     req<{ status: string }>(`/api/sessions/${taskId}`, { method: 'DELETE' }),
+}
+
+export interface WorkflowExport {
+  state: string | null
+  pending: boolean
+  updated_at: string | null
+  file_date: string | null
 }

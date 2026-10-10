@@ -96,6 +96,7 @@ interface Draft {
   uploadDelay: string
   exportClassifiedBy: string
   exportMaxSizeMb: string
+  exportOutputDir: string
   maxInterval: string
   imagesPerSequence: string
   onlyClassified: boolean
@@ -123,6 +124,7 @@ function toDraft(s: AppSettings): Draft {
     uploadDelay: String(s.ZOONIVERSE.upload_retry_delay),
     exportClassifiedBy: s.ZOONIVERSE.export_classified_by,
     exportMaxSizeMb: String(s.ZOONIVERSE.export_max_file_size_mb),
+    exportOutputDir: s.ZOONIVERSE.export_output_dir ?? '',
     maxInterval: String(s.SEQUENCES.max_interval),
     imagesPerSequence: String(s.SEQUENCES.images_per_sequence),
     onlyClassified: s.SEQUENCES.only_classified,
@@ -167,6 +169,7 @@ function toUpdate(d: Draft): AppSettingsUpdate | null {
       user_name: d.zooUser.trim() || null, user_password: d.zooPassword,
       upload_workers: n('uploadWorkers'), upload_attempts: n('uploadAttempts'), upload_retry_delay: n('uploadDelay'),
       export_classified_by: d.exportClassifiedBy.trim(), export_max_file_size_mb: n('exportMaxSizeMb'),
+      export_output_dir: d.exportOutputDir.trim() || null,
     },
     SEQUENCES: {
       max_interval: n('maxInterval'), images_per_sequence: n('imagesPerSequence'), only_classified: d.onlyClassified,
@@ -623,6 +626,7 @@ export default function SettingsPage({ onClose }: Props) {
               <NumberBox label="Seconds between retries" value={draft.uploadDelay} limits={LIMITS.delay} onChange={text('uploadDelay')} unit="before the first retry" />
             </Row>
             <Row label="Classifications export" description="The CSV of observations Retrieve classifications writes for Trapper's import.">
+              <TextBox label="Folder" mono value={draft.exportOutputDir} placeholder="Blank: “exports” in the app’s documents folder" onChange={(v) => set('exportOutputDir', v)} />
               <BoxField label="Classified by" error={draft.exportClassifiedBy.trim() ? null : 'Who the observations are classified by, in Trapper.'}>
                 <input
                   className={boxInput} value={draft.exportClassifiedBy} aria-label="Classified by"

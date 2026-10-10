@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { api } from '../api'
 import type { TrapperCredentials } from '../api'
 import Combobox from './Combobox'
+import FieldLabel from './FieldLabel'
 import type { ClassificationProject, Collection, Deployment, ResearchProject, TrapperSelection } from '../types'
 
 const inputClass = 'w-full px-3 py-2 text-sm rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono'
@@ -13,10 +14,12 @@ function SmallSpinner() {
   return <div className="w-4 h-4 border border-zinc-500 border-t-zinc-200 rounded-full animate-spin" />
 }
 
-function StepHeading({ n, children }: { n: number; children: ReactNode }) {
+function StepHeading({ n, children }: { n?: number; children: ReactNode }) {
   return (
     <h4 className="text-base font-semibold mb-4 text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-      <span className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-xs flex items-center justify-center font-bold">{n}</span>
+      {n !== undefined && (
+        <span className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-xs flex items-center justify-center font-bold">{n}</span>
+      )}
       {children}
     </h4>
   )
@@ -36,6 +39,10 @@ function day(iso?: string | null) {
 
 type ConnStatus = 'idle' | 'testing' | 'ok' | 'error'
 
+// The credentials the saved connection sends: all blank, so the backend's
+// are the configuration's.
+const BLANK: TrapperCredentials = { url: '', username: '', password: '' }
+
 /** One level of the Trapper hierarchy: its options, the chosen one, and
  * whether it's still loading. */
 interface Level<T> {
@@ -53,17 +60,25 @@ interface Props {
   /** The full selection once at least one deployment is chosen, or null
    * whenever it stops being valid (an upstream choice changed). */
   onSelectionChange: (selection: TrapperSelection | null) => void
+  /** Use the account saved in the configuration: no connection step, the
+   * research projects load as soon as the form opens (and its steps aren't
+   * numbered — the page around it has its own). */
+  useSavedConnection?: boolean
+  /** Under the classification project field. */
+  classificationHint?: ReactNode
 }
 
 /** Connects to Trapper and walks it the same way wildintel-tools' own
  * "zooniverse wizard import" does: research project -> classification
  * project -> collection -> deployments (all or some). */
-export default function TrapperSelectionForm({ onSelectionChange }: Props) {
+export default function TrapperSelectionForm({ onSelectionChange, useSavedConnection = false, classificationHint }: Props) {
   const [form, setForm] = useState<TrapperCredentials>({ url: '', username: '', password: '' })
   const [hasSavedPassword, setHasSavedPassword] = useState(false)
   const [conn, setConn] = useState<{ status: ConnStatus; message: string }>({ status: 'idle', message: '' })
 
-  const [researchProjects, setResearchProjects] = useState<Level<ResearchProject>>(emptyLevel)
+  const [researchProjects, setResearchProjects] = useState<Level<ResearchProject>>(
+    () => ({ ...emptyLevel<ResearchProject>(), loading: useSavedConnection }),
+  )
   const [classificationProjects, setClassificationProjects] = useState<Level<ClassificationProject>>(emptyLevel)
   const [collections, setCollections] = useState<Level<Collection>>(emptyLevel)
   const [deployments, setDeployments] = useState<Level<Deployment>>(emptyLevel)
@@ -83,6 +98,21 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
       .catch(() => {})
   }, [])
 
+  // With the saved connection the credentials stay as the configuration's
+  // (the requests leave them blank, the backend falls back) and the
+  // research projects load right away.
+  useEffect(() => {
+    if (!useSavedConnection) return
+    let cancelled = false
+    setResearchProjects({ ...emptyLevel<ResearchProject>(), loading: true })
+    api.trapperResearchProjects(BLANK)
+      .then(({ results }) => { if (!cancelled) setResearchProjects({ ...emptyLevel<ResearchProject>(), items: results }) })
+      .catch((e) => {
+        if (!cancelled) setResearchProjects({ ...emptyLevel<ResearchProject>(), error: e instanceof Error ? e.message : 'Could not load the research projects.' })
+      })
+    return () => { cancelled = true }
+  }, [useSavedConnection])
+
   function resetBelow(level: 'connection' | 'research' | 'classification' | 'collection') {
     if (level === 'connection') setResearchProjects(emptyLevel)
     if (level === 'connection' || level === 'research') setClassificationProjects(emptyLevel)
@@ -98,6 +128,7 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
     resetBelow('connection')
   }
 
+  const creds = useSavedConnection ? BLANK : form
   const canTest = form.url !== '' && form.username !== '' && (form.password !== '' || hasSavedPassword)
   const isTesting = conn.status === 'testing'
 
@@ -121,7 +152,7 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
     if (!pk) return
     setClassificationProjects({ ...emptyLevel<ClassificationProject>(), loading: true })
     try {
-      const { results } = await api.trapperClassificationProjects(form, Number(pk))
+      const { results } = await api.trapperClassificationProjects(creds, Number(pk))
       setClassificationProjects({ ...emptyLevel<ClassificationProject>(), items: results })
     } catch (e) {
       setClassificationProjects({ ...emptyLevel<ClassificationProject>(), error: e instanceof Error ? e.message : 'Could not load them.' })
@@ -134,7 +165,7 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
     if (!pk) return
     setCollections({ ...emptyLevel<Collection>(), loading: true })
     try {
-      const { results } = await api.trapperCollections(form, Number(pk))
+      const { results } = await api.trapperCollections(creds, Number(pk))
       setCollections({ ...emptyLevel<Collection>(), items: results })
     } catch (e) {
       setCollections({ ...emptyLevel<Collection>(), error: e instanceof Error ? e.message : 'Could not load them.' })
@@ -148,7 +179,7 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
     if (!collection) return
     setDeployments({ ...emptyLevel<Deployment>(), loading: true })
     try {
-      const { results } = await api.trapperDeployments(form, Number(researchProjects.selected), collection.pk)
+      const { results } = await api.trapperDeployments(creds, Number(researchProjects.selected), collection.pk)
       setDeployments({ ...emptyLevel<Deployment>(), items: results })
       setChosenDeployments(new Set(results.map((d) => d.pk)))
     } catch (e) {
@@ -194,77 +225,85 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
 
   return (
     <div>
+      {!useSavedConnection && (
+        <>
       {/* ── 1. Connection ── */}
-      <StepHeading n={1}>Connect to Trapper</StepHeading>
-
-      <div className="mb-4">
-        <label className={labelClass} htmlFor="trapper-url">Trapper URL</label>
-        <input
-          id="trapper-url" className={inputClass} placeholder="https://trapper.example.com"
-          value={form.url} onChange={(e) => setField('url', e.target.value)} autoComplete="url"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className={labelClass} htmlFor="trapper-username">Username</label>
+        <StepHeading n={1}>Connect to Trapper</StepHeading>
+  
+        <div className="mb-4">
+          <label className={labelClass} htmlFor="trapper-url">Trapper URL</label>
           <input
-            id="trapper-username" className={inputClass}
-            value={form.username} onChange={(e) => setField('username', e.target.value)} autoComplete="username"
+            id="trapper-url" className={inputClass} placeholder="https://trapper.example.com"
+            value={form.url} onChange={(e) => setField('url', e.target.value)} autoComplete="url"
           />
         </div>
-        <div>
-          <label className={labelClass} htmlFor="trapper-password">Password</label>
-          <input
-            id="trapper-password" type="password" className={inputClass} placeholder="••••••••"
-            value={form.password} onChange={(e) => setField('password', e.target.value)} autoComplete="current-password"
-          />
-          {hasSavedPassword && form.password === '' && (
-            <p className={hintClass}>Already saved — leave blank to reuse it.</p>
-          )}
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex justify-end">
-          <button
-            type="button" disabled={!canTest || isTesting} onClick={handleTestConnection}
-            className={[
-              'px-4 py-2 text-sm rounded border flex items-center gap-2 transition-colors',
-              canTest && !isTesting
-                ? 'border-zinc-400 dark:border-zinc-500 text-zinc-700 dark:text-zinc-200 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer'
-                : 'border-zinc-300 dark:border-zinc-700 text-zinc-400 dark:text-zinc-600 cursor-not-allowed',
-            ].join(' ')}
-          >
-            {isTesting && <SmallSpinner />}
-            {isTesting ? 'Testing…' : 'Test Connection'}
-          </button>
-        </div>
-        {conn.status === 'ok' && (
-          <div className="flex items-center gap-1.5 mt-2 text-sm text-emerald-600 dark:text-emerald-400 justify-end">
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            {conn.message}
+  
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className={labelClass} htmlFor="trapper-username">Username</label>
+            <input
+              id="trapper-username" className={inputClass}
+              value={form.username} onChange={(e) => setField('username', e.target.value)} autoComplete="username"
+            />
           </div>
-        )}
-        {conn.status === 'error' && <div className="mt-2 text-sm text-red-600 dark:text-red-400 text-right">{conn.message}</div>}
-      </div>
+          <div>
+            <label className={labelClass} htmlFor="trapper-password">Password</label>
+            <input
+              id="trapper-password" type="password" className={inputClass} placeholder="••••••••"
+              value={form.password} onChange={(e) => setField('password', e.target.value)} autoComplete="current-password"
+            />
+            {hasSavedPassword && form.password === '' && (
+              <p className={hintClass}>Already saved — leave blank to reuse it.</p>
+            )}
+          </div>
+        </div>
+  
+        <div className="mb-6">
+          <div className="flex justify-end">
+            <button
+              type="button" disabled={!canTest || isTesting} onClick={handleTestConnection}
+              className={[
+                'px-4 py-2 text-sm rounded border flex items-center gap-2 transition-colors',
+                canTest && !isTesting
+                  ? 'border-zinc-400 dark:border-zinc-500 text-zinc-700 dark:text-zinc-200 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer'
+                  : 'border-zinc-300 dark:border-zinc-700 text-zinc-400 dark:text-zinc-600 cursor-not-allowed',
+              ].join(' ')}
+            >
+              {isTesting && <SmallSpinner />}
+              {isTesting ? 'Testing…' : 'Test Connection'}
+            </button>
+          </div>
+          {conn.status === 'ok' && (
+            <div className="flex items-center gap-1.5 mt-2 text-sm text-emerald-600 dark:text-emerald-400 justify-end">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              {conn.message}
+            </div>
+          )}
+          {conn.status === 'error' && <div className="mt-2 text-sm text-red-600 dark:text-red-400 text-right">{conn.message}</div>}
+        </div>
+        </>
+      )}
 
       {/* ── 2. Research project ── */}
-      {conn.status === 'ok' && (
+      {(conn.status === 'ok' || useSavedConnection) && (
         <>
-          <Divider />
-          <StepHeading n={2}>Research project</StepHeading>
+          {!useSavedConnection && <Divider />}
+          {!useSavedConnection && <StepHeading n={2}>Research project</StepHeading>}
           <div className="mb-6">
-            <label className={labelClass} htmlFor="trapper-research-project">Research project</label>
+            <FieldLabel htmlFor="trapper-research-project" done={Boolean(researchProject)}>Research project</FieldLabel>
             <Combobox
-              id="trapper-research-project" disabled={researchProjects.items.length === 0}
-              options={researchProjects.items.map((p) => ({ value: String(p.pk), label: p.acronym ? `${p.acronym} — ${p.name}` : p.name }))}
+              id="trapper-research-project" disabled={researchProjects.items.length === 0} loading={researchProjects.loading}
+              options={researchProjects.items.map((p) => ({ value: String(p.pk), label: p.acronym && p.acronym !== p.name ? `${p.acronym} — ${p.name}` : p.name }))}
               value={researchProjects.selected} onChange={handleResearchProjectChange}
-              placeholder={researchProjects.items.length === 0 ? 'No research projects found' : 'Select a research project…'}
+              placeholder={
+                researchProjects.loading ? 'Loading research projects…'
+                  : researchProjects.items.length === 0 ? 'No research projects found' : 'Select a research project…'
+              }
               clearLabel="Clear research project"
             />
+            {researchProjects.error && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{researchProjects.error}</p>}
           </div>
         </>
       )}
@@ -272,13 +311,13 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
       {/* ── 3. Classification project ── */}
       {researchProject && (
         <>
-          <Divider />
-          <StepHeading n={3}>Classification project</StepHeading>
+          {!useSavedConnection && <Divider />}
+          {!useSavedConnection && <StepHeading n={3}>Classification project</StepHeading>}
           <div className="mb-6">
-            <label className={labelClass} htmlFor="trapper-classification-project">Classification project</label>
+            <FieldLabel htmlFor="trapper-classification-project" done={Boolean(classificationProject)}>Classification project</FieldLabel>
             <Combobox
               id="trapper-classification-project"
-              disabled={classificationProjects.loading || classificationProjects.items.length === 0}
+              disabled={classificationProjects.items.length === 0} loading={classificationProjects.loading}
               options={classificationProjects.items.map((p) => ({ value: String(p.pk), label: `${p.name}${p.is_active ? '' : ' (inactive)'}` }))}
               value={classificationProjects.selected} onChange={handleClassificationProjectChange}
               placeholder={
@@ -289,7 +328,7 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
               clearLabel="Clear classification project"
             />
             {classificationProjects.error && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{classificationProjects.error}</p>}
-            <p className={hintClass}>Its approved classifications decide which images are sent to Zooniverse.</p>
+            {classificationHint && <p className={hintClass}>{classificationHint}</p>}
           </div>
         </>
       )}
@@ -297,25 +336,42 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
       {/* ── 4. Collection ── */}
       {classificationProject && (
         <>
-          <Divider />
-          <StepHeading n={4}>Collection</StepHeading>
+          {!useSavedConnection && <Divider />}
+          {!useSavedConnection && <StepHeading n={4}>Collection</StepHeading>}
           <div className="mb-6">
-            <label className={labelClass} htmlFor="trapper-collection">Collection</label>
-            <select
-              id="trapper-collection"
-              disabled={collections.loading || collections.items.length === 0}
-              className={selectClass(collections.loading || collections.items.length === 0)}
-              value={collections.selected} onChange={(e) => handleCollectionChange(e.target.value)}
-            >
-              <option value="">
-                {collections.loading ? 'Loading collections…'
-                  : collections.items.length === 0 ? 'No collections found'
-                    : 'Select a collection…'}
-              </option>
-              {collections.items.map((c) => (
-                <option key={c.pk} value={String(c.pk)}>{c.name} — {c.approved_count}/{c.total_count} approved</option>
-              ))}
-            </select>
+            <FieldLabel htmlFor="trapper-collection" done={Boolean(collection)}>Collection</FieldLabel>
+            {useSavedConnection
+              ? (
+                <Combobox
+                  id="trapper-collection"
+                  disabled={collections.items.length === 0} loading={collections.loading}
+                  options={collections.items.map((c) => ({ value: String(c.pk), label: `${c.name} — ${c.approved_count}/${c.total_count} approved` }))}
+                  value={collections.selected} onChange={handleCollectionChange}
+                  placeholder={
+                    collections.loading ? 'Loading collections…'
+                      : collections.items.length === 0 ? 'No collections found'
+                        : 'Select a collection…'
+                  }
+                  clearLabel="Clear collection"
+                />
+              )
+              : (
+              <select
+                id="trapper-collection"
+                disabled={collections.loading || collections.items.length === 0}
+                className={selectClass(collections.loading || collections.items.length === 0)}
+                value={collections.selected} onChange={(e) => handleCollectionChange(e.target.value)}
+              >
+                <option value="">
+                  {collections.loading ? 'Loading collections…'
+                    : collections.items.length === 0 ? 'No collections found'
+                      : 'Select a collection…'}
+                </option>
+                {collections.items.map((c) => (
+                  <option key={c.pk} value={String(c.pk)}>{c.name} — {c.approved_count}/{c.total_count} approved</option>
+                ))}
+              </select>
+              )}
             {collections.error && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{collections.error}</p>}
           </div>
         </>
@@ -324,9 +380,19 @@ export default function TrapperSelectionForm({ onSelectionChange }: Props) {
       {/* ── 5. Deployments ── */}
       {collection && (
         <>
-          <Divider />
-          <StepHeading n={5}>Deployments</StepHeading>
-          {deployments.loading && <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading deployments…</p>}
+          {!useSavedConnection && <Divider />}
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-base font-semibold text-zinc-700 dark:text-zinc-300">Deployments</h4>
+            {chosenDeployments.size > 0 && (
+              <svg role="img" aria-label="Done" className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <circle cx="12" cy="12" r="9" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12.5l2.7 2.7L16 9.5" />
+              </svg>
+            )}
+          </div>
+          {deployments.loading && (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><SmallSpinner /> Loading deployments…</p>
+          )}
           {deployments.error && <p className="text-sm text-red-600 dark:text-red-400">{deployments.error}</p>}
           {!deployments.loading && !deployments.error && deployments.items.length === 0 && (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">

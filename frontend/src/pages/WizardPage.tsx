@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import MediaListsEditor from '../components/MediaListsEditor'
 import OptionCards from '../components/OptionCards'
+import Stepper from '../components/Stepper'
 import type { Option } from '../components/OptionCards'
 import TrapperSelectionForm from '../components/TrapperSelectionForm'
 import ExportClassificationsPage from './ExportClassificationsPage'
@@ -12,7 +13,8 @@ import { api } from '../api'
 import { DEFAULT_CRITERIA } from '../types'
 import type { SessionSummary, SourceType, Task, TrapperSelection, UploadCriteria, ZooniverseDestination } from '../types'
 
-const STEP_LABELS = ['Task', 'Source', 'Images', 'Filters', 'Zooniverse', 'Upload']
+// The task choice (step 0) isn't one of them: the indicator starts at Source.
+const STEP_LABELS = ['Source', 'Images', 'Filters', 'Zooniverse', 'Upload']
 
 /** The step a resumed session lands on — the one after the last it saved. */
 const RESUME_STEP: Record<SessionSummary['phase'], number> = { selected: 3, filtered: 4, destination: 5, uploading: 5 }
@@ -104,9 +106,11 @@ interface Props {
   /** A session left unfinished by an earlier run (see ResumeSessionsPage) —
    * the wizard lands on the step after the one it had reached. */
   resumeSession?: SessionSummary
+  /** Whether there is something under way that going to the first page would leave. */
+  onProgressChange?: (active: boolean) => void
 }
 
-export default function WizardPage({ resumeSession }: Props) {
+export default function WizardPage({ resumeSession, onProgressChange }: Props) {
   const [step, setStep] = useState(resumeSession ? RESUME_STEP[resumeSession.phase] : 0)
   const [task, setTask] = useState<Task | null>(resumeSession?.task ?? null)
   const [source, setSource] = useState<SourceType | null>(resumeSession?.source_type ?? null)
@@ -136,6 +140,10 @@ export default function WizardPage({ resumeSession }: Props) {
   const [utilsOpen, setUtilsOpen] = useState(false)
   // Likewise the Retrieve classifications task — a page of its own.
   const [exportOpen, setExportOpen] = useState(false)
+
+  // Past the task choice, or in a screen of its own: leaving would lose it (a saved session can be resumed).
+  const inProgress = step > 0 || utilsOpen || exportOpen
+  useEffect(() => { onProgressChange?.(inProgress) }, [inProgress, onProgressChange])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -224,28 +232,8 @@ export default function WizardPage({ resumeSession }: Props) {
       {utilsOpen && <UtilsPage onBack={() => setUtilsOpen(false)} />}
       {exportOpen && <ExportClassificationsPage onBack={() => { setExportOpen(false); setTask(null) }} />}
       <div className={utilsOpen || exportOpen ? 'hidden' : ''}>
-        {/* Step indicator */}
-        <div className="flex items-start mb-10">
-          {STEP_LABELS.map((label, i) => (
-            <div key={i} className="flex items-start flex-1">
-              <div className="flex flex-col items-center" style={{ minWidth: 56 }}>
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center font-bold mb-1 text-sm ${
-                    i < step ? 'bg-emerald-600 text-white' : i === step ? 'bg-blue-600 text-white' : 'bg-zinc-700 text-zinc-400'
-                  }`}
-                >
-                  {i < step ? '✓' : i + 1}
-                </div>
-                <small className={`text-xs whitespace-nowrap ${i === step ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-400'}`}>
-                  {label}
-                </small>
-              </div>
-              {i < STEP_LABELS.length - 1 && (
-                <div className={`flex-1 border-t mx-1 mt-[18px] ${i < step ? 'border-emerald-500' : 'border-zinc-700'}`} />
-              )}
-            </div>
-          ))}
-        </div>
+        {/* Step indicator — not on the first screen: nothing has started yet */}
+        {step > 0 && <Stepper labels={STEP_LABELS} current={step - 1} />}
 
         {/* ── Step 0: task ── */}
         {step === 0 && (
@@ -291,10 +279,13 @@ export default function WizardPage({ resumeSession }: Props) {
           <div className={step === 2 ? '' : 'hidden'}>
             <h4 className="text-lg font-semibold mb-1">Choose the images</h4>
             <p className="text-zinc-500 dark:text-zinc-400 mb-6 text-sm">
-              Connect to Trapper, then pick the research project, classification project, collection and deployments whose
-              images will be uploaded.
+              Pick the research project, classification project, collection and deployments whose images will be
+              uploaded, from the Trapper account saved in the settings.
             </p>
-            <TrapperSelectionForm onSelectionChange={handleSelectionChange} />
+            <TrapperSelectionForm
+              onSelectionChange={handleSelectionChange} useSavedConnection
+              classificationHint="Its approved classifications decide which images are sent to Zooniverse."
+            />
             {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
           </div>
         )}
@@ -322,7 +313,7 @@ export default function WizardPage({ resumeSession }: Props) {
           <div className={step === 4 ? '' : 'hidden'}>
             <h4 className="text-lg font-semibold mb-1">Where to upload them</h4>
             <p className="text-zinc-500 dark:text-zinc-400 mb-6 text-sm">
-              Connect to Zooniverse, then pick the project and the subject set the images go to.
+              Pick the project and the subject set the images go to, from the Zooniverse account saved in the settings.
             </p>
             <ZooniverseDestinationForm
               // A new collection means a new default subject set name.

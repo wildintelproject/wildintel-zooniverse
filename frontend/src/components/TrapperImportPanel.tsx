@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { api } from '../api'
 import ProgressBar from './ProgressBar'
 import type { TrapperImportEvent } from '../types'
@@ -49,12 +50,14 @@ interface Props {
   manualUrl: string
   /** Start right away (the export's "Import into Trapper when finished"). */
   autoStart?: boolean
+  /** Buttons shown before the import's, in the same row. */
+  leading?: ReactNode
 }
 
 /** Imports an export's observation CSVs into Trapper — wildintel-tools'
  * export --upload, through Trapper's API: only expert classifications,
  * updating each row's observation; approved only if asked. */
-export default function TrapperImportPanel({ files, trapperUrl, project, manualUrl, autoStart = false }: Props) {
+export default function TrapperImportPanel({ files, trapperUrl, project, manualUrl, autoStart = false, leading }: Props) {
   const [approve, setApprove] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [run, setRun] = useState<Run | null>(null)
@@ -98,42 +101,36 @@ export default function TrapperImportPanel({ files, trapperUrl, project, manualU
   const failed = run ? run.files.filter((f) => f.status === 'failed').length : 0
   const background = run?.files.some((f) => f.taskId)
 
+  const busy = confirming || run !== null
+
   return (
-    <div className="mt-4 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-sm text-zinc-700 dark:text-zinc-300">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="font-semibold">Import into Trapper</p>
+    <div className="mt-4">
+      <div className="flex items-center gap-2 flex-wrap">
+        {leading}
         {running
-          ? <button type="button" className={btnOutline} onClick={() => abortRef.current?.abort()}><SmallSpinner />Stop</button>
+          ? <button type="button" className={btnOutline} onClick={() => abortRef.current?.abort()}><SmallSpinner />Stop import</button>
           : (
             <button type="button" className={btnPrimary} disabled={confirming} onClick={() => setConfirming(true)}>
               {run ? 'Import again' : 'Import into Trapper'}
             </button>
           )}
       </div>
-      <p className={hintClass}>
-        {files.length > 1 ? `The ${files.length} files` : 'The file'} into classification project <strong>{project.name}</strong>, as
-        expert classifications — each row updating its observation.
-      </p>
 
-      {!running && (
-        <label className="flex items-start gap-2.5 cursor-pointer mt-2">
-          <input type="checkbox" className="mt-1" checked={approve} onChange={(e) => setApprove(e.target.checked)} />
-          <span>
-            <span className="text-sm font-semibold">Approve the imported classifications</span>
-            <span className={`block ${hintClass}`}>Off: they&rsquo;re imported for review, as wildintel-tools did.</span>
-          </span>
-        </label>
-      )}
-
+      {busy && (
+      <div className="mt-3 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-sm text-zinc-700 dark:text-zinc-300">
       {confirming && (
-        <div className="mt-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+        <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
           <p>
             Import {files.length > 1 ? `the ${files.length} files` : 'the file'} into Trapper classification project{' '}
-            <strong>{project.name}</strong>{approve ? ', approved' : ''}? It updates its observations — this app
+            <strong>{project.name}</strong>, as expert classifications — each row updating its observation? This app
             can&rsquo;t undo it.
           </p>
+          <label className="flex items-start gap-2.5 cursor-pointer mt-3">
+            <input type="checkbox" className="mt-1" checked={approve} onChange={(e) => setApprove(e.target.checked)} />
+            <span className="text-sm font-semibold">Approve the imported classifications</span>
+          </label>
           <div className="flex gap-2 mt-3">
-            <button type="button" className={btnPrimary} onClick={start}>Yes, import</button>
+            <button type="button" className={btnPrimary} onClick={start}>Yes, import{approve ? ' and approve' : ''}</button>
             <button type="button" className={btnOutline} onClick={() => setConfirming(false)}>Cancel</button>
           </div>
         </div>
@@ -181,6 +178,8 @@ export default function TrapperImportPanel({ files, trapperUrl, project, manualU
           <a href={manualUrl} target="_blank" rel="noreferrer" className="font-mono text-blue-600 dark:text-blue-400 underline break-all">{manualUrl}</a>
           {' '}and upload each file, checking only <em>Import expert classifications</em>.
         </p>
+      )}
+      </div>
       )}
     </div>
   )

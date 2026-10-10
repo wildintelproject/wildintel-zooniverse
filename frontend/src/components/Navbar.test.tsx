@@ -20,4 +20,11 @@ describe('Navbar', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Settings' }))
     expect(onOpenSettings).toHaveBeenCalled()
   })
+
+  it('goes back to the first page when the app’s name is clicked', async () => {
+    const onHome = vi.fn()
+    render(<Navbar version="1.2.3" settingsOpen={false} onOpenSettings={vi.fn()} onHome={onHome} />)
+    await userEvent.click(screen.getByRole('button', { name: /WildINTEL Zooniverse/ }))
+    expect(onHome).toHaveBeenCalledTimes(1)
+  })
 })

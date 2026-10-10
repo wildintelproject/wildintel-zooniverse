@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { api } from '../api'
 import type { ZooniverseCredentials } from '../api'
+import Combobox from './Combobox'
+import FieldLabel from './FieldLabel'
 import type { ZooniverseProject, ZooniverseSubjectSet } from '../types'
 
 const inputClass = 'w-full px-3 py-2 text-sm rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono'
@@ -13,12 +15,21 @@ export function SmallSpinner() {
   return <div className="w-4 h-4 border border-zinc-500 border-t-zinc-200 rounded-full animate-spin" />
 }
 
-export function StepHeading({ n, children }: { n: number; children: ReactNode }) {
+export function StepHeading({ n, children, description, done = false }: { n: number; children: ReactNode; description?: ReactNode; done?: boolean }) {
   return (
-    <h4 className="text-base font-semibold mb-4 text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-      <span className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-xs flex items-center justify-center font-bold">{n}</span>
-      {children}
-    </h4>
+    <div className={`flex items-start gap-3 ${description ? 'mb-5' : 'mb-4'}`}>
+      <span className="w-5 h-5 mt-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-xs flex items-center justify-center font-bold flex-shrink-0">{n}</span>
+      <div className="flex-1 min-w-0">
+        <h4 className="text-base font-semibold text-zinc-700 dark:text-zinc-300">{children}</h4>
+        {description && <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">{description}</p>}
+      </div>
+      {done && (
+        <svg role="img" aria-label="Done" className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+          <circle cx="12" cy="12" r="9" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12.5l2.7 2.7L16 9.5" />
+        </svg>
+      )}
+    </div>
   )
 }
 
@@ -33,19 +44,29 @@ export interface ZooniversePick {
   /** The connection was tested and works. */
   connected: boolean
   projectId: number | null
+  projectName: string | null
   subjectSets: { items: ZooniverseSubjectSet[]; loading: boolean; error: string | null }
 }
 
 type ConnStatus = 'idle' | 'testing' | 'ok' | 'error'
 
 interface Props {
-  /** Step 2's heading, e.g. "Subject sets". */
-  title: string
+  /** Step 2's heading, e.g. "Subject sets" — none: no heading. */
+  title?: string
   disabled?: boolean
   /** Load the chosen project's subject sets (the children then show once
    * there are some) — otherwise the children show as soon as a project is
    * chosen. */
   loadSubjectSets?: boolean
+  /** Use the account saved in the configuration: no connection step, the
+   * projects load as soon as the page opens. */
+  useSavedConnection?: boolean
+  /** The number the step takes (with the saved connection, the first). */
+  stepNumber?: number
+  /** Under the step's heading. */
+  description?: ReactNode
+  /** The step is complete: a tick shows at its right. */
+  done?: boolean
   onChange: (pick: ZooniversePick) => void
   /** Shown under the project once one is chosen — the subject set choice. */
   children?: ReactNode
@@ -54,7 +75,7 @@ interface Props {
 /** Steps 1 and 2 of a Utils page: connect to Zooniverse (the saved account
  * pre-filled), then pick one of the user's projects, whose subject sets
  * are loaded for the page to choose from. */
-export default function ZooniverseProjectPicker({ title, disabled = false, loadSubjectSets = true, onChange, children }: Props) {
+export default function ZooniverseProjectPicker({ title, disabled = false, loadSubjectSets = true, useSavedConnection = false, stepNumber, description, done, onChange, children }: Props) {
   const [form, setForm] = useState<ZooniverseCredentials>({ username: '', password: '' })
   const [hasSavedPassword, setHasSavedPassword] = useState(false)
   const [conn, setConn] = useState<{ status: ConnStatus; message: string }>({ status: 'idle', message: '' })
@@ -62,18 +83,40 @@ export default function ZooniverseProjectPicker({ title, disabled = false, loadS
   const [projectId, setProjectId] = useState('')
   const [subjectSets, setSubjectSets] = useState<ZooniversePick['subjectSets']>({ items: [], loading: false, error: null })
 
+  // With the saved connection the credentials stay blank — the backend
+  // falls back to the configuration's — and the projects load right away.
   useEffect(() => {
+    if (!useSavedConnection) return
+    let cancelled = false
+    setConn({ status: 'testing', message: '' })
+    api.zooniverseProjects({ username: '', password: '' })
+      .then(({ results }) => {
+        if (cancelled) return
+        setProjects(results)
+        setConn({ status: 'ok', message: '' })
+      })
+      .catch((e) => {
+        if (!cancelled) setConn({ status: 'error', message: e instanceof Error ? e.message : 'Could not load your Zooniverse projects.' })
+      })
+    return () => { cancelled = true }
+  }, [useSavedConnection])
+
+  useEffect(() => {
+    if (useSavedConnection) return
     api.zooniverseGetConfig()
       .then((config) => {
         setForm((f) => ({ ...f, username: config.user_name ?? f.username }))
         setHasSavedPassword(config.has_password)
       })
       .catch(() => {})
-  }, [])
+  }, [useSavedConnection])
 
   useEffect(() => {
-    onChange({ creds: form, connected: conn.status === 'ok', projectId: projectId ? Number(projectId) : null, subjectSets })
-  }, [form, conn.status, projectId, subjectSets, onChange])
+    onChange({
+      creds: form, connected: conn.status === 'ok', projectId: projectId ? Number(projectId) : null,
+      projectName: projects.find((p) => String(p.id) === projectId)?.display_name ?? null, subjectSets,
+    })
+  }, [form, conn.status, projectId, projects, subjectSets, onChange])
 
   function setField(key: keyof ZooniverseCredentials, value: string) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -113,50 +156,74 @@ export default function ZooniverseProjectPicker({ title, disabled = false, loadS
     }
   }
 
+  const projectField = useSavedConnection
+    ? (
+      <Combobox
+        id="zoo-pick-project" disabled={disabled || (conn.status === 'ok' && projects.length === 0)}
+        loading={conn.status === 'testing'}
+        options={projects.map((p) => ({ value: String(p.id), label: `${p.display_name} (${p.slug})` }))}
+        value={projectId} onChange={handleProjectChange}
+        placeholder={
+          conn.status === 'testing' ? 'Loading your projects…'
+            : conn.status === 'error' ? 'Could not load the projects'
+              : projects.length === 0 ? 'No projects' : 'Select a project…'
+        }
+        clearLabel="Clear project"
+      />
+    )
+    : (
+      <select
+        id="zoo-pick-project" className={inputClass} disabled={projects.length === 0 || disabled}
+        value={projectId} onChange={(e) => handleProjectChange(e.target.value)}
+      >
+        <option value="">{projects.length === 0 ? 'No projects' : 'Select a project…'}</option>
+        {projects.map((p) => <option key={p.id} value={String(p.id)}>{p.display_name} ({p.slug})</option>)}
+      </select>
+    )
+
   return (
     <>
-      <StepHeading n={1}>Connect to Zooniverse</StepHeading>
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className={labelClass} htmlFor="zoo-pick-username">Username</label>
-          <input
-            id="zoo-pick-username" className={inputClass} disabled={disabled}
-            value={form.username} onChange={(e) => setField('username', e.target.value)} autoComplete="username"
-          />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor="zoo-pick-password">Password</label>
-          <input
-            id="zoo-pick-password" type="password" className={inputClass} placeholder="••••••••" disabled={disabled}
-            value={form.password} onChange={(e) => setField('password', e.target.value)} autoComplete="current-password"
-          />
-          {hasSavedPassword && form.password === '' && <p className={hintClass}>Already saved — leave blank to reuse it.</p>}
-        </div>
-      </div>
-      <div className="mb-6">
-        <div className="flex justify-end">
-          <button type="button" className={btnOutline} disabled={!canTest || conn.status === 'testing' || disabled} onClick={handleTestConnection}>
-            {conn.status === 'testing' && <SmallSpinner />}
-            {conn.status === 'testing' ? 'Testing…' : 'Test Connection'}
-          </button>
-        </div>
-        {conn.status === 'ok' && <div className="mt-2 text-sm text-emerald-600 dark:text-emerald-400 text-right">{conn.message}</div>}
-        {conn.status === 'error' && <div className="mt-2 text-sm text-red-600 dark:text-red-400 text-right">{conn.message}</div>}
-      </div>
-
-      {conn.status === 'ok' && (
+      {!useSavedConnection && (
         <>
-          <Divider />
-          <StepHeading n={2}>{title}</StepHeading>
+          <StepHeading n={1}>Connect to Zooniverse</StepHeading>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className={labelClass} htmlFor="zoo-pick-username">Username</label>
+              <input
+                id="zoo-pick-username" className={inputClass} disabled={disabled}
+                value={form.username} onChange={(e) => setField('username', e.target.value)} autoComplete="username"
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="zoo-pick-password">Password</label>
+              <input
+                id="zoo-pick-password" type="password" className={inputClass} placeholder="••••••••" disabled={disabled}
+                value={form.password} onChange={(e) => setField('password', e.target.value)} autoComplete="current-password"
+              />
+              {hasSavedPassword && form.password === '' && <p className={hintClass}>Already saved — leave blank to reuse it.</p>}
+            </div>
+          </div>
+          <div className="mb-6">
+            <div className="flex justify-end">
+              <button type="button" className={btnOutline} disabled={!canTest || conn.status === 'testing' || disabled} onClick={handleTestConnection}>
+                {conn.status === 'testing' && <SmallSpinner />}
+                {conn.status === 'testing' ? 'Testing…' : 'Test Connection'}
+              </button>
+            </div>
+            {conn.status === 'ok' && <div className="mt-2 text-sm text-emerald-600 dark:text-emerald-400 text-right">{conn.message}</div>}
+            {conn.status === 'error' && <div className="mt-2 text-sm text-red-600 dark:text-red-400 text-right">{conn.message}</div>}
+          </div>
+        </>
+      )}
+
+      {(conn.status === 'ok' || useSavedConnection) && (
+        <>
+          {!useSavedConnection && <Divider />}
+          {title && <StepHeading n={stepNumber ?? 2} description={description} done={done}>{title}</StepHeading>}
           <div className="mb-4">
-            <label className={labelClass} htmlFor="zoo-pick-project">Zooniverse project</label>
-            <select
-              id="zoo-pick-project" className={inputClass} disabled={projects.length === 0 || disabled}
-              value={projectId} onChange={(e) => handleProjectChange(e.target.value)}
-            >
-              <option value="">{projects.length === 0 ? 'No projects' : 'Select a project…'}</option>
-              {projects.map((p) => <option key={p.id} value={String(p.id)}>{p.display_name} ({p.slug})</option>)}
-            </select>
+            <FieldLabel htmlFor="zoo-pick-project" done={useSavedConnection && Boolean(projectId)}>{useSavedConnection ? 'Project' : 'Zooniverse project'}</FieldLabel>
+            {projectField}
+            {useSavedConnection && conn.status === 'error' && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{conn.message}</p>}
           </div>
           {subjectSets.loading && <p className={hintClass}>Loading the project&rsquo;s subject sets…</p>}
           {subjectSets.error && <p className="text-sm text-red-600 dark:text-red-400">{subjectSets.error}</p>}
