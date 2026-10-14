@@ -356,3 +356,18 @@ def test_only_the_export_folder_and_what_is_in_it_can_be_opened(tmp_path: Path, 
     outside = _client().post("/api/export/open-folder", json={"path": str(tmp_path.parent)})
     assert outside.status_code == 400
     assert opened == [mine.resolve()]
+
+
+def test_a_media_gets_as_many_observations_as_voted_whatever_it_had_in_trapper():
+    from types import SimpleNamespace
+
+    from wildintel_zooniverse.core.services.classifications_export_service import observation_rows
+
+    voted = [
+        SimpleNamespace(observationType="animal", scientificName=name, classificationProbability=0.5, count=1,
+                        observationComments="c")
+        for name in ("Cervus elaphus", "Bos taurus")
+    ]
+    # Four observations in Trapper (all with the media's _id): still two rows.
+    rows = observation_rows(voted, [77, 77, 77, 77], "me")
+    assert [(r["_id"], r["scientificName"]) for r in rows] == [(77, "Cervus elaphus"), (77, "Bos taurus")]

@@ -88,8 +88,9 @@ A workflow's Zooniverse classifications become a CSV Trapper's classification im
 2. the chosen Trapper collection's **observations** are fetched;
 3. each subject's classifications go through the workflow's **extractor and voter** — the
    volunteers' answers turned into observations: species, and the median of their counts;
-4. each voted observation is written once per Trapper observation of its image, with that
-   observation's `_id` — the one the import updates.
+4. each voted observation is written once, with its image's `_id`. Trapper's import makes a
+   new observation of every row (replacing the image's previous ones, boxes included), so an
+   image ends up with as many observations as species the volunteers voted.
 
 Big exports are split into several CSVs (1.5 MB each by default — Trapper's import has a size
 limit), and the volunteers' raw answers can be saved alongside.
@@ -104,6 +105,11 @@ differs — and each observation gets its `classificationProbability`.
 The CSVs are then imported into Trapper through its API — as expert classifications, approved
 only if asked — right away if asked, or from the result, file by file. (wildintel-tools filled in
 Trapper's web form with a browser instead.)
+Before each file is sent, its scientific names are checked against Trapper's species catalog: a file
+with a name Trapper doesn't know (e.g. `human`) isn't sent, and the result lists the names and their
+rows — Trapper itself answers a 500 error page for them. An error page from Trapper is shown as one
+line, not as the page. The catalog is Trapper's global one: a species in it but missing from the
+project's own list can still be refused.
 
 ## Utilities
 

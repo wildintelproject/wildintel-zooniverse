@@ -96,3 +96,33 @@ def test_wrong_credentials_are_an_error_before_anything_is_imported(fake_trapper
     })
     assert response.status_code == 401
     fake_trapper.client.classification_results.import_classifications.assert_not_called()
+
+
+def test_species_missing_from_trapper_are_reported_before_importing(fake_trapper, tmp_path: Path):
+    fake_trapper.client.species.where.return_value = [SimpleNamespace(latin_name="Cervus elaphus")]
+    bad = tmp_path / "observations_part001.csv"
+    bad.write_text("observationType,scientificName,_id\nanimal,Cervus elaphus,1\nanimal,human,2\nanimal,human,3\n",
+                   encoding="utf-8")
+    good = tmp_path / "observations_part002.csv"
+    good.write_text("observationType,scientificName,_id\nanimal,Cervus elaphus,4\n", encoding="utf-8")
+    lines = _ndjson(_client().post("/api/export/import", json={
+        **CREDS, "classification_project_id": 10, "files": [str(bad), str(good)],
+    }))
+    [failed] = [line for line in lines if line["type"] == "failed"]
+    assert failed["path"] == str(bad)
+    assert "human (2 rows)" in failed["detail"]
+    # Only the good file reached Trapper.
+    calls = fake_trapper.client.classification_results.import_classifications.call_args_list
+    assert [c.kwargs["file"] for c in calls] == [good]
+    assert lines[-1] == {"type": "done", "imported": 1, "failed": 1}
+
+
+def test_an_html_error_page_is_shown_as_one_line(fake_trapper, csvs):
+    page = "Classification import failed (status 500): non-JSON response (likely an unhandled server error): <!DOCTYPE html><html>" + "x" * 900
+    fake_trapper.client.classification_results.import_classifications.side_effect = err.APIError(page)
+    lines = _ndjson(_client().post("/api/export/import", json={
+        **CREDS, "classification_project_id": 10, "files": [str(csvs[0])],
+    }))
+    [failed] = [line for line in lines if line["type"] == "failed"]
+    assert "HTTP 500" in failed["detail"]
+    assert "<" not in failed["detail"] and len(failed["detail"]) < 400

@@ -47,6 +47,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The CSV's **classificationProbability** column: each observation's probability, chained over the
   voted species so a subject's add up to 1 — the same in every workflow, and the one in the
   observation's comment.
+- Importing into Trapper checks each CSV's scientific names against Trapper's species catalog first,
+  and reports the unknown ones (with their rows) instead of sending a file Trapper answers with a 500.
+  Trapper's HTML error pages are shown as one line.
 - Option to also remove **vehicles** from middle sequences.
 - Option to **collapse empty sequences**: a sequence left with only "empty" images is reduced to
   its second one — wildintel-tools' own `collapse_empty_sequences`.

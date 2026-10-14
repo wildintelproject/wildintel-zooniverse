@@ -10,11 +10,14 @@ it's imported by hand, in Trapper's classification import page.
      external_id — wildintel-tools only read the file name, so older
      uploads, named after the original file, were skipped.
   2. The Trapper selection's observations are fetched, deployment by
-     deployment: the media each one belongs to, and its _id.
+     deployment: the media each one belongs to, and its _id — Trapper's id
+     for the media's classification, the same for all its observations.
   3. Each subject's classifications go through the workflow's extractor
      and voter (services.annotations) — its observations — and each goes
-     into the CSV once per Trapper observation of its media, with that
-     observation's _id: the one Trapper's import updates.
+     into the CSV once, with the media's _id. Trapper's import creates one
+     new observation per row of an _id (replacing the ones it had), so a
+     media ends up with as many observations as the volunteers voted,
+     whatever it had before.
   4. The CSV is written — split into _part001, _part002… files when bigger
      than the configured size — plus, optionally, the volunteers' raw
      answers ("zoo_annotations_…").
@@ -186,8 +189,11 @@ def write_csv(rows: list[dict], path: Path, fields: list[str], max_size_mb: floa
 
 
 def observation_rows(decisions, observation_ids: list[int], classified_by: str) -> list[dict]:
-    """Each voted observation once per Trapper observation of the media —
-    wildintel-tools' own."""
+    """Each voted observation once, with the media's _id: Trapper's import
+    makes a new observation of every row, so a media gets as many as were
+    voted — however many (boxes, observations) it had in Trapper. The ids
+    are deduplicated: a media's observations all carry the same _id."""
+    observation_ids = list(dict.fromkeys(observation_ids))
     return [
         {
             "observationType": d.observationType, "scientificName": d.scientificName,
