@@ -51,6 +51,13 @@ def _media(media_id, minute, deployment="R0033-DONA_0001_A"):
                            filePublic=True, filePath=f"{TRAPPER}/m/{media_id}.jpg", fileName=f"IMG_{media_id}.JPG")
 
 
+@pytest.fixture(autouse=True)
+def _no_listed_subjects():
+    from wildintel_zooniverse.core.services import validation_service
+
+    validation_service._LISTED.clear()
+
+
 @pytest.fixture
 def fake(monkeypatch):
     from wildintel_zooniverse.core.services import zooniverse_service
@@ -119,6 +126,18 @@ def test_compared_with_what_an_upload_would_send(fake):
     )
     # The selection's own Trapper URL, since none was given.
     fake.assert_called_with(TRAPPER, "alice", "s3cret")
+
+
+def test_the_comparison_reuses_the_subjects_the_first_validation_listed(fake, monkeypatch):
+    from wildintel_zooniverse.core.services import zooniverse_service
+
+    _ndjson(_client().post("/api/validation/subject-set", json={**CREDS, "subject_set_id": 8}))
+    monkeypatch.setattr(zooniverse_service, "iter_subjects", lambda u, p, ss_id: pytest.fail("listed again"))
+    lines = _ndjson(_client().post("/api/validation/subject-set", json={**CREDS, "subject_set_id": 8, "trapper": COMPARE}))
+
+    assert [line["type"] for line in lines] == ["trapper", "deployment", "deployment", "report", "done"]
+    report = lines[-2]
+    assert (report["subjects"], report["compared"], len(report["missing"]), len(report["extra"])) == (5, True, 1, 1)
 
 
 def test_a_trapper_failure_midway_is_the_last_line(fake):

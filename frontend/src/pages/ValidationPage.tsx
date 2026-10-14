@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { api } from '../api'
+import Combobox from '../components/Combobox'
+import FieldLabel from '../components/FieldLabel'
 import ProgressBar from '../components/ProgressBar'
 import TrapperSelectionForm from '../components/TrapperSelectionForm'
 import UploadCriteriaForm from '../components/UploadCriteriaForm'
@@ -197,17 +199,19 @@ interface Props {
 }
 
 /** Validation & audit of a subject set — wildintel-tools' check-* commands
- * in one pass: duplicated media, subjects with no Trapper media id, and
- * their metadata; compared with a Trapper collection (chosen as for an
- * upload), also which images are missing or extra. */
+ * in two phases: the subject set on its own (duplicated media, subjects with
+ * no Trapper media id, and their metadata), then compared with a Trapper
+ * collection (chosen as for an upload): which images are missing or extra,
+ * and every metadata field. */
 export default function ValidationPage({ onBack }: Props) {
   const [pick, setPick] = useState<ZooniversePick | null>(null)
   const [subjectSetId, setSubjectSetId] = useState('')
-  const [compare, setCompare] = useState(true)
   const [selection, setSelection] = useState<TrapperSelection | null>(null)
   const [criteria, setCriteria] = useState<UploadCriteria | null>(null)
   const [initialCriteria, setInitialCriteria] = useState<UploadCriteria | null>(null)
+  // Phase 1: the subject set on its own. Phase 2: compared with Trapper.
   const [run, setRun] = useState<Run | null>(null)
+  const [comparison, setComparison] = useState<Run | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -223,115 +227,136 @@ export default function ValidationPage({ onBack }: Props) {
   const handleCriteriaChange = useCallback((value: UploadCriteria | null) => setCriteria(value), [])
   useEffect(() => setSubjectSetId(''), [pick?.projectId, pick?.creds])
 
-  const running = run?.status === 'running'
+  const running = run?.status === 'running' || comparison?.status === 'running'
   const subjectSets = pick?.subjectSets.items ?? []
   const chosen = subjectSets.find((s) => String(s.id) === subjectSetId)
-  const trapperReady = !compare || (selection !== null && criteria !== null)
-  const canValidate = Boolean(chosen) && trapperReady && !running
+  const validated = run?.status === 'done' && run.report !== undefined
+  const report = comparison?.report ?? run?.report
 
   function stop() {
     abortRef.current?.abort()
     abortRef.current = null
   }
 
-  async function handleValidate() {
+  async function execute(
+    set: (update: (r: Run | null) => Run | null) => void, trapper: { selection: TrapperSelection; criteria: UploadCriteria } | null,
+  ) {
     if (!chosen || !pick) return
     stop()
     const controller = new AbortController()
     abortRef.current = controller
-    setRun({ status: 'running' })
+    set(() => ({ status: 'running' }))
     try {
-      await api.validateSubjectSet(
-        pick.creds, chosen.id, compare && selection && criteria ? { selection, criteria } : null,
-        (event) => setRun((r) => (r && reduce(r, event))), controller.signal,
-      )
+      await api.validateSubjectSet(pick.creds, chosen.id, trapper, (event) => set((r) => (r && reduce(r, event))), controller.signal)
     } catch (e) {
       if (controller.signal.aborted) {
-        setRun((r) => (r && r.status === 'running' ? { ...r, status: 'stopped' } : r))
+        set((r) => (r && r.status === 'running' ? { ...r, status: 'stopped' } : r))
       } else {
-        setRun((r) => ({ ...r, status: 'error', error: e instanceof Error ? e.message : 'The validation failed.' }))
+        set((r) => ({ ...r, status: 'error', error: e instanceof Error ? e.message : 'The validation failed.' }))
       }
     } finally {
       if (abortRef.current === controller) abortRef.current = null
     }
   }
 
+  function handleValidate() {
+    setComparison(null)
+    return execute(setRun, null)
+  }
+
+  function handleCompare() {
+    if (selection && criteria) return execute(setComparison, { selection, criteria })
+  }
+
   return (
     <div>
       <h4 className="text-lg font-semibold mb-1">Validation &amp; audit</h4>
       <p className="text-zinc-500 dark:text-zinc-400 mb-6 text-sm">
-        Check a subject set: duplicated images, subjects that can&rsquo;t be traced back to Trapper, and their metadata —
-        and, compared with a Trapper collection, which images are missing or shouldn&rsquo;t be there.
+        Check a subject set: duplicated images, subjects that can&rsquo;t be traced back to Trapper, and their metadata.
+        Then compare it with a Trapper collection to find which images are missing or shouldn&rsquo;t be there.
       </p>
 
-      <ZooniverseProjectPicker title="Subject set" disabled={running} onChange={handlePick}>
+      <ZooniverseProjectPicker
+        title="Subject set" stepNumber={1} description="The project and the subject set to check."
+        disabled={running} useSavedConnection done={Boolean(chosen)} onChange={handlePick}
+      >
         <div className="mb-6">
-          <label className={labelClass} htmlFor="validate-subject-set">Subject set</label>
-          <select
-            id="validate-subject-set" className={inputClass} disabled={running}
-            value={subjectSetId} onChange={(e) => { setSubjectSetId(e.target.value); setRun(null) }}
-          >
-            <option value="">Select a subject set…</option>
-            {subjectSets.map((s) => (
-              <option key={s.id} value={String(s.id)}>{s.display_name} — {s.subjects_count.toLocaleString()} subjects (#{s.id})</option>
-            ))}
-          </select>
+          <FieldLabel htmlFor="validate-subject-set" done={Boolean(chosen)}>Subject set</FieldLabel>
+          <Combobox
+            id="validate-subject-set" disabled={running}
+            options={subjectSets.map((s) => ({ value: String(s.id), label: `${s.display_name} — ${s.subjects_count.toLocaleString()} subjects (#${s.id})` }))}
+            value={subjectSetId} onChange={(value) => { setSubjectSetId(value); setRun(null); setComparison(null) }}
+            placeholder="Select a subject set…" clearLabel="Clear subject set"
+          />
         </div>
       </ZooniverseProjectPicker>
 
       {chosen && (
         <>
           <Divider />
-          <StepHeading n={3}>Compare with Trapper</StepHeading>
-          <label className="flex items-start gap-2.5 cursor-pointer mb-4">
-            <input type="checkbox" className="mt-1" checked={compare} disabled={running} onChange={(e) => setCompare(e.target.checked)} />
-            <span>
-              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Compare with what an upload would send</span>
-              <span className={`block ${hintClass}`}>
-                Choose the Trapper collection and criteria it was uploaded from, to find missing and extra images and check every
-                metadata field. Otherwise only the subject set itself is checked.
-              </span>
-            </span>
-          </label>
-          {compare && (
-            <div className="p-4 mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
-              <TrapperSelectionForm onSelectionChange={handleSelectionChange} />
-              {selection && initialCriteria && (
-                <>
-                  <Divider />
-                  <h5 className="text-sm font-semibold mb-3 text-zinc-700 dark:text-zinc-300">Upload criteria</h5>
-                  <UploadCriteriaForm selection={selection} initial={initialCriteria} onCriteriaChange={handleCriteriaChange} />
-                </>
-              )}
-            </div>
-          )}
-
-          <Divider />
-          <StepHeading n={4}>Validate</StepHeading>
-          <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <StepHeading n={2} done={validated}>Validate the subject set</StepHeading>
+          <div className="p-4 mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <span className="text-sm text-zinc-600 dark:text-zinc-300">
-                {compare && !trapperReady
-                  ? 'Choose the Trapper images to compare with first.'
-                  : <>Subject set <strong>{chosen.display_name}</strong>{compare && selection ? <> against collection <strong>{selection.collection.name}</strong></> : null}.</>}
+                Subject set <strong>{chosen.display_name}</strong>, on its own.
               </span>
-              {running
+              {run?.status === 'running'
                 ? <button type="button" className={btnOutline} onClick={stop}><SmallSpinner />Stop</button>
                 : (
-                  <button type="button" className={btnPrimary} disabled={!canValidate} onClick={handleValidate}>
+                  <button type="button" className={btnPrimary} disabled={running} onClick={handleValidate}>
                     {run ? 'Validate again' : 'Validate'}
                   </button>
                 )}
             </div>
             {run?.subjects && (
-              <PhaseBar label="Subjects listed" done={run.subjects.done} total={run.subjects.total} finished={run.trapper !== undefined || run.status === 'done'} />
-            )}
-            {run?.trapper && (
-              <PhaseBar label="Trapper deployments fetched" done={run.trapper.done} total={run.trapper.total} finished={run.status === 'done'} />
+              <PhaseBar label="Subjects listed" done={run.subjects.done} total={run.subjects.total} finished={run.status === 'done'} />
             )}
             {run?.status === 'stopped' && <p className={hintClass}>Stopped.</p>}
             {run?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{run.error}</p>}
-            {run?.report && <Report report={run.report} />}
+            {!comparison?.report && run?.report && <Report report={run.report} />}
+          </div>
+        </>
+      )}
+
+      {validated && (
+        <>
+          <Divider />
+          <StepHeading n={3} done={comparison?.status === 'done'}>Compare with Trapper</StepHeading>
+          <p className={`${hintClass} mb-4`}>
+            Choose the Trapper collection and criteria it was uploaded from, to find missing and extra images and check every
+            metadata field against what an upload would set.
+          </p>
+          <div className="p-4 mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <TrapperSelectionForm onSelectionChange={handleSelectionChange} useSavedConnection />
+            {selection && initialCriteria && (
+              <>
+                <Divider />
+                <h5 className="text-sm font-semibold mb-3 text-zinc-700 dark:text-zinc-300">Upload criteria</h5>
+                <UploadCriteriaForm selection={selection} initial={initialCriteria} onCriteriaChange={handleCriteriaChange} />
+              </>
+            )}
+          </div>
+          <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-sm text-zinc-600 dark:text-zinc-300">
+                {selection && criteria
+                  ? <>Subject set <strong>{chosen?.display_name}</strong> against collection <strong>{selection.collection.name}</strong>.</>
+                  : 'Choose the Trapper images to compare with first.'}
+              </span>
+              {comparison?.status === 'running'
+                ? <button type="button" className={btnOutline} onClick={stop}><SmallSpinner />Stop</button>
+                : (
+                  <button type="button" className={btnPrimary} disabled={!selection || !criteria || running} onClick={handleCompare}>
+                    {comparison ? 'Compare again' : 'Compare'}
+                  </button>
+                )}
+            </div>
+            {comparison?.trapper && (
+              <PhaseBar label="Trapper deployments fetched" done={comparison.trapper.done} total={comparison.trapper.total} finished={comparison.status === 'done'} />
+            )}
+            {comparison?.status === 'stopped' && <p className={hintClass}>Stopped.</p>}
+            {comparison?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{comparison.error}</p>}
+            {comparison?.report && report && <Report report={report} />}
           </div>
         </>
       )}

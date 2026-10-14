@@ -1,7 +1,9 @@
 """Validation & audit of a Zooniverse subject set — wildintel-tools'
 check-subject-set, check-missing-media, check-duplicated-media,
-check-unmatched-subjects and check_metadata, in one pass. Its subjects are
-read straight from Zooniverse, not from a subjects export CSV.
+check-unmatched-subjects and check_metadata, in two phases: the subject set
+on its own, then compared with Trapper (reusing the subjects the first
+listed, if this server still has them). Its subjects are read straight
+from Zooniverse, not from a subjects export CSV.
 
 On its own, the subject set is checked for:
   - unmatched subjects: no Trapper media id can be read from their
@@ -20,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import re
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass
 
@@ -35,6 +37,19 @@ REQUIRED_METADATA_FIELDS = ("external_id", "preview", "link", "thumbnail", "orig
 _MEDIA_ID_RE = re.compile(r":media:(\d+)\s*$")
 # A "progress" event every this many subjects listed.
 PROGRESS_EVERY = 100
+
+
+# The last subject sets validated on their own (id -> their subjects), for the
+# comparison with Trapper to start from.
+_LISTED: OrderedDict[int, list[dict]] = OrderedDict()
+KEPT_SUBJECT_SETS = 4
+
+
+def _remember(subject_set_id: int, listed: list[dict]) -> None:
+    _LISTED[subject_set_id] = listed
+    _LISTED.move_to_end(subject_set_id)
+    while len(_LISTED) > KEPT_SUBJECT_SETS:
+        _LISTED.popitem(last=False)
 
 
 def media_id_of(metadata: dict) -> int | None:
@@ -74,7 +89,8 @@ def validate_stream(
     """The validation's events, as the router streams them:
       - {"type": "subjects", "total"}: listing the subject set's subjects
         starts — "total" is Zooniverse's own count;
-        {"type": "progress", "phase": "subjects", "done"} as they're listed.
+        {"type": "progress", "phase": "subjects", "done"} as they're listed
+        (not when the comparison reuses the subjects of the last validation).
       - With Trapper: {"type": "trapper", "total"} (deployments), then
         {"type": "deployment", ...} with each one's counts, as fetched.
       - {"type": "report", ...}: the findings (see _report), then
@@ -89,25 +105,31 @@ def validate_stream(
     )
 
     def events() -> Iterator[dict]:
-        yield {"type": "subjects", "id": subject_set["id"], "name": subject_set["display_name"],
-               "total": subject_set["subjects_count"]}
+        # Compared with Trapper, the subjects the subject set's own validation
+        # listed are reused (when this server still has them).
+        listed = _LISTED.get(subject_set_id) if trapper else None
+        if listed is None:
+            listed = []
+            yield {"type": "subjects", "id": subject_set["id"], "name": subject_set["display_name"],
+                   "total": subject_set["subjects_count"]}
+            for subject in zooniverse_service.iter_subjects(*zooniverse, subject_set_id):
+                listed.append({"id": subject["id"], "media_id": media_id_of(subject["metadata"]), "metadata": subject["metadata"]})
+                if len(listed) % PROGRESS_EVERY == 0:
+                    yield {"type": "progress", "phase": "subjects", "done": len(listed)}
+            yield {"type": "progress", "phase": "subjects", "done": len(listed)}
+            _remember(subject_set_id, listed)
+
         by_media: dict[int, list[int]] = defaultdict(list)
         unmatched: list[int] = []
         issues: list[dict] = []
-        listed = 0
-        for subject in zooniverse_service.iter_subjects(*zooniverse, subject_set_id):
-            media_id = media_id_of(subject["metadata"])
-            if media_id is None:
+        for subject in listed:
+            if subject["media_id"] is None:
                 unmatched.append(subject["id"])
             else:
-                by_media[media_id].append(subject["id"])
-            found = metadata_issues(subject["metadata"], media_id, trapper.url if trapper else None)
+                by_media[subject["media_id"]].append(subject["id"])
+            found = metadata_issues(subject["metadata"], subject["media_id"], trapper.url if trapper else None)
             if found:
-                issues.append({"subject_id": subject["id"], "media_id": media_id, "issues": found})
-            listed += 1
-            if listed % PROGRESS_EVERY == 0:
-                yield {"type": "progress", "phase": "subjects", "done": listed}
-        yield {"type": "progress", "phase": "subjects", "done": listed}
+                issues.append({"subject_id": subject["id"], "media_id": subject["media_id"], "issues": found})
 
         expected: dict[int, dict] = {}
         deployment_ids: list[str] = []
@@ -123,10 +145,10 @@ def validate_stream(
                         "media_id": image.media_id, "deployment_id": deployment.deployment_id, "file_name": image.file_name,
                     }
 
-        report = _report(subject_set, listed, by_media, unmatched, issues, expected if trapper else None, deployment_ids)
+        report = _report(subject_set, len(listed), by_media, unmatched, issues, expected if trapper else None, deployment_ids)
         logger.info(
             "Subject set %s validated: %d subjects, %d duplicated, %d unmatched, %d metadata issues%s",
-            subject_set_id, listed, len(report["duplicated"]), len(report["unmatched"]), len(report["metadata_issues"]),
+            subject_set_id, len(listed), len(report["duplicated"]), len(report["unmatched"]), len(report["metadata_issues"]),
             f", {len(report['missing'])} missing, {len(report['extra'])} extra" if trapper else "",
         )
         yield report
