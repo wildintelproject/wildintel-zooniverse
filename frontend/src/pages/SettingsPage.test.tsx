@@ -8,7 +8,7 @@ import { APP_SETTINGS } from '../test/fixtures'
 vi.mock('../api', () => ({
   api: {
     getSettings: vi.fn(), saveSettings: vi.fn(), clearLog: vi.fn(),
-    checkForUpdate: vi.fn(), configs: vi.fn(), addConfig: vi.fn(), activateConfig: vi.fn(), openConfigFolder: vi.fn(),
+    checkForUpdate: vi.fn(), trapperTestConnection: vi.fn(), zooniverseTestConnection: vi.fn(), configs: vi.fn(), addConfig: vi.fn(), activateConfig: vi.fn(), openConfigFolder: vi.fn(),
   },
 }))
 
@@ -222,5 +222,45 @@ describe('SettingsPage', () => {
 
     expect(await screen.findByText(/up to date/)).toBeInTheDocument()
     expect(screen.queryByText(/offline/)).not.toBeInTheDocument()
+  })
+
+  it('tests the Trapper connection with what is typed, without saving it', async () => {
+    mockedApi.trapperTestConnection.mockResolvedValue({ ok: true, research_projects_count: 3 })
+    render(<SettingsPage onClose={vi.fn()} />)
+    await section('Trapper')
+
+    await userEvent.type(await screen.findByLabelText('Password'), 's3cret')
+    await userEvent.click(screen.getByRole('button', { name: 'Test connection' }))
+
+    expect(await screen.findByText('Connected — 3 research projects visible.')).toBeInTheDocument()
+    expect(mockedApi.trapperTestConnection).toHaveBeenCalledWith(
+      expect.objectContaining({ password: 's3cret' }), false,
+    )
+    expect(mockedApi.saveSettings).not.toHaveBeenCalled()
+  })
+
+  it('says why the Trapper connection failed, and forgets it once a value changes', async () => {
+    mockedApi.trapperTestConnection.mockRejectedValue(new Error('Incorrect Trapper username or password.'))
+    render(<SettingsPage onClose={vi.fn()} />)
+    await section('Trapper')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Test connection' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect Trapper username or password.')
+
+    await userEvent.type(screen.getByLabelText('Password'), 'x')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('tests the Zooniverse connection with what is typed, without saving it', async () => {
+    mockedApi.zooniverseTestConnection.mockResolvedValue({ ok: true, login: 'alice', display_name: 'Alice Smith' })
+    render(<SettingsPage onClose={vi.fn()} />)
+    await section('Zooniverse')
+
+    await userEvent.type(await screen.findByLabelText('Password'), 's3cret')
+    await userEvent.click(screen.getByRole('button', { name: 'Test connection' }))
+
+    expect(await screen.findByText('Connected as Alice Smith.')).toBeInTheDocument()
+    expect(mockedApi.zooniverseTestConnection).toHaveBeenCalledWith(expect.objectContaining({ password: 's3cret' }), false)
+    expect(mockedApi.saveSettings).not.toHaveBeenCalled()
   })
 })

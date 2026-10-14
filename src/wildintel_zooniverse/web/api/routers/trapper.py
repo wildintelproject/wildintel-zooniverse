@@ -61,12 +61,14 @@ def get_config() -> dict:
 
 
 @router.post("/test-connection")
-def test_connection(req: TrapperCredentials) -> dict:
+def test_connection(req: TrapperCredentials, save: bool = True) -> dict:
     """Checks the credentials, and saves them to settings.toml once they
-    work — so they needn't be retyped."""
+    work — so they needn't be retyped — unless `save` is false (the settings
+    page, which has its own Save button)."""
     url, username, password = _resolve(req)
     result = _call(lambda: trapper_service.test_connection(url, username, password))
-    trapper_service.save_credentials(url, username, password)
+    if save:
+        trapper_service.save_credentials(url, username, password)
     return result
 
 

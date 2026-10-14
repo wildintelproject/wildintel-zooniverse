@@ -103,8 +103,9 @@ export const api = {
   trapperGetConfig: () =>
     req<{ base_url: string | null; user_name: string | null; has_password: boolean }>('/api/trapper/config'),
 
-  trapperTestConnection: (creds: TrapperCredentials) =>
-    post<{ ok: boolean; research_projects_count: number }>('/api/trapper/test-connection', creds),
+  // save=false: only checks — the credentials aren't written to settings.toml (the settings page has its own Save).
+  trapperTestConnection: (creds: TrapperCredentials, save = true) =>
+    post<{ ok: boolean; research_projects_count: number }>(`/api/trapper/test-connection${save ? '' : '?save=false'}`, creds),
 
   trapperResearchProjects: (creds: TrapperCredentials) =>
     post<{ results: ResearchProject[] }>('/api/trapper/research-projects', creds),
@@ -171,8 +172,9 @@ export const api = {
   zooniverseGetConfig: () =>
     req<{ user_name: string | null; has_password: boolean }>('/api/zooniverse/config'),
 
-  zooniverseTestConnection: (creds: ZooniverseCredentials) =>
-    post<{ ok: boolean; login: string; display_name: string }>('/api/zooniverse/test-connection', creds),
+  // save=false: only checks — the credentials aren't written to settings.toml (the settings page has its own Save).
+  zooniverseTestConnection: (creds: ZooniverseCredentials, save = true) =>
+    post<{ ok: boolean; login: string; display_name: string }>(`/api/zooniverse/test-connection${save ? '' : '?save=false'}`, creds),
 
   // The projects the user owns or collaborates on.
   zooniverseProjects: (creds: ZooniverseCredentials) =>

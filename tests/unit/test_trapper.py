@@ -56,6 +56,16 @@ def test_test_connection_lists_projects_and_saves_the_credentials(fake_trapper):
     assert config_response == {"base_url": "https://trapper.example.org/", "user_name": "alice", "has_password": True}
 
 
+def test_testing_without_saving_leaves_the_settings_alone(fake_trapper):
+    from wildintel_zooniverse.core import config
+
+    config.save_settings(config.Settings())
+    response = _client().post("/api/trapper/test-connection?save=false", json=CREDS)
+
+    assert response.json() == {"ok": True, "research_projects_count": 2}
+    assert config.load_settings().TRAPPER.user_password in (None, "")
+
+
 def test_blank_password_reuses_the_saved_one(fake_trapper):
     _client().post("/api/trapper/test-connection", json=CREDS)
     _client().post("/api/trapper/research-projects", json={**CREDS, "password": ""})

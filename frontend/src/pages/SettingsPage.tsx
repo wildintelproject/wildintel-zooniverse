@@ -293,6 +293,33 @@ function CheckOption({ label, checked, onChange }: { label: string; checked: boo
 const outlineBtn = 'inline-flex items-center justify-center px-4 py-2 text-sm rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50'
 const iconBtn = 'w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors'
 
+type TestState = { kind: 'idle' } | { kind: 'testing' } | { kind: 'ok'; message: string } | { kind: 'error'; message: string }
+
+/** "Test connection": runs the check with what's typed — not saved — and says
+ * whether it worked. Remount it (key) when the typed values change, to drop a stale answer. */
+function TestConnectionButton({ test }: { test: () => Promise<string> }) {
+  const [state, setState] = useState<TestState>({ kind: 'idle' })
+
+  async function run() {
+    setState({ kind: 'testing' })
+    try {
+      setState({ kind: 'ok', message: await test() })
+    } catch (e) {
+      setState({ kind: 'error', message: e instanceof Error ? e.message : 'Could not connect.' })
+    }
+  }
+
+  return (
+    <div className="space-y-1">
+      <button type="button" className={outlineBtn} disabled={state.kind === 'testing'} onClick={run}>
+        {state.kind === 'testing' ? 'Testing…' : 'Test connection'}
+      </button>
+      {state.kind === 'ok' && <p className="text-xs text-emerald-700 dark:text-emerald-400 px-1" role="status">{state.message}</p>}
+      {state.kind === 'error' && <p className="text-xs text-red-600 dark:text-red-400 px-1" role="alert">{state.message}</p>}
+    </div>
+  )
+}
+
 type UpdateState =
   | { kind: 'idle' } | { kind: 'checking' } | { kind: 'error'; message: string } | { kind: 'result'; check: UpdateCheck }
 
@@ -605,6 +632,18 @@ export default function SettingsPage({ onClose }: Props) {
             <Row label="Account" description={passwordHint(saved.TRAPPER.has_password)}>
               <TextBox label="Username" value={draft.trapperUser} onChange={(v) => set('trapperUser', v)} />
               <TextBox label="Password" type="password" value={draft.trapperPassword} onChange={(v) => set('trapperPassword', v)} />
+              <TestConnectionButton
+                key={`${draft.trapperUrl}|${draft.trapperUser}|${draft.trapperPassword}`}
+                test={async () => {
+                  // Blank fields fall back to what's saved. Nothing is saved by testing.
+                  const result = await api.trapperTestConnection(
+                    { url: draft.trapperUrl.trim(), username: draft.trapperUser.trim(), password: draft.trapperPassword },
+                    false,
+                  )
+                  const n = result.research_projects_count
+                  return `Connected — ${n} research project${n === 1 ? '' : 's'} visible.`
+                }}
+              />
             </Row>
             <Row label="Downloads" description="How an upload downloads each image from Trapper. Each retry waits twice as long as the one before.">
               <NumberBox label="Parallel downloads" value={draft.downloadWorkers} limits={LIMITS.workers} onChange={text('downloadWorkers')} unit="at once" />
@@ -619,6 +658,16 @@ export default function SettingsPage({ onClose }: Props) {
             <Row label="Account" description={passwordHint(saved.ZOONIVERSE.has_password)}>
               <TextBox label="Username" value={draft.zooUser} onChange={(v) => set('zooUser', v)} />
               <TextBox label="Password" type="password" value={draft.zooPassword} onChange={(v) => set('zooPassword', v)} />
+              <TestConnectionButton
+                key={`${draft.zooUser}|${draft.zooPassword}`}
+                test={async () => {
+                  // Blank fields fall back to what's saved. Nothing is saved by testing.
+                  const result = await api.zooniverseTestConnection(
+                    { username: draft.zooUser.trim(), password: draft.zooPassword }, false,
+                  )
+                  return `Connected as ${result.display_name || result.login}.`
+                }}
+              />
             </Row>
             <Row label="Transfers" description="How images are uploaded to Zooniverse — and downloaded from it by Download subject sets (Utils). Each retry waits twice as long as the one before.">
               <NumberBox label="Parallel uploads" value={draft.uploadWorkers} limits={LIMITS.workers} onChange={text('uploadWorkers')} unit="at once — downloads too" />

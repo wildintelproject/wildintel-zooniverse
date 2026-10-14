@@ -46,6 +46,16 @@ def test_test_connection_saves_the_credentials_without_exposing_the_password(fak
     assert _client().get("/api/zooniverse/config").json() == {"user_name": "alice", "has_password": True}
 
 
+def test_testing_without_saving_leaves_the_settings_alone(fake_panoptes):
+    from wildintel_zooniverse.core import config
+
+    config.save_settings(config.Settings())
+    response = _client().post("/api/zooniverse/test-connection?save=false", json=CREDS)
+
+    assert response.json() == {"ok": True, "login": "alice", "display_name": "Alice"}
+    assert _client().get("/api/zooniverse/config").json() == {"user_name": None, "has_password": False}
+
+
 def test_logs_in_again_only_when_the_credentials_change(fake_panoptes):
     client = _client()
     client.post("/api/zooniverse/test-connection", json=CREDS)

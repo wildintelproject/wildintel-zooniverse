@@ -62,11 +62,13 @@ def get_config() -> dict:
 
 
 @router.post("/test-connection")
-def test_connection(req: ZooniverseCredentials) -> dict:
-    """Checks the credentials, and saves them to settings.toml once they work."""
+def test_connection(req: ZooniverseCredentials, save: bool = True) -> dict:
+    """Checks the credentials, and saves them to settings.toml once they work
+    — unless `save` is false (the settings page, which has its own Save button)."""
     username, password = _resolve(req)
     result = _call(lambda: zooniverse_service.test_connection(username, password))
-    zooniverse_service.save_credentials(username, password)
+    if save:
+        zooniverse_service.save_credentials(username, password)
     return result
 
 
