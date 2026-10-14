@@ -353,6 +353,8 @@ export interface ExportResult {
   observations: number
   rows: number
   skipped: Record<ExportSkipReason, number>
+  /** Subjects of a media that has another subject too: voted together, once. */
+  merged_subjects?: number
   /** A few subject ids per reason. */
   samples: Partial<Record<ExportSkipReason, number[]>>
   files: { path: string; rows: number; bytes: number }[]

@@ -3,6 +3,7 @@
 import csv
 import io
 import json
+import sys
 from datetime import datetime, timezone
 from contextlib import contextmanager
 from pathlib import Path
@@ -371,3 +372,17 @@ def test_a_media_gets_as_many_observations_as_voted_whatever_it_had_in_trapper()
     # Four observations in Trapper (all with the media's _id): still two rows.
     rows = observation_rows(voted, [77, 77, 77, 77], "me")
     assert [(r["_id"], r["scientificName"]) for r in rows] == [(77, "Cervus elaphus"), (77, "Bos taurus")]
+
+
+def test_subjects_of_the_same_media_vote_together_once(fake, tmp_path: Path, monkeypatch):
+    # 507 is 505's media (4) uploaded a second time.
+    monkeypatch.setattr(sys.modules[__name__], "ROWS", ROWS + [
+        _row(9, 507, {"Filename": "4_x_D_x_IMG_4.JPG"}, ("REDFOX", "1")),
+    ])
+    done = _export(tmp_path)[-1]
+
+    assert (done["subjects"], done["exported"], done["observations"], done["rows"]) == (6, 3, 2, 3)
+    assert done["merged_subjects"] == 1
+    [observations] = done["files"]
+    ids = [r["_id"] for r in _read(observations["path"])]
+    assert sorted(ids) == ["10", "11", "40"]  # media 4 once, not once per subject

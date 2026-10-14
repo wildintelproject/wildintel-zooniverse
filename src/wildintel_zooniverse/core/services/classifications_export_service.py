@@ -396,14 +396,28 @@ def export_stream(
         samples: dict[str, list[int]] = defaultdict(list)
         csv_rows: list[dict] = []
         raw_rows: list[dict] = []
-        for done, (sid, entry) in enumerate(sorted(subjects.items()), start=1):
+        # Subjects of the same media (uploaded twice) vote together, once.
+        by_media: dict[int, list[int]] = defaultdict(list)
+        for sid, entry in sorted(subjects.items()):
+            if entry.media_id is not None:
+                by_media[entry.media_id].append(sid)
+        merged = sum(len(sids) - 1 for sids in by_media.values())
+        done = 0
+        for sid, entry in sorted(subjects.items()):
+            done += 1
+            sids = [sid]
+            if entry.media_id is not None:
+                sids = by_media[entry.media_id]
+                if sid != sids[0]:
+                    continue  # voted with the media's first subject
             reason = None
             if entry.media_id is None:
                 reason = "no_media_id"
             elif entry.media_id not in observations:
                 reason = "not_in_trapper"
             else:
-                extracted = extractor.run(entry.classifications)
+                classifications = [c for s_ in sids for c in subjects[s_].classifications]
+                extracted = extractor.run(classifications)
                 decisions = voter.run(extracted) if extracted else None
                 if not extracted:
                     reason = "no_valid_classifications"
@@ -412,12 +426,13 @@ def export_stream(
                 else:
                     csv_rows.extend(observation_rows(decisions, observations[entry.media_id], classified_by))
                     raw_rows.extend(zoo_rows(extracted))
-                    counts["exported"] += 1
+                    counts["exported"] += len(sids)
                     counts["observations"] += len(decisions)
             if reason:
-                counts[reason] += 1
-                if len(samples[reason]) < SAMPLE_SIZE:
-                    samples[reason].append(sid)
+                counts[reason] += len(sids)
+                for s_ in sids:
+                    if len(samples[reason]) < SAMPLE_SIZE:
+                        samples[reason].append(s_)
             if done % SUBJECTS_EVERY == 0:
                 yield {"type": "progress", "done": done}
         yield {"type": "progress", "done": len(subjects)}
@@ -438,7 +453,7 @@ def export_stream(
             "type": "done",
             "workflow": {"id": workflow_id, "name": workflow},
             "subjects": len(subjects), "trapper_media": len(observations), "exported": counts["exported"],
-            "observations": counts["observations"], "rows": len(csv_rows),
+            "observations": counts["observations"], "rows": len(csv_rows), "merged_subjects": merged,
             "skipped": {reason: counts[reason] for reason in SKIP_REASONS},
             "samples": {reason: samples[reason] for reason in SKIP_REASONS if samples[reason]},
             "files": files, "zoo_annotations_file": zoo_file,
