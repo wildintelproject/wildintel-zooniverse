@@ -44,6 +44,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   or never some.
 - **Settings** page (⚙️): Trapper and Zooniverse accounts, parallel transfers and retries, the
   export's defaults, and the sequence criteria new uploads start from.
+- The CSV's **classificationProbability** column: each observation's probability, chained over the
+  voted species so a subject's add up to 1 — the same in every workflow, and the one in the
+  observation's comment.
 - Option to also remove **vehicles** from middle sequences.
 - Option to **collapse empty sequences**: a sequence left with only "empty" images is reduced to
   its second one — wildintel-tools' own `collapse_empty_sequences`.
@@ -78,7 +81,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Workflow 17553's voter can be loaded, and votes humans as *Homo sapiens*.
 - Workflows 29186/17553 keep the *k* most voted species, not *k+1*.
 - "No animal" votes are ignored when volunteers saw several species.
-- Humans are *Homo sapiens* in every workflow (29187 wrote *Homo Sapiens*).
+- Humans are *Homo sapiens* in every workflow (29187 wrote *Homo Sapiens*; 29186 made them an
+  *animal* called "human").
+- Every workflow's voter knows the same observation types (animal, human, vehicle, blank,
+  unclassified, unknown) and differs only in how it breaks a tie.
 - A subject whose classifications were all discarded no longer stops the whole export.
 
 ## Released

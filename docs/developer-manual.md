@@ -304,17 +304,19 @@ The full, live reference is FastAPI's own, at `/docs` while the backend runs. In
 
 ## 7. Adding a Zooniverse workflow
 
-A workflow's classifications can only be exported with an **extractor** and a **voter** of its
-own — its questions and species are its own. In `src/wildintel_zooniverse/core/services/annotations/`:
+A workflow's classifications can only be exported with a **mapping** and a **voter** — its
+questions and species are its own. In `src/wildintel_zooniverse/core/services/annotations/`:
 
-1. **Extractor** (`extractor.py`) — subclass `AnnotationsExtractor` and map every Zooniverse
-   choice of the workflow to its Trapper name in `zoo_to_trapper`. `NOANIMAL` →
-   `"blank"`, `HUMANORVEHICLE` → `"human"`, `OTHERSPECIES` → `"animal"`,
-   `UNRECOGNIZABLE` → `"unknown"`; species → scientific names. Override `extract_matches` if
-   its annotations aren't the usual survey-task shape.
-2. **Voter** (`voter.py`) — usually reuse `Workflow29186AnnotationsVoter` or
-   `Workflow29187AnnotationsVoter` (a subclass is enough); write one if it votes differently.
-3. **Register** both in `registry.WORKFLOWS`, with a label.
+1. **Mapping** (`mappings.py`) — a dictionary from every Zooniverse choice of the workflow to its
+   Trapper name. Start from `**COMMON` (`NOANIMAL` → `"blank"`, `HUMANORVEHICLE` → `"human"`,
+   `OTHERSPECIES` → `"animal"`, `UNRECOGNIZABLE` → `"unknown"`) and add the species → scientific
+   names; a choice not listed reads as `"unknown"`. The one `AnnotationsExtractor`
+   (`extractor.py`) takes it — there is no extractor to subclass. Only if the annotations aren't the
+   usual survey-task shape would the extractor need to change.
+2. **Voter** (`voter.py`) — `SpeciesVoter` does the whole vote; a workflow's voter only says how
+   a tie is broken (`_rank`): subclass `Workflow29186AnnotationsVoter` (first voted wins) or
+   `Workflow29187AnnotationsVoter` (alphabetical), or write one if it votes differently.
+3. **Register** them in `registry.WORKFLOWS`: `Workflow(label, mapping, voter)`.
 4. **Test** it in `tests/unit/test_annotations.py` — a few typical classifications and
    the observations they must give.
 

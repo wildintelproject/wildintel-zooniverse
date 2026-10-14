@@ -24,6 +24,7 @@ class Zoo2TrapperObservation(BaseModel):
 
     observationType: Literal["animal", "human", "vehicle", "blank", "unclassified", "unknown"]
     scientificName: Optional[str] = None
+    classificationProbability: Optional[float] = None
     count: Optional[int] = None
     countNew: Optional[int] = None
     lifeStage: Optional[str] = None

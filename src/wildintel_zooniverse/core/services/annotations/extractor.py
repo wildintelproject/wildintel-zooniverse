@@ -1,10 +1,12 @@
-"""wildintel-tools' AnnotationsExtractor and its per-workflow subclasses —
-species names mapped from each workflow's own Zooniverse choices."""
+"""wildintel-tools' AnnotationsExtractor — one class for every workflow, which
+gets the workflow's own mapping of Zooniverse choices to Trapper names
+(mappings.py)."""
 from __future__ import annotations
 
 import ast
 import logging
 import re
+from collections.abc import Mapping
 from statistics import multimode
 from typing import Any
 
@@ -18,9 +20,10 @@ class AnnotationsExtractor:
     those with 0 or more than k_max choices discarded — plus the most common
     number of choices per classification (k)."""
 
-    zoo_to_trapper: dict[str, str] = {}
-
-    def __init__(self, k_max: int = 3):
+    def __init__(self, zoo_to_trapper: Mapping[str, str], k_max: int = 3):
+        """zoo_to_trapper: the workflow's own mapping (see mappings.py) —
+        a choice it doesn't list is "unknown"."""
+        self.zoo_to_trapper = zoo_to_trapper
         self.k_max = k_max
 
     def trapper_name(self, choice: str) -> str:
@@ -50,69 +53,3 @@ class AnnotationsExtractor:
             return []
         k_majority = max(m for m in multimode(k_list) if m <= self.k_max)
         return [(k_majority, sid, choices)]
-
-
-class Workflow29186AnnotationExtractor(AnnotationsExtractor):
-    """Workflow 29186 (Doñana National Park)."""
-
-    zoo_to_trapper = {
-        "NOANIMAL": "blank",
-        "HUMANORVEHICLE": "human",
-        "OTHERSPECIES": "animal",
-        "UNRECOGNIZABLE": "unknown",
-
-        "REDDEER": "Cervus elaphus",
-        "REDFOX": "Vulpes vulpes",
-        "WILDBOAR": "Sus scrofa",
-        "CERVIDREDORFALLOWDEER": "Cervidae",
-        "COMMONGENET": "Genetta genetta",
-        "COW": "Bos taurus",
-        "EGYPTIANMONGOOSE": "Herpestes ichneumon",
-        "EUROPEANBADGER": "Meles meles",
-        "EUROPEANRABBIT": "Oryctolagus cuniculus",
-        "FALLOWDEER": "Dama dama",
-        "HORSE": "Equus caballus",
-        "IBERIANHARE": "Lepus granatensis",
-        "IBERIANLYNX": "Lynx pardinus",
-        "LEPORIDRABBITORHARE": "Leporidae",
-        "BIRD": "Aves",
-        "DOMESTICDOG": "Canis familiaris",
-    }
-
-
-class Workflow17553AnnotationExtractor(Workflow29186AnnotationExtractor):
-    """Workflow 17553 (IberianCameraTrapR1_1_2_3) — the same as 29186."""
-
-
-class Workflow29187AnnotationExtractor(AnnotationsExtractor):
-    """Workflow 29187 (Tatra National Park)."""
-
-    zoo_to_trapper = {
-        "NOANIMAL": "blank",
-        "HUMANORVEHICLE": "human",
-        "OTHERSPECIES": "animal",
-        "UNRECOGNIZABLE": "unknown",
-
-        "REDDEER": "Cervus elaphus",
-        "ROEDEER": "Capreolus capreolus",
-        "CERVIDREDORROEDEER": "Cervidae",
-        "REDFOX": "Vulpes vulpes",
-        "REDSQUIRREL": "Sciurus vulgaris",
-        "BROWNBEAR": "Ursus arctos",
-        "PINEMARTEN": "Martes martes",
-        "MARTENPINEORSTONEMARTEN": "Martes",
-        "STONEMARTEN": "Martes foina",
-        "CHAMOIS": "Rupicapra rupicapra",
-        "EURASIANLYNX": "Lynx lynx",
-        "WOLF": "Canis lupus",
-        "EUROPEANBADGER": "Meles meles",
-        "MARMOT": "Marmota marmota",
-        "WILDBOAR": "Sus scrofa",
-        "EUROPEANHARE": "Lepus europaeus",
-        "DOMESTICDOG": "Canis familiaris",
-        "DOMESTICCAT": "Felis catus",
-        "STOAT": "Mustela erminea",
-        "WEASEL": "Mustela nivalis",
-        "MUSTELID": "Mustelidae",
-        "BIRDGENERAL": "Aves",
-    }

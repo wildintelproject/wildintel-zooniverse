@@ -48,7 +48,7 @@ from wildintel_zooniverse.core.services.subject_media import media_id_of
 logger = logging.getLogger(__name__)
 
 # wildintel-tools' own columns — the ones Trapper's import reads.
-CSV_FIELDS = ["observationType", "scientificName", "count", "classifiedBy", "classificationMethod", "observationComments", "_id"]
+CSV_FIELDS = ["observationType", "scientificName", "classificationProbability", "count", "classifiedBy", "classificationMethod", "observationComments", "_id"]
 ZOO_CSV_FIELDS = ["subject_id", "k_majority", "scientific_name", "answers"]
 # How long to wait for a new classifications export — Zooniverse queues
 # them, and big workflows have taken hours.
@@ -190,7 +190,8 @@ def observation_rows(decisions, observation_ids: list[int], classified_by: str) 
     wildintel-tools' own."""
     return [
         {
-            "observationType": d.observationType, "scientificName": d.scientificName, "count": d.count,
+            "observationType": d.observationType, "scientificName": d.scientificName,
+            "classificationProbability": d.classificationProbability, "count": d.count,
             "classifiedBy": classified_by, "classificationMethod": "human",
             "observationComments": d.observationComments, "_id": obs_id,
         }

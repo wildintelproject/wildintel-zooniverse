@@ -94,11 +94,12 @@ A workflow's Zooniverse classifications become a CSV Trapper's classification im
 Big exports are split into several CSVs (1.5 MB each by default — Trapper's import has a size
 limit), and the volunteers' raw answers can be saved alongside.
 
-Workflows 17553, 29186 and 29187 can be exported. Compared with wildintel-tools, three voting
+Workflows 17553, 29186 and 29187 can be exported. Compared with wildintel-tools, these voting
 errors are fixed: workflow 17553's voter works (wildintel-tools' couldn't be loaded), and humans
 are voted as *Homo sapiens* in every workflow; workflows 29186/17553 keep the *k* most voted
 species (wildintel-tools kept *k+1*); and "no animal" votes are ignored when volunteers saw
-several species, as intended.
+several species, as intended. Every workflow votes the same way — only how a tie is broken
+differs — and each observation gets its `classificationProbability`.
 
 The CSVs are then imported into Trapper through its API — as expert classifications, approved
 only if asked — right away if asked, or from the result, file by file. (wildintel-tools filled in

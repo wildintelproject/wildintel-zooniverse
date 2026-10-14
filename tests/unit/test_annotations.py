@@ -22,12 +22,37 @@ def test_17553_counts_the_votes_as_29186_does():
     assert [(o.observationType, o.scientificName) for o in ours] == [("human", "Homo sapiens"), ("animal", "Vulpes vulpes")]
 
 
-def test_29186_still_votes_humans_as_wildintel_tools_did():
-    # Left as ported — only 17553 was fixed.
-    from wildintel_zooniverse.core.services.annotations.voter import Workflow29186AnnotationsVoter
+def test_every_workflow_votes_the_same_way_but_for_ties():
+    from wildintel_zooniverse.core.services.annotations.voter import (
+        Workflow17553AnnotationsVoter, Workflow29186AnnotationsVoter, Workflow29187AnnotationsVoter,
+    )
 
-    [obs] = Workflow29186AnnotationsVoter.run(_opinions("human"))
-    assert (obs.observationType, obs.scientificName) == ("animal", "human")
+    opinions = _opinions("human", "human", "Vulpes vulpes", "Vulpes vulpes", "Vulpes vulpes", "Sus scrofa", k=2)
+    results = [
+        [o.model_dump() for o in voter.run(opinions)]
+        for voter in (Workflow17553AnnotationsVoter, Workflow29186AnnotationsVoter, Workflow29187AnnotationsVoter)
+    ]
+    assert results[0] == results[1] == results[2]
+    assert [(o["observationType"], o["scientificName"]) for o in results[0]] == [("animal", "Vulpes vulpes"), ("human", "Homo sapiens")]
+    assert round(sum(o["classificationProbability"] for o in results[0]), 4) == 1.0
+
+
+def test_every_workflow_knows_the_observation_types():
+    from wildintel_zooniverse.core.services.annotations.voter import Workflow29186AnnotationsVoter, Workflow29187AnnotationsVoter
+
+    for voter in (Workflow29186AnnotationsVoter, Workflow29187AnnotationsVoter):
+        for name in ("animal", "human", "vehicle", "blank", "unclassified", "unknown"):
+            [obs] = voter.run(_opinions(name, name))
+            assert obs.observationType == name
+            assert obs.scientificName == ("Homo sapiens" if name == "human" else "")
+
+
+def test_ties_are_broken_by_each_workflow_its_own_way():
+    from wildintel_zooniverse.core.services.annotations.voter import Workflow29186AnnotationsVoter, Workflow29187AnnotationsVoter
+
+    opinions = _opinions("Vulpes vulpes", "Cervus elaphus")
+    assert [o.scientificName for o in Workflow29186AnnotationsVoter.run(opinions)] == ["Vulpes vulpes"]
+    assert [o.scientificName for o in Workflow29187AnnotationsVoter.run(opinions)] == ["Cervus elaphus"]
 
 
 def test_every_listed_workflow_has_an_extractor_and_voter():
@@ -69,3 +94,14 @@ def test_humans_are_homo_sapiens_in_every_workflow():
     for voter in (Workflow17553AnnotationsVoter, Workflow29187AnnotationsVoter):
         [obs] = voter.run(_opinions("human", "human"))
         assert (obs.observationType, obs.scientificName) == ("human", "Homo sapiens")
+
+
+def test_the_extractor_maps_a_choice_with_the_workflows_own_mapping():
+    from wildintel_zooniverse.core.services.annotations import registry
+    from wildintel_zooniverse.core.services.annotations.extractor import AnnotationsExtractor
+
+    assert registry.extractor_and_voter(29186)[0].trapper_name("IBERIANLYNX") == "Lynx pardinus"
+    assert registry.extractor_and_voter(29187)[0].trapper_name("BROWNBEAR") == "Ursus arctos"
+    # Not in the workflow's mapping: unknown.
+    assert registry.extractor_and_voter(29187)[0].trapper_name("IBERIANLYNX") == "unknown"
+    assert AnnotationsExtractor({}).trapper_name("REDDEER") == "unknown"

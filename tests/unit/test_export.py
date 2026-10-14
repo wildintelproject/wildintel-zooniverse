@@ -149,14 +149,15 @@ def test_writes_the_observations_csv_trapper_imports(fake, tmp_path: Path):
     [observations] = done["files"]
     assert Path(observations["path"]).name.startswith("observations_wf29186_cp10_col33_")
     rows = _read(observations["path"])
-    assert list(rows[0]) == ["observationType", "scientificName", "count", "classifiedBy", "classificationMethod",
-                             "observationComments", "_id"]
+    assert list(rows[0]) == ["observationType", "scientificName", "classificationProbability", "count", "classifiedBy",
+                             "classificationMethod", "observationComments", "_id"]
     assert [(r["_id"], r["scientificName"], r["count"], r["classifiedBy"]) for r in rows] == [
         ("10", "Cervus elaphus", "2", "zooniverse@wildintel-project.org"),
         ("11", "Cervus elaphus", "2", "zooniverse@wildintel-project.org"),
         ("40", "Vulpes vulpes", "1", "zooniverse@wildintel-project.org"),
     ]
-    assert rows[0]["observationComments"] == "Automatically classified by Zooniverse for subject 501 with confidence 1.00"
+    assert rows[0]["classificationProbability"] == "1.0"
+    assert rows[0]["observationComments"] == "Automatically classified by Zooniverse for subject 501 with confidences 1.00 1.00"
 
     zoo = _read(done["zoo_annotations_file"]["path"])
     assert [(r["subject_id"], r["scientific_name"], r["answers"]) for r in zoo][:2] == [
