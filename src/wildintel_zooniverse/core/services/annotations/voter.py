@@ -30,8 +30,10 @@ OBSERVATION_TYPES = {"animal", "human", "vehicle", "blank", "unclassified", "unk
 class SpeciesVoter(AnnotationsVoter):
     """The vote every workflow shares: the k most voted species, each with
     the median of its HOWMANY answers as count, and a probability chained
-    over the ranking (each species' ratio to the next one, scaled by what
-    the ones before it left), so a subject's probabilities add up to 1.
+    over the ranking (each species' share against the next one in the
+    ranking, scaled by what the ones before it left). The next one counts
+    even when it is not kept, so a single species voted against another one
+    is not a certainty.
 
     What differs between workflows is only how a tie is broken: _rank."""
 
@@ -53,9 +55,9 @@ class SpeciesVoter(AnnotationsVoter):
         return math.ceil(median(valid)) if valid else None
 
     @staticmethod
-    def _confidences(idx: int, votes: int, top_k_species: list, accumulated_conf: float) -> tuple[float, float]:
-        if idx + 1 < len(top_k_species):
-            votes_next = top_k_species[idx + 1][1]
+    def _confidences(idx: int, votes: int, ranking: list, accumulated_conf: float) -> tuple[float, float]:
+        if idx + 1 < len(ranking):
+            votes_next = ranking[idx + 1][1]
             pre_conf = votes / (votes + votes_next)
         else:
             pre_conf = 1.0
@@ -83,11 +85,12 @@ class SpeciesVoter(AnnotationsVoter):
         species_howmany = cls._group_howmany(user_opinions)
         # If k > 1 (volunteers saw several species), "no animal" isn't counted.
         species_count = Counter(species for species, _ in user_opinions if not (k > 1 and species == BLANK))
-        top_k = cls._rank(species_count)[: max(1, k)]
+        k = max(1, k)
+        ranking = cls._rank(species_count)[: k + 1]  # the one after the last kept only sets its probability
         result = []
         accumulated_conf = 0.0
-        for idx, (species, votes) in enumerate(top_k):
-            pre_conf, confidence = cls._confidences(idx, votes, top_k, accumulated_conf)
+        for idx, (species, votes) in enumerate(ranking[:k]):
+            pre_conf, confidence = cls._confidences(idx, votes, ranking, accumulated_conf)
             accumulated_conf += confidence
             result.append(cls._to_observation(species, cls._howmany_median(species_howmany, species), pre_conf, confidence, sid))
         return result

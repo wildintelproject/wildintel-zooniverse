@@ -34,7 +34,16 @@ def test_every_workflow_votes_the_same_way_but_for_ties():
     ]
     assert results[0] == results[1] == results[2]
     assert [(o["observationType"], o["scientificName"]) for o in results[0]] == [("animal", "Vulpes vulpes"), ("human", "Homo sapiens")]
-    assert round(sum(o["classificationProbability"] for o in results[0]), 4) == 1.0
+    assert [o["classificationProbability"] for o in results[0]] == [0.6, 0.2667]
+
+
+def test_a_species_voted_against_another_is_not_a_certainty_even_when_only_one_is_kept():
+    from wildintel_zooniverse.core.services.annotations.voter import Workflow29186AnnotationsVoter
+
+    [obs] = Workflow29186AnnotationsVoter.run(_opinions("Vulpes vulpes", "Vulpes vulpes", "Vulpes vulpes", "Sus scrofa", k=1))
+    assert obs.classificationProbability == 0.75
+    [alone] = Workflow29186AnnotationsVoter.run(_opinions("Vulpes vulpes", "Vulpes vulpes", k=1))
+    assert alone.classificationProbability == 1.0
 
 
 def test_every_workflow_knows_the_observation_types():
