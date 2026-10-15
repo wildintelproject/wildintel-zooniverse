@@ -46,6 +46,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   they were made — also when several subjects of the same image (uploaded twice) vote together. Classifications
   that mix "no animal" with a species are discarded, and the HOWMANY ranges ("11-50", "51+") count their
   lower bound, not their digits.
+- Listing a subject set's subjects (Update metadata, Validation, Download) asks again for a page Zooniverse
+  fails to give (a 502, a dropped connection), as the settings' upload retries say, instead of stopping the run.
 - **Settings** page (⚙️): Trapper and Zooniverse accounts, parallel transfers and retries, the
   export's defaults, and the sequence criteria new uploads start from.
 - The CSV's **classificationProbability** column: each observation's probability: its votes over its

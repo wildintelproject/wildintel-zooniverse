@@ -16,6 +16,7 @@ that). An upload's worker threads each get a client of their own
 from __future__ import annotations
 
 import logging
+import re
 import threading
 from email.utils import parsedate_to_datetime
 from collections.abc import Iterator
@@ -23,11 +24,13 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import httpx
+import requests
 
 from panoptes_client import Panoptes, Project, Subject, SubjectSet, User, Workflow
 from panoptes_client.panoptes import PanoptesAPIException
 
 from wildintel_zooniverse.core import config
+from wildintel_zooniverse.core.services.retry import RetryPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -163,11 +166,18 @@ def subject_set_info(username: str, password: str, subject_set_id: int) -> dict:
 
 def iter_subjects(username: str, password: str, subject_set_id: int) -> Iterator[dict]:
     """A subject set's subjects, page by page as they're iterated — each its
-    id, image URL, file name (see subject_file_name) and metadata."""
+    id, image URL, file name (see subject_file_name) and metadata. A page
+    Zooniverse fails to give (a 502, a dropped connection) is asked for
+    again, as the settings' retries say, before the listing gives up."""
     client = _client_for(username, password)
-    with client:
-        subjects = Subject.where(subject_set_id=subject_set_id, page_size=SUBJECTS_PAGE_SIZE)
-    for subject in _iter_with(client, subjects):
+    policy = _listing_policy()
+
+    def first_page():
+        with client:
+            return Subject.where(subject_set_id=subject_set_id, page_size=SUBJECTS_PAGE_SIZE)
+
+    subjects = policy.call(first_page, retry_if=_listing_retryable, cancel=threading.Event())
+    for subject in _iter_with(client, subjects, policy):
         url = _image_url(subject.locations)
         metadata = subject.metadata or {}
         yield {"id": int(subject.id), "url": url, "file_name": subject_file_name(subject.id, metadata, url), "metadata": metadata}
@@ -178,17 +188,36 @@ def _client_for(username: str, password: str) -> Panoptes:
         return client
 
 
-def _iter_with(client: Panoptes, items: Iterator) -> Iterator:
+def _listing_policy() -> RetryPolicy:
+    zoo = config.load_settings().ZOONIVERSE
+    return RetryPolicy.from_delay(zoo.upload_attempts, zoo.upload_retry_delay)
+
+
+def _listing_retryable(exc: BaseException) -> bool:
+    """Zooniverse's own server errors and dropped connections — never a 4xx."""
+    if isinstance(exc, PanoptesAPIException):
+        return re.search(r"status code (5\d\d|429)\b", str(exc)) is not None
+    return isinstance(exc, requests.RequestException)
+
+
+def _iter_with(client: Panoptes, items: Iterator, policy: RetryPolicy | None = None) -> Iterator:
     """Iterates a lazy panoptes listing with `client` current for each page
     fetch — the caller's thread may change between items (a streaming
-    response), and panoptes keeps its current client per thread."""
+    response), and panoptes keeps its current client per thread. With a
+    policy, a page that fails is asked for again: panoptes only advances
+    once it has the next page, so calling next() again repeats the request."""
     iterator = iter(items)
-    while True:
+    never = threading.Event()
+
+    def next_item():
         with client:
-            try:
-                item = next(iterator)
-            except StopIteration:
-                return
+            return next(iterator)
+
+    while True:
+        try:
+            item = policy.call(next_item, retry_if=_listing_retryable, cancel=never) if policy else next_item()
+        except StopIteration:
+            return
         yield item
 
 

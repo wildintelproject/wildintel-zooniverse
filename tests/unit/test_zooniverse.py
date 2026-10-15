@@ -110,3 +110,57 @@ def test_every_call_makes_the_logged_in_client_its_threads_own(fake_panoptes):
     client.post("/api/zooniverse/subject-sets", json={**CREDS, "project_id": 30567})
     assert fake_panoptes.panoptes.call_count == 1
     assert fake_panoptes.panoptes.return_value.__enter__.call_count == 2
+
+
+def _listing(monkeypatch, pages):
+    """iter_subjects over a fake panoptes listing: each item of `pages` is a subject, or an exception raised by that next()."""
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+
+    from wildintel_zooniverse.core.services import retry, zooniverse_service
+
+    class Listing:
+        def __init__(self):
+            self.todo = list(pages)
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            if not self.todo:
+                raise StopIteration
+            item = self.todo[0]
+            if isinstance(item, Exception):
+                self.todo.pop(0)  # like panoptes: asking again repeats the request, which then works
+                raise item
+            return self.todo.pop(0)
+
+    monkeypatch.setattr(zooniverse_service, "_client_for", lambda u, p: nullcontext())
+    monkeypatch.setattr(zooniverse_service.Subject, "where", lambda **kw: Listing())
+    monkeypatch.setattr(zooniverse_service, "_listing_policy", lambda: retry.RetryPolicy(attempts=3, min_wait=0, max_wait=0))
+    return zooniverse_service, SimpleNamespace
+
+
+def _subject(sid):
+    from types import SimpleNamespace
+    return SimpleNamespace(id=str(sid), locations=[], metadata={"Filename": f"{sid}_x.jpg"})
+
+
+def test_a_page_zooniverse_fails_to_give_is_asked_for_again(monkeypatch):
+    from panoptes_client.panoptes import PanoptesAPIException
+
+    zoo, _ = _listing(monkeypatch, [_subject(1), PanoptesAPIException("Received HTTP status code 502 from API"), _subject(2)])
+    assert [s["id"] for s in zoo.iter_subjects("u", "p", 8)] == [1, 2]
+
+
+def test_a_listing_gives_up_after_the_attempts_and_never_retries_a_4xx(monkeypatch):
+    from panoptes_client.panoptes import PanoptesAPIException
+
+    zoo, _ = _listing(monkeypatch, [PanoptesAPIException("Received HTTP status code 502 from API")] * 3 + [_subject(1)])
+    import pytest
+    with pytest.raises(PanoptesAPIException, match="502"):
+        list(zoo.iter_subjects("u", "p", 8))
+
+    zoo, _ = _listing(monkeypatch, [PanoptesAPIException("Received HTTP status code 404 from API"), _subject(1)])
+    with pytest.raises(PanoptesAPIException, match="404"):
+        list(zoo.iter_subjects("u", "p", 8))
