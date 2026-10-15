@@ -71,6 +71,7 @@ async function chooseSubjectSet() {
   await userEvent.click(await screen.findByRole('option', { name: /European Camera Trap Project/ }))
   await userEvent.click(await screen.findByLabelText('Subject set'))
   await userEvent.click(await screen.findByRole('option', { name: /#128950/ }))
+  await userEvent.click(screen.getByRole('button', { name: /continue to validation/i }))
 }
 
 describe('ValidationPage', () => {
@@ -112,7 +113,8 @@ describe('ValidationPage', () => {
     await run.finish()
     expect(mockedApi.validateSubjectSet).toHaveBeenLastCalledWith(expect.anything(), 128950, null, expect.any(Function), expect.any(AbortSignal))
 
-    expect(await screen.findByRole('heading', { name: 'Compare with Trapper' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /continue to comparison/i }))
+    expect(await screen.findByRole('heading', { name: '3. Compare with Trapper' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^compare$/i })).toBeDisabled()
     expect(screen.queryByRole('button', { name: /test connection/i })).not.toBeInTheDocument()
     await userEvent.type(await screen.findByLabelText('Research project'), 'Doñana')

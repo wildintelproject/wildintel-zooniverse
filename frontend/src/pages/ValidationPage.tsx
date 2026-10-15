@@ -6,7 +6,8 @@ import FieldLabel from '../components/FieldLabel'
 import ProgressBar from '../components/ProgressBar'
 import TrapperSelectionForm from '../components/TrapperSelectionForm'
 import UploadCriteriaForm from '../components/UploadCriteriaForm'
-import ZooniverseProjectPicker, { Divider, SmallSpinner, StepHeading } from '../components/ZooniverseProjectPicker'
+import Step from '../components/WizardStep'
+import ZooniverseProjectPicker, { Divider, SmallSpinner } from '../components/ZooniverseProjectPicker'
 import type { ZooniversePick } from '../components/ZooniverseProjectPicker'
 import { DEFAULT_CRITERIA } from '../types'
 import type { TrapperSelection, UploadCriteria, ValidationEvent, ValidationReport } from '../types'
@@ -211,6 +212,9 @@ export default function ValidationPage({ onBack }: Props) {
   const [run, setRun] = useState<Run | null>(null)
   const [comparison, setComparison] = useState<Run | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  // The step that's open, and the furthest one unlocked.
+  const [open, setOpen] = useState(1)
+  const [reached, setReached] = useState(1)
 
   useEffect(() => {
     // New comparisons start from the settings page's criteria.
@@ -230,6 +234,12 @@ export default function ValidationPage({ onBack }: Props) {
   const chosen = subjectSets.find((s) => String(s.id) === subjectSetId)
   const validated = run?.status === 'done' && run.report !== undefined
   const report = comparison?.report ?? run?.report
+  const unlocked = (n: number) => n === 1 || (n === 2 ? Boolean(chosen) : validated)
+  const status = (n: number): 'open' | 'done' | 'locked' => (n === open ? 'open' : n <= reached && unlocked(n) ? 'done' : 'locked')
+  function next(n: number) {
+    setOpen(n)
+    setReached((r) => Math.max(r, n))
+  }
 
   function stop() {
     abortRef.current?.abort()
@@ -274,26 +284,34 @@ export default function ValidationPage({ onBack }: Props) {
         Then compare it with a Trapper collection to find which images are missing or shouldn&rsquo;t be there.
       </p>
 
-      <ZooniverseProjectPicker
-        title="Subject set" stepNumber={1} description="The project and the subject set to check."
-        disabled={running} useSavedConnection done={Boolean(chosen)} framed onChange={handlePick}
+      <Step
+        n={1} title="Target subject set" status={status(1)} canEdit={!running} onEdit={() => setOpen(1)}
+        description="Subject set to check."
+        summary={chosen && <>{pick?.projectName}<br />{chosen.display_name} · {chosen.subjects_count.toLocaleString()} subjects</>}
       >
-        <div className="mb-6">
-          <FieldLabel htmlFor="validate-subject-set" done={Boolean(chosen)}>Subject set</FieldLabel>
-          <Combobox
-            id="validate-subject-set" disabled={running}
-            options={subjectSets.map((s) => ({ value: String(s.id), label: `${s.display_name} — ${s.subjects_count.toLocaleString()} subjects (#${s.id})` }))}
-            value={subjectSetId} onChange={(value) => { setSubjectSetId(value); setRun(null); setComparison(null) }}
-            placeholder="Select a subject set…" clearLabel="Clear subject set"
-          />
+        <ZooniverseProjectPicker disabled={running} useSavedConnection framed onChange={handlePick}>
+          <div className="mb-6">
+            <FieldLabel htmlFor="validate-subject-set" done={Boolean(chosen)}>Subject set</FieldLabel>
+            <Combobox
+              id="validate-subject-set" disabled={running}
+              options={subjectSets.map((s) => ({ value: String(s.id), label: `${s.display_name} — ${s.subjects_count.toLocaleString()} subjects (#${s.id})` }))}
+              value={subjectSetId} onChange={(value) => { setSubjectSetId(value); setRun(null); setComparison(null) }}
+              placeholder="Select a subject set…" clearLabel="Clear subject set"
+            />
+          </div>
+        </ZooniverseProjectPicker>
+        <div className="flex justify-end mt-4">
+          <button type="button" className={btnPrimary} disabled={!chosen} onClick={() => next(2)}>Continue to validation</button>
         </div>
-      </ZooniverseProjectPicker>
+      </Step>
 
-      {chosen && (
-        <>
-          <Divider />
-          <StepHeading n={2} done={validated}>Validate the subject set</StepHeading>
-          <div className="p-4 mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
+      <Step
+        n={2} title="Validate the subject set" status={status(2)} canEdit={!running} onEdit={() => setOpen(2)}
+        description="Duplicated images, subjects with no Trapper media id, and their metadata."
+        summary={chosen && <>{chosen.display_name} validated</>}
+      >
+        {chosen && (
+          <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <span className="text-sm text-zinc-600 dark:text-zinc-300">
                 Subject set <strong>{chosen.display_name}</strong>, on its own.
@@ -313,51 +331,50 @@ export default function ValidationPage({ onBack }: Props) {
             {run?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{run.error}</p>}
             {!comparison?.report && run?.report && <Report report={run.report} />}
           </div>
-        </>
-      )}
+        )}
+        <div className="flex justify-end mt-4">
+          <button type="button" className={btnPrimary} disabled={!validated || running} onClick={() => next(3)}>Continue to comparison</button>
+        </div>
+      </Step>
 
-      {validated && (
-        <>
-          <Divider />
-          <StepHeading n={3} done={comparison?.status === 'done'}>Compare with Trapper</StepHeading>
-          <p className={`${hintClass} mb-4`}>
-            Choose the Trapper collection and criteria it was uploaded from, to find missing and extra images and check every
-            metadata field against what an upload would set.
-          </p>
-          <div className="p-4 mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
-            <TrapperSelectionForm onSelectionChange={handleSelectionChange} useSavedConnection />
-            {selection && initialCriteria && (
-              <>
-                <Divider />
-                <h5 className="text-sm font-semibold mb-3 text-zinc-700 dark:text-zinc-300">Upload criteria</h5>
-                <UploadCriteriaForm selection={selection} initial={initialCriteria} onCriteriaChange={handleCriteriaChange} />
-              </>
-            )}
+      <Step
+        n={3} title="Compare with Trapper" status={status(3)} canEdit={!running} onEdit={() => setOpen(3)}
+        description="Find missing and extra images and check every metadata field against what an upload would set."
+        summary={selection && <>Collection {selection.collection.name}</>}
+      >
+        <div className="p-4 mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <TrapperSelectionForm onSelectionChange={handleSelectionChange} useSavedConnection />
+          {selection && initialCriteria && (
+            <>
+              <Divider />
+              <h5 className="text-sm font-semibold mb-3 text-zinc-700 dark:text-zinc-300">Upload criteria</h5>
+              <UploadCriteriaForm selection={selection} initial={initialCriteria} onCriteriaChange={handleCriteriaChange} />
+            </>
+          )}
+        </div>
+        <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <span className="text-sm text-zinc-600 dark:text-zinc-300">
+              {selection && criteria
+                ? <>Subject set <strong>{chosen?.display_name}</strong> against collection <strong>{selection.collection.name}</strong>.</>
+                : 'Choose the Trapper images to compare with first.'}
+            </span>
+            {comparison?.status === 'running'
+              ? <button type="button" className={btnOutline} onClick={stop}><SmallSpinner />Stop</button>
+              : (
+                <button type="button" className={btnPrimary} disabled={!selection || !criteria || running} onClick={handleCompare}>
+                  {comparison ? 'Compare again' : 'Compare'}
+                </button>
+              )}
           </div>
-          <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-sm text-zinc-600 dark:text-zinc-300">
-                {selection && criteria
-                  ? <>Subject set <strong>{chosen?.display_name}</strong> against collection <strong>{selection.collection.name}</strong>.</>
-                  : 'Choose the Trapper images to compare with first.'}
-              </span>
-              {comparison?.status === 'running'
-                ? <button type="button" className={btnOutline} onClick={stop}><SmallSpinner />Stop</button>
-                : (
-                  <button type="button" className={btnPrimary} disabled={!selection || !criteria || running} onClick={handleCompare}>
-                    {comparison ? 'Compare again' : 'Compare'}
-                  </button>
-                )}
-            </div>
-            {comparison?.trapper && (
-              <PhaseBar label="Trapper deployments fetched" done={comparison.trapper.done} total={comparison.trapper.total} finished={comparison.status === 'done'} />
-            )}
-            {comparison?.status === 'stopped' && <p className={hintClass}>Stopped.</p>}
-            {comparison?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{comparison.error}</p>}
-            {comparison?.report && report && <Report report={report} />}
-          </div>
-        </>
-      )}
+          {comparison?.trapper && (
+            <PhaseBar label="Trapper deployments fetched" done={comparison.trapper.done} total={comparison.trapper.total} finished={comparison.status === 'done'} />
+          )}
+          {comparison?.status === 'stopped' && <p className={hintClass}>Stopped.</p>}
+          {comparison?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{comparison.error}</p>}
+          {comparison?.report && report && <Report report={report} />}
+        </div>
+      </Step>
 
       <div className="mt-10">
         <button type="button" className={btnOutline} onClick={onBack} disabled={running}>Back</button>
