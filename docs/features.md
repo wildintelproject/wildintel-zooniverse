@@ -102,6 +102,8 @@ species (wildintel-tools kept *k+1*); and "no animal" votes are ignored when vol
 several species, as intended. Every workflow votes the same way — only how a tie is broken
 differs — and each observation gets its `classificationProbability`: its votes over its votes plus
 those of the next species in the ranking (so species sharing a photo don't penalise each other).
+Subjects that are the same Trapper image (uploaded twice) vote together, once, and a volunteer who
+classified it in both counts once, with their most recent classification.
 
 The CSVs are then imported into Trapper through its API — as expert classifications, approved
 only if asked — right away if asked, or from the result, file by file. (wildintel-tools filled in

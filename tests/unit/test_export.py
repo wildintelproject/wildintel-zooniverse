@@ -386,3 +386,28 @@ def test_subjects_of_the_same_media_vote_together_once(fake, tmp_path: Path, mon
     [observations] = done["files"]
     ids = [r["_id"] for r in _read(observations["path"])]
     assert sorted(ids) == ["10", "11", "40"]  # media 4 once, not once per subject
+
+
+def test_a_volunteer_who_saw_the_same_media_in_two_subjects_votes_once_with_their_last_opinion(fake, tmp_path: Path, monkeypatch):
+    # Volunteer 7 said fox on 505, then red deer on 507 — both are media 4.
+    again = _row(9, 507, {"Filename": "4_x_D_x_IMG_4.JPG"}, ("REDDEER", "2"))
+    again["user_id"] = again["user_name"] = "7"
+    monkeypatch.setattr(sys.modules[__name__], "ROWS", [dict(r, user_id="7", user_name="7") if r["subject_ids"] == "505" else r for r in ROWS] + [again])
+    done = _export(tmp_path)[-1]
+
+    [observations] = done["files"]
+    media_4 = [r for r in _read(observations["path"]) if r["_id"] == "40"]
+    assert [r["scientificName"] for r in media_4] == ["Cervus elaphus"]
+
+
+def test_last_vote_per_user():
+    from wildintel_zooniverse.core.services.annotations.models import ClassificationInfo
+    from wildintel_zooniverse.core.services.classifications_export_service import last_vote_per_user
+
+    def info(cid, user_id=None, user_name=None):
+        return ClassificationInfo(classification_id=cid, user_id=user_id, user_name=user_name, subject_name=None, sid=1)
+
+    votes = [info("10", "1"), info("9", "2"), info("12", "1"), info("5", None, "not-logged-in-a"), info("6", None, "not-logged-in-a"),
+             info("7"), info("8")]
+    # Volunteer 1's last (12), 2's only one, the not-logged-in one's last (6), and the anonymous ones all — in their order.
+    assert [c.classification_id for c in last_vote_per_user(votes)] == ["9", "12", "6", "7", "8"]
