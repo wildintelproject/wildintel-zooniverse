@@ -2,7 +2,8 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import Combobox from '../components/Combobox'
 import FieldLabel from '../components/FieldLabel'
-import ZooniverseProjectPicker, { Divider, SmallSpinner, StepHeading } from '../components/ZooniverseProjectPicker'
+import Step from '../components/WizardStep'
+import ZooniverseProjectPicker, { SmallSpinner } from '../components/ZooniverseProjectPicker'
 import type { ZooniversePick } from '../components/ZooniverseProjectPicker'
 import { parseIds } from '../lib/mediaIds'
 import type { ZooniverseSubjectInfo } from '../types'
@@ -95,6 +96,8 @@ export default function SubjectsPage({ onBack }: Props) {
   const [page, setPage] = useState(1)
   const [browse, setBrowse] = useState<Load<{ subjects: ZooniverseSubjectInfo[]; page: number; page_count: number; count: number }>>({ status: 'idle' })
   const fileRef = useRef<HTMLInputElement>(null)
+  // The step that's open — the two don't depend on each other.
+  const [open, setOpen] = useState(1)
 
   const handlePick = useCallback((next: ZooniversePick) => setPick(next), [])
   useEffect(() => { setSubjectSetId(''); setBrowse({ status: 'idle' }) }, [pick?.projectId, pick?.creds])
@@ -124,6 +127,10 @@ export default function SubjectsPage({ onBack }: Props) {
 
   const subjectSets = pick?.subjectSets.items ?? []
   const browsed = browse.data
+  const hasResult = (n: number) => (n === 1 ? Boolean(subjectSetId && browsed) : lookup.status === 'done')
+  const status = (n: number): 'open' | 'done' | 'idle' | 'locked' => (
+    n === open ? 'open' : n === 2 && !pick?.connected ? 'locked' : hasResult(n) ? 'done' : 'idle'
+  )
 
   return (
     <div>
@@ -133,10 +140,12 @@ export default function SubjectsPage({ onBack }: Props) {
         each is, their subject sets and their metadata.
       </p>
 
-      <ZooniverseProjectPicker
-        title="Browse a subject set" stepNumber={1} description="The project and a subject set, a page of its subjects at a time."
-        useSavedConnection done={Boolean(subjectSetId)} framed onChange={handlePick}
+      <Step
+        n={1} title="Browse a subject set" status={status(1)} canEdit onEdit={() => setOpen(1)}
+        description="The project and a subject set, a page of its subjects at a time."
+        summary={browsed && <>{subjectSets.find((s) => String(s.id) === subjectSetId)?.display_name}<br />Page {browsed.page} of {browsed.page_count.toLocaleString()} · {browsed.count.toLocaleString()} subjects</>}
       >
+        <ZooniverseProjectPicker useSavedConnection framed onChange={handlePick}>
         <div className="mb-4">
           <FieldLabel htmlFor="subjects-subject-set" done={Boolean(subjectSetId)}>Subject set</FieldLabel>
           <Combobox
@@ -167,55 +176,56 @@ export default function SubjectsPage({ onBack }: Props) {
           </div>
         )}
         {subjectSetId && !browsed && browse.status === 'loading' && <p className={hintClass}>Loading…</p>}
-      </ZooniverseProjectPicker>
+        </ZooniverseProjectPicker>
+      </Step>
 
-      {pick?.connected && (
+      <Step
+        n={2} title="Look up subjects by id" status={status(2)} canEdit onEdit={() => setOpen(2)}
+        description="Paste subject ids or load them from a file."
+        summary={lookup.data && <>{lookup.data.subjects.length.toLocaleString()} found{lookup.data.not_found.length > 0 && ` · ${lookup.data.not_found.length.toLocaleString()} not found`}</>}
+      >
+      <label className={labelClass} htmlFor="subjects-ids">Subject ids</label>
+      <textarea
+        id="subjects-ids" className={`${inputClass} h-20 text-xs`} value={idsText} onChange={(e) => setIdsText(e.target.value)}
+        placeholder="One per line, or separated by commas or spaces"
+      />
+      <div className="flex items-center gap-2 mt-1 flex-wrap">
+        <input
+          ref={fileRef} type="file" accept=".txt,.csv,.tsv,.json,text/plain,text/csv,application/json" className="hidden"
+          aria-label="Subject ids file"
+          onChange={async (e) => {
+            const file = e.target.files?.[0]
+            e.target.value = ''
+            if (file) setIdsText(parseIds(await file.text(), 'subject').ids.join('\n'))
+          }}
+        />
+        <button type="button" className={btnOutline} onClick={() => fileRef.current?.click()}>Load file…</button>
+        <button type="button" className={btnPrimary} disabled={ids.length === 0 || lookup.status === 'loading'} onClick={handleLookup}>
+          {lookup.status === 'loading' && <SmallSpinner />}
+          Look up
+        </button>
+        <span className="text-xs text-zinc-600 dark:text-zinc-300">
+          <strong>{ids.length.toLocaleString()}</strong> id{ids.length === 1 ? '' : 's'}
+          {ignored > 0 && <span className="text-amber-700 dark:text-amber-400"> · {ignored} not an id, ignored</span>}
+          {ids.length > MAX_LOOKUP && <span className="text-amber-700 dark:text-amber-400"> · only the first {MAX_LOOKUP.toLocaleString()} are looked up</span>}
+        </span>
+      </div>
+      <p className={hintClass}>A list of ids, a CSV with a <span className="font-mono">subject_id</span> column, or a report of this app&rsquo;s.</p>
+      {lookup.status === 'error' && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{lookup.error}</p>}
+      {lookup.status === 'done' && lookup.data && (
         <>
-          <Divider />
-          <StepHeading n={2}>Look up subjects by id</StepHeading>
-          <label className={labelClass} htmlFor="subjects-ids">Subject ids</label>
-          <textarea
-            id="subjects-ids" className={`${inputClass} h-20 text-xs`} value={idsText} onChange={(e) => setIdsText(e.target.value)}
-            placeholder="One per line, or separated by commas or spaces"
-          />
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <input
-              ref={fileRef} type="file" accept=".txt,.csv,.tsv,.json,text/plain,text/csv,application/json" className="hidden"
-              aria-label="Subject ids file"
-              onChange={async (e) => {
-                const file = e.target.files?.[0]
-                e.target.value = ''
-                if (file) setIdsText(parseIds(await file.text(), 'subject').ids.join('\n'))
-              }}
-            />
-            <button type="button" className={btnOutline} onClick={() => fileRef.current?.click()}>Load file…</button>
-            <button type="button" className={btnPrimary} disabled={ids.length === 0 || lookup.status === 'loading'} onClick={handleLookup}>
-              {lookup.status === 'loading' && <SmallSpinner />}
-              Look up
-            </button>
-            <span className="text-xs text-zinc-600 dark:text-zinc-300">
-              <strong>{ids.length.toLocaleString()}</strong> id{ids.length === 1 ? '' : 's'}
-              {ignored > 0 && <span className="text-amber-700 dark:text-amber-400"> · {ignored} not an id, ignored</span>}
-              {ids.length > MAX_LOOKUP && <span className="text-amber-700 dark:text-amber-400"> · only the first {MAX_LOOKUP.toLocaleString()} are looked up</span>}
-            </span>
-          </div>
-          <p className={hintClass}>A list of ids, a CSV with a <span className="font-mono">subject_id</span> column, or a report of this app&rsquo;s.</p>
-          {lookup.status === 'error' && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{lookup.error}</p>}
-          {lookup.status === 'done' && lookup.data && (
-            <>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3">
-                {lookup.data.subjects.length.toLocaleString()} found
-                {lookup.data.not_found.length > 0 && (
-                  <span className="text-amber-700 dark:text-amber-400">
-                    {' '}· not found (or not visible to you): <span className="font-mono">{lookup.data.not_found.slice(0, 20).join(', ')}{lookup.data.not_found.length > 20 ? '…' : ''}</span>
-                  </span>
-                )}
-              </p>
-              <SubjectList subjects={lookup.data.subjects} label="Subjects found" />
-            </>
-          )}
+          <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-3">
+            {lookup.data.subjects.length.toLocaleString()} found
+            {lookup.data.not_found.length > 0 && (
+              <span className="text-amber-700 dark:text-amber-400">
+                {' '}· not found (or not visible to you): <span className="font-mono">{lookup.data.not_found.slice(0, 20).join(', ')}{lookup.data.not_found.length > 20 ? '…' : ''}</span>
+              </span>
+            )}
+          </p>
+          <SubjectList subjects={lookup.data.subjects} label="Subjects found" />
         </>
       )}
+      </Step>
 
       <div className="mt-10">
         <button type="button" className={btnOutline} onClick={onBack}>Back</button>

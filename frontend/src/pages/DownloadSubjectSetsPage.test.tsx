@@ -39,28 +39,30 @@ beforeEach(() => {
   mockedApi.zooniverseDownloadDefaults.mockResolvedValue({ output_dir: '/home/me/Documents/wildintel-zooniverse/downloads' })
 })
 
-async function chooseSubjectSets(...names: string[]) {
+async function chooseSubjectSets(next: boolean, ...names: string[]) {
   await userEvent.click(await screen.findByLabelText('Project'))
   await userEvent.click(await screen.findByRole('option', { name: /European Camera Trap Project/ }))
   for (const name of names) await userEvent.click(await screen.findByRole('checkbox', { name: new RegExp(name) }))
+  if (next) await userEvent.click(screen.getByRole('button', { name: /continue to download/i }))
 }
 
 describe('DownloadSubjectSetsPage', () => {
   it("lists the project's subject sets to choose from, and the default folder", async () => {
     render(<DownloadSubjectSetsPage onBack={vi.fn()} />)
-    await chooseSubjectSets('Kittehs')
+    await chooseSubjectSets(false, 'Kittehs')
 
     expect(screen.getByText('1 chosen · 30 images')).toBeInTheDocument()
-    expect(screen.getByLabelText('Folder')).toHaveValue('/home/me/Documents/wildintel-zooniverse/downloads')
-
     await userEvent.click(screen.getByRole('checkbox', { name: /all subject sets/i }))
     expect(screen.getByText(/^2 chosen · 86\D?908 images$/)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /continue to download/i }))
+    expect(screen.getByLabelText('Folder')).toHaveValue('/home/me/Documents/wildintel-zooniverse/downloads')
   })
 
   it('downloads the chosen subject sets, with a bar for each and the files in flight', async () => {
     const run = controlledDownload()
     render(<DownloadSubjectSetsPage onBack={vi.fn()} />)
-    await chooseSubjectSets('Kittehs')
+    await chooseSubjectSets(true, 'Kittehs')
     await userEvent.click(screen.getByRole('checkbox', { name: /download again images already there/i }))
     await userEvent.click(screen.getByRole('button', { name: /^download$/i }))
 
@@ -92,9 +94,7 @@ describe('DownloadSubjectSetsPage', () => {
   it('downloads only the subjects the lists keep', async () => {
     const run = controlledDownload()
     render(<DownloadSubjectSetsPage onBack={vi.fn()} />)
-    await chooseSubjectSets('Kittehs')
-    await userEvent.click(screen.getByRole('button', { name: /subject lists/i }))
-    await userEvent.click(screen.getByRole('checkbox', { name: /process only some subjects/i }))
+    await chooseSubjectSets(true, 'Kittehs')
     await userEvent.type(screen.getByLabelText('Only these subjects'), '1 2 3')
     await userEvent.type(screen.getByLabelText('Never these subjects'), '3')
     await userEvent.tab()
@@ -114,7 +114,7 @@ describe('DownloadSubjectSetsPage', () => {
     controlledDownload()
     const onBack = vi.fn()
     render(<DownloadSubjectSetsPage onBack={onBack} />)
-    await chooseSubjectSets('Kittehs')
+    await chooseSubjectSets(true, 'Kittehs')
     await userEvent.click(screen.getByRole('button', { name: /^download$/i }))
     expect(screen.getByRole('button', { name: /^back$/i })).toBeDisabled()
 
@@ -127,7 +127,7 @@ describe('DownloadSubjectSetsPage', () => {
   it('shows why it failed', async () => {
     mockedApi.zooniverseDownloadSubjectSets.mockRejectedValue(new Error("Can't use the folder /nope: Permission denied"))
     render(<DownloadSubjectSetsPage onBack={vi.fn()} />)
-    await chooseSubjectSets('Kittehs')
+    await chooseSubjectSets(true, 'Kittehs')
     await userEvent.click(screen.getByRole('button', { name: /^download$/i }))
     expect(await screen.findByText(/Permission denied/)).toBeInTheDocument()
   })

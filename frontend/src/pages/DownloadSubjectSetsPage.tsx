@@ -3,7 +3,8 @@ import { api } from '../api'
 import IdListsEditor, { NO_LISTS } from '../components/IdListsEditor'
 import type { IdLists } from '../components/IdListsEditor'
 import ProgressBar from '../components/ProgressBar'
-import ZooniverseProjectPicker, { Divider, SmallSpinner, StepHeading } from '../components/ZooniverseProjectPicker'
+import Step from '../components/WizardStep'
+import ZooniverseProjectPicker, { SmallSpinner } from '../components/ZooniverseProjectPicker'
 import type { ZooniversePick } from '../components/ZooniverseProjectPicker'
 import type { DownloadEvent } from '../types'
 
@@ -142,6 +143,9 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
   const [subjectLists, setSubjectLists] = useState<IdLists>(NO_LISTS)
   const [run, setRun] = useState<Run | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  // The step that's open, and the furthest one unlocked.
+  const [open, setOpen] = useState(1)
+  const [reached, setReached] = useState(1)
 
   useEffect(() => {
     api.zooniverseDownloadDefaults().then((d) => setOutputDir((dir) => dir || d.output_dir)).catch(() => {})
@@ -154,6 +158,13 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
   const subjectSets = pick?.subjectSets ?? { items: [], loading: false, error: null }
 
   const running = run?.status === 'running'
+  const status = (n: number): 'open' | 'done' | 'locked' => (
+    n === open ? 'open' : n <= reached && (n === 1 || chosen.size > 0) && (n < 3 || run) ? 'done' : 'locked'
+  )
+  function next(n: number) {
+    setOpen(n)
+    setReached((r) => Math.max(r, n))
+  }
 
   function toggle(id: number) {
     setChosen((c) => {
@@ -175,6 +186,7 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
 
   async function handleDownload() {
     stop()
+    next(3)
     const controller = new AbortController()
     abortRef.current = controller
     const initial: Run = {
@@ -221,10 +233,12 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
         Download the images of one or more Zooniverse subject sets to this computer — each subject set into a folder of its own.
       </p>
 
-      <ZooniverseProjectPicker
-        title="Subject sets" stepNumber={1} description="The project and the subject sets to download."
-        disabled={running} useSavedConnection done={chosen.size > 0} framed onChange={handlePick}
+      <Step
+        n={1} title="Subject sets" status={status(1)} canEdit={!running} onEdit={() => setOpen(1)}
+        description="The Zooniverse project and the subject sets to download."
+        summary={<>{pick?.projectName}<br />{chosen.size} subject set(s) · {chosenImages.toLocaleString()} images</>}
       >
+        <ZooniverseProjectPicker disabled={running} useSavedConnection framed onChange={handlePick}>
         <div className="mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
           <label className="flex items-center gap-2.5 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer">
             <input
@@ -250,103 +264,101 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
             ))}
           </ul>
         </div>
-      </ZooniverseProjectPicker>
+        </ZooniverseProjectPicker>
+        <div className="flex justify-end mt-4">
+          <button type="button" className={btnPrimary} disabled={chosen.size === 0} onClick={() => next(2)}>Continue to download</button>
+        </div>
+      </Step>
 
-      {/* ── 3. Folder & download ── */}
-      {chosen.size > 0 && (
-        <>
-          <Divider />
-          <StepHeading n={2}>Download</StepHeading>
-          <div className="mb-3">
-            <label className={labelClass} htmlFor="download-folder">Folder</label>
-            <input
-              id="download-folder" className={inputClass} disabled={running}
-              value={outputDir} onChange={(e) => setOutputDir(e.target.value)}
-            />
-            <p className={hintClass}>On this computer. Each subject set goes into a folder of its own inside it.</p>
-          </div>
-          <label className="flex items-start gap-2.5 cursor-pointer mb-5">
-            <input type="checkbox" className="mt-1" checked={overwrite} disabled={running} onChange={(e) => setOverwrite(e.target.checked)} />
-            <span>
-              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Download again images already there</span>
-              <span className={`block ${hintClass}`}>Otherwise they&rsquo;re skipped — running it again only downloads what&rsquo;s missing.</span>
-            </span>
-          </label>
-
-          <IdListsEditor
-            kind="subject" initial={NO_LISTS} onCommit={setSubjectLists} disabled={running} className="mb-5"
-            intro={<>
-              Only some subjects, or never some — wildintel-tools&rsquo; <span className="font-mono">--white-list</span> /{' '}
-              <span className="font-mono">--exclude-subjects</span>. Load a list of subject ids, or a CSV with a{' '}
-              <span className="font-mono">subject_id</span> column.
-            </>}
+      <Step
+        n={2} title="Folder and filters" status={status(2)} canEdit={!running} onEdit={() => setOpen(2)}
+        description="Where the images go, and which subjects to download."
+        summary={<span className="font-mono break-all">{outputDir}</span>}
+      >
+        <div className="mb-3">
+          <label className={labelClass} htmlFor="download-folder">Folder</label>
+          <input
+            id="download-folder" className={inputClass} disabled={running}
+            value={outputDir} onChange={(e) => setOutputDir(e.target.value)}
           />
-          <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-sm text-zinc-600 dark:text-zinc-300">
-                {run && totals
-                  ? <><strong>{done.toLocaleString()}</strong> of {totals.total.toLocaleString()} images</>
-                  : <>{chosenImages.toLocaleString()} images in {chosen.size} subject set(s).</>}
-              </span>
-              {running
-                ? <button type="button" className={btnOutline} onClick={stop}><SmallSpinner />Stop</button>
-                : (
-                  <button type="button" className={btnPrimary} disabled={!outputDir.trim()} onClick={handleDownload}>
-                    {run ? 'Download again' : 'Download'}
-                  </button>
-                )}
+          <p className={hintClass}>On this computer. Each subject set goes into a folder of its own inside it.</p>
+        </div>
+        <label className="flex items-start gap-2.5 cursor-pointer mb-5">
+          <input type="checkbox" className="mt-1" checked={overwrite} disabled={running} onChange={(e) => setOverwrite(e.target.checked)} />
+          <span>
+            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Download again images already there</span>
+            <span className={`block ${hintClass}`}>Otherwise they&rsquo;re skipped — running it again only downloads what&rsquo;s missing.</span>
+          </span>
+        </label>
+
+        <h5 className="text-sm font-semibold mb-1">Subject selection</h5>
+        <p className={`${hintClass} mb-3`}>Optional. Without filters, every subject of the chosen subject sets is downloaded.</p>
+        <IdListsEditor
+          kind="subject" initial={NO_LISTS} onCommit={setSubjectLists} disabled={running} className="mb-5" layout="cards" intro={null}
+        />
+        <button type="button" className={`${btnPrimary} w-full justify-center py-3 text-base`} disabled={!outputDir.trim() || chosen.size === 0} onClick={handleDownload}>
+          {run ? 'Download again' : 'Download'}
+        </button>
+      </Step>
+
+      <Step
+        n={3} title="Download results" status={status(3)} canEdit={false} onEdit={() => setOpen(3)}
+        description="Progress of each subject set."
+      >
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <span className="text-sm text-zinc-600 dark:text-zinc-300">
+            {run && totals && <><strong>{done.toLocaleString()}</strong> of {totals.total.toLocaleString()} images</>}
+          </span>
+          {running && <button type="button" className={btnOutline} onClick={stop}><SmallSpinner />Stop</button>}
+        </div>
+          {run && (
+            <div className="mt-3">
+              <div className="flex justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                <span>Total</span>
+                <span>{percent}%</span>
+              </div>
+              <ProgressBar percent={percent} label="Total" tone={run.status === 'done' ? (run.failures.length > 0 ? 'amber' : 'emerald') : 'blue'} />
+              <ul className="mt-3 max-h-80 overflow-auto divide-y divide-zinc-200 dark:divide-zinc-700 pr-1">
+                {run.sets.map((s) => <SetRow key={s.id} s={s} />)}
+              </ul>
             </div>
+          )}
 
-            {run && (
-              <div className="mt-3">
-                <div className="flex justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  <span>Total</span>
-                  <span>{percent}%</span>
-                </div>
-                <ProgressBar percent={percent} label="Total" tone={run.status === 'done' ? (run.failures.length > 0 ? 'amber' : 'emerald') : 'blue'} />
-                <ul className="mt-3 max-h-80 overflow-auto divide-y divide-zinc-200 dark:divide-zinc-700 pr-1">
-                  {run.sets.map((s) => <SetRow key={s.id} s={s} />)}
-                </ul>
-              </div>
-            )}
+          {run?.status === 'done' && totals && (
+            <p className={`text-sm mt-2 ${totals.failed > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+              Download finished: {totals.downloaded.toLocaleString()} images downloaded
+              {totals.existing > 0 && <>, {totals.existing.toLocaleString()} already there</>}
+              {totals.filtered_out > 0 && <>, {totals.filtered_out.toLocaleString()} left out by the subject lists</>}
+              {totals.failed > 0 && <>, {totals.failed.toLocaleString()} failed — download again to retry them</>}.
+              <span className="block font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1 break-all">{run.outputDir}</span>
+            </p>
+          )}
+          {run?.status === 'stopped' && <p className={hintClass}>Stopped — the images above are kept; downloading again skips them.</p>}
+          {run?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{run.error}</p>}
 
-            {run?.status === 'done' && totals && (
-              <p className={`text-sm mt-2 ${totals.failed > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                Download finished: {totals.downloaded.toLocaleString()} images downloaded
-                {totals.existing > 0 && <>, {totals.existing.toLocaleString()} already there</>}
-                {totals.filtered_out > 0 && <>, {totals.filtered_out.toLocaleString()} left out by the subject lists</>}
-                {totals.failed > 0 && <>, {totals.failed.toLocaleString()} failed — download again to retry them</>}.
-                <span className="block font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1 break-all">{run.outputDir}</span>
-              </p>
-            )}
-            {run?.status === 'stopped' && <p className={hintClass}>Stopped — the images above are kept; downloading again skips them.</p>}
-            {run?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{run.error}</p>}
-
-            {run && run.failures.length > 0 && (
-              <div className="mt-3 max-h-60 overflow-auto">
-                <table className="w-full text-xs">
-                  <thead className="text-zinc-500 dark:text-zinc-400 text-left">
-                    <tr>
-                      <th className="py-1 pr-2 font-medium">Subject</th>
-                      <th className="py-1 px-2 font-medium">File</th>
-                      <th className="py-1 pl-2 font-medium">Error</th>
+          {run && run.failures.length > 0 && (
+            <div className="mt-3 max-h-60 overflow-auto">
+              <table className="w-full text-xs">
+                <thead className="text-zinc-500 dark:text-zinc-400 text-left">
+                  <tr>
+                    <th className="py-1 pr-2 font-medium">Subject</th>
+                    <th className="py-1 px-2 font-medium">File</th>
+                    <th className="py-1 pl-2 font-medium">Error</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                  {run.failures.map((f) => (
+                    <tr key={f.subject_id}>
+                      <td className="py-1 pr-2 font-mono">{f.subject_id}</td>
+                      <td className="py-1 px-2 font-mono break-all">{f.file_name}</td>
+                      <td className="py-1 pl-2 text-red-600 dark:text-red-400">{f.detail}</td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                    {run.failures.map((f) => (
-                      <tr key={f.subject_id}>
-                        <td className="py-1 pr-2 font-mono">{f.subject_id}</td>
-                        <td className="py-1 px-2 font-mono break-all">{f.file_name}</td>
-                        <td className="py-1 pl-2 text-red-600 dark:text-red-400">{f.detail}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+      </Step>
 
       <div className="mt-10">
         <button type="button" className={btnOutline} onClick={onBack} disabled={running}>Back</button>
