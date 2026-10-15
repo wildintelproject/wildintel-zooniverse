@@ -184,7 +184,7 @@
     { type: 'subjects', total: 26114 },
     { type: 'progress', done: 26114 },
     {
-      type: 'done', workflow: { id: 29186, name: 'Species identification' }, subjects: 26114, exported: 24987,
+      type: 'done', workflow: { id: 29186, name: 'Species identification' }, subjects: 26114, trapper_media: 23921, exported: 24987,
       observations: 26402, rows: 27711,
       skipped: { not_in_trapper: 12, no_media_id: 1, no_valid_classifications: 311, no_decision: 803 },
       samples: { not_in_trapper: [98000011, 98000019], no_media_id: [98000611], no_valid_classifications: [98000101], no_decision: [98000201, 98000202] },

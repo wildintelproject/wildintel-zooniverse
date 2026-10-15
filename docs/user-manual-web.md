@@ -300,11 +300,15 @@ its file, which can be used even if Zooniverse still says it's being made.
   finished after 24 hours can be asked for again.
 - If the workflow has no export yet, one is made first.
 
+![Step 1: the project, a workflow, and its latest classifications export](img/screenshots/classifications-zooniverse.png){ loading=lazy }
+
 ### Step 2 — Trapper
 
 The **research project**, **classification project**, **collection** and **deployments** the
 subjects were uploaded from: their observations get the classifications. Subjects of other images
 (e.g. another subject set of the same workflow) are skipped. Each choice gets a tick once made.
+
+![Step 2: the Trapper research project, classification project, collection and its deployments](img/screenshots/classifications-trapper.png){ loading=lazy }
 
 ### Step 3 — Export
 

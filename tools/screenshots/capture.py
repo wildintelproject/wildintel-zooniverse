@@ -185,16 +185,55 @@ def connect_zooniverse(page: Page) -> None:
     page.get_by_label("Zooniverse project").select_option("30567")
 
 
-@shot("export")
-def export(page: Page) -> None:
+def choose(page: Page, label: str, option: str | re.Pattern) -> None:
+    """A dropdown that can be typed in: open it, pick the option."""
+    page.get_by_label(label, exact=True).click()
+    page.get_by_role("option", name=option).first.click()
+
+
+def to_classifications(page: Page) -> None:
     to_task(page)
     page.get_by_text("Retrieve classifications").click()
-    connect_zooniverse(page)
-    page.get_by_label("Workflow", exact=True).select_option("29186")
-    pick_trapper(page)
+    expect(page.get_by_role("heading", name="Zooniverse project")).to_be_visible()
+
+
+def classifications_zooniverse(page: Page) -> None:
+    to_classifications(page)
+    choose(page, "Project", re.compile("European Camera Trap Project"))
+    choose(page, "Workflow", re.compile("Species identification \\(#29186\\)"))
+    expect(page.get_by_text("Classification export available")).to_be_visible()
+
+
+def classifications_trapper(page: Page) -> None:
+    classifications_zooniverse(page)
+    page.get_by_role("button", name="Next", exact=True).click()
+    choose(page, "Research project", re.compile("DONA"))
+    choose(page, "Classification project", re.compile("Doñana 2024"))
+    choose(page, "Collection", re.compile("R0033"))
+    expect(page.get_by_label("R0033-DONA_0001_A")).to_be_visible()
+
+
+@shot("classifications-zooniverse")
+def classifications_zooniverse_shot(page: Page) -> None:
+    classifications_zooniverse(page)
+    save(page, "classifications-zooniverse", top=page.get_by_role("heading", name="Zooniverse project"),
+         bottom=page.get_by_role("button", name="Next", exact=True))
+
+
+@shot("classifications-trapper")
+def classifications_trapper_shot(page: Page) -> None:
+    classifications_trapper(page)
+    save(page, "classifications-trapper", top=page.get_by_role("heading", name="Trapper images"),
+         bottom=page.get_by_role("button", name="Next", exact=True))
+
+
+@shot("export")
+def export(page: Page) -> None:
+    classifications_trapper(page)
+    page.get_by_role("button", name="Next", exact=True).click()
     page.get_by_role("button", name="Export CSV").click()
     expect(page.get_by_role("button", name="Import into Trapper")).to_be_visible()
-    save(page, "export", top=heading(page, "Export"), bottom=page.get_by_role("button", name="Back", exact=True))
+    save(page, "export", top=heading(page, "Summary"), bottom=page.get_by_role("button", name="Back", exact=True))
 
 
 def to_util(page: Page, title: str) -> None:
