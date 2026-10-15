@@ -1157,19 +1157,26 @@ when the app starts, to resume or discard. Sessions never store passwords.</p>
 <li>the chosen Trapper collection's <strong>observations</strong> are fetched;</li>
 <li>each subject's classifications go through the workflow's <strong>extractor and voter</strong> — the
    volunteers' answers turned into observations: species, and the median of their counts;</li>
-<li>each voted observation is written once per Trapper observation of its image, with that
-   observation's <code>_id</code> — the one the import updates.</li>
+<li>each voted observation is written once, with its image's <code>_id</code>. Trapper's import makes a
+   new observation of every row (replacing the image's previous ones, boxes included), so an
+   image ends up with as many observations as species the volunteers voted.</li>
 </ol>
 <p>Big exports are split into several CSVs (1.5 MB each by default — Trapper's import has a size
 limit), and the volunteers' raw answers can be saved alongside.</p>
-<p>Workflows 17553, 29186 and 29187 can be exported. Compared with wildintel-tools, three voting
+<p>Workflows 17553, 29186 and 29187 can be exported. Compared with wildintel-tools, these voting
 errors are fixed: workflow 17553's voter works (wildintel-tools' couldn't be loaded), and humans
 are voted as <em>Homo sapiens</em> in every workflow; workflows 29186/17553 keep the <em>k</em> most voted
 species (wildintel-tools kept <em>k+1</em>); and "no animal" votes are ignored when volunteers saw
-several species, as intended.</p>
+several species, as intended. Every workflow votes the same way — only how a tie is broken
+differs — and each observation gets its <code>classificationProbability</code>.</p>
 <p>The CSVs are then imported into Trapper through its API — as expert classifications, approved
 only if asked — right away if asked, or from the result, file by file. (wildintel-tools filled in
-Trapper's web form with a browser instead.)</p>
+Trapper's web form with a browser instead.)
+Before each file is sent, its scientific names are checked against Trapper's species catalog: a file
+with a name Trapper doesn't know (e.g. <code>human</code>) isn't sent, and the result lists the names and their
+rows — Trapper itself answers a 500 error page for them. An error page from Trapper is shown as one
+line, not as the page. The catalog is Trapper's global one: a species in it but missing from the
+project's own list can still be refused.</p>
 <h2 id="utilities">Utilities<a class="headerlink" href="#utilities" title="Permanent link">&para;</a></h2>
 <h3 id="download-subject-sets">Download subject sets<a class="headerlink" href="#download-subject-sets" title="Permanent link">&para;</a></h3>
 <p>Downloads the images of one or more subject sets to a folder, one folder per subject set, each

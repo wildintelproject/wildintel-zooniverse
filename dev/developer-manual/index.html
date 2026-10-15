@@ -1671,17 +1671,19 @@ at the level of <strong>⚙️ → General</strong> (<code>GENERAL.log_level</co
 </tbody>
 </table>
 <h2 id="7-adding-a-zooniverse-workflow">7. Adding a Zooniverse workflow<a class="headerlink" href="#7-adding-a-zooniverse-workflow" title="Permanent link">&para;</a></h2>
-<p>A workflow's classifications can only be exported with an <strong>extractor</strong> and a <strong>voter</strong> of its
-own — its questions and species are its own. In <code>src/wildintel_zooniverse/core/services/annotations/</code>:</p>
+<p>A workflow's classifications can only be exported with a <strong>mapping</strong> and a <strong>voter</strong> — its
+questions and species are its own. In <code>src/wildintel_zooniverse/core/services/annotations/</code>:</p>
 <ol>
-<li><strong>Extractor</strong> (<code>extractor.py</code>) — subclass <code>AnnotationsExtractor</code> and map every Zooniverse
-   choice of the workflow to its Trapper name in <code>zoo_to_trapper</code>. <code>NOANIMAL</code> →
-   <code>"blank"</code>, <code>HUMANORVEHICLE</code> → <code>"human"</code>, <code>OTHERSPECIES</code> → <code>"animal"</code>,
-   <code>UNRECOGNIZABLE</code> → <code>"unknown"</code>; species → scientific names. Override <code>extract_matches</code> if
-   its annotations aren't the usual survey-task shape.</li>
-<li><strong>Voter</strong> (<code>voter.py</code>) — usually reuse <code>Workflow29186AnnotationsVoter</code> or
-   <code>Workflow29187AnnotationsVoter</code> (a subclass is enough); write one if it votes differently.</li>
-<li><strong>Register</strong> both in <code>registry.WORKFLOWS</code>, with a label.</li>
+<li><strong>Mapping</strong> (<code>mappings.py</code>) — a dictionary from every Zooniverse choice of the workflow to its
+   Trapper name. Start from <code>**COMMON</code> (<code>NOANIMAL</code> → <code>"blank"</code>, <code>HUMANORVEHICLE</code> → <code>"human"</code>,
+   <code>OTHERSPECIES</code> → <code>"animal"</code>, <code>UNRECOGNIZABLE</code> → <code>"unknown"</code>) and add the species → scientific
+   names; a choice not listed reads as <code>"unknown"</code>. The one <code>AnnotationsExtractor</code>
+   (<code>extractor.py</code>) takes it — there is no extractor to subclass. Only if the annotations aren't the
+   usual survey-task shape would the extractor need to change.</li>
+<li><strong>Voter</strong> (<code>voter.py</code>) — <code>SpeciesVoter</code> does the whole vote; a workflow's voter only says how
+   a tie is broken (<code>_rank</code>): subclass <code>Workflow29186AnnotationsVoter</code> (first voted wins) or
+   <code>Workflow29187AnnotationsVoter</code> (alphabetical), or write one if it votes differently.</li>
+<li><strong>Register</strong> them in <code>registry.WORKFLOWS</code>: <code>Workflow(label, mapping, voter)</code>.</li>
 <li><strong>Test</strong> it in <code>tests/unit/test_annotations.py</code> — a few typical classifications and
    the observations they must give.</li>
 </ol>

@@ -1828,10 +1828,12 @@ its file, which can be used even if Zooniverse still says it's being made.</p>
   finished after 24 hours can be asked for again.</li>
 <li>If the workflow has no export yet, one is made first.</li>
 </ul>
+<p><img alt="Step 1: the project, a workflow, and its latest classifications export" loading="lazy" src="../img/screenshots/classifications-zooniverse.png" /></p>
 <h3 id="step-2-trapper">Step 2 — Trapper<a class="headerlink" href="#step-2-trapper" title="Permanent link">&para;</a></h3>
 <p>The <strong>research project</strong>, <strong>classification project</strong>, <strong>collection</strong> and <strong>deployments</strong> the
 subjects were uploaded from: their observations get the classifications. Subjects of other images
 (e.g. another subject set of the same workflow) are skipped. Each choice gets a tick once made.</p>
+<p><img alt="Step 2: the Trapper research project, classification project, collection and its deployments" loading="lazy" src="../img/screenshots/classifications-trapper.png" /></p>
 <h3 id="step-3-export">Step 3 — Export<a class="headerlink" href="#step-3-export" title="Permanent link">&para;</a></h3>
 <p>A <strong>summary</strong> of what you chose, and the options: whether to <strong>also save the volunteers' answers</strong>
 (a second CSV with every answer before voting — to see how an observation was decided) and whether
@@ -1891,8 +1893,9 @@ than 3 species, is discarded), and <em>k</em> — how many species most voluntee
 most voted species become its observations, each with the median of the volunteers' counts. When
 several species were seen, "no animal" answers don't count.</p>
 <h2 id="6-utilities">6. Utilities<a class="headerlink" href="#6-utilities" title="Permanent link">&para;</a></h2>
-<p><strong>🧰 Utils</strong>, on the first step, opens four tools. Each starts by connecting to Zooniverse and
-choosing a project.</p>
+<p><strong>🧰 Utils</strong>, on the first step, opens four tools. Each uses the Zooniverse and Trapper
+accounts saved in the <a href="#3-settings">settings</a> — there is nothing to fill in or test — and starts
+by choosing a project.</p>
 <p><img alt="The four utilities" loading="lazy" src="../img/screenshots/utils.png" /></p>
 <h3 id="download-subject-sets">Download subject sets<a class="headerlink" href="#download-subject-sets" title="Permanent link">&para;</a></h3>
 <p>Downloads the images of one or more subject sets to this computer.</p>
@@ -1910,12 +1913,14 @@ downloading again only fetches what's missing; an image being downloaded when st
 left half-written.</p>
 <p><img alt="Downloading two subject sets: one finished, the other with its images in flight" loading="lazy" src="../img/screenshots/download-subject-sets.png" /></p>
 <h3 id="validation-audit">Validation &amp; audit<a class="headerlink" href="#validation-audit" title="Permanent link">&para;</a></h3>
-<p>Checks a subject set.</p>
+<p>Checks a subject set in two phases.</p>
 <ol>
 <li>Choose the <strong>subject set</strong>.</li>
-<li><strong>Compare with what an upload would send</strong> (on by default): choose the Trapper collection and
-   the criteria it was uploaded with. Otherwise only the subject set itself is checked.</li>
-<li><strong>Validate</strong>.</li>
+<li><strong>Validate</strong> it on its own, without Trapper: duplicated images, subjects that can't be traced
+   back to Trapper, and missing metadata fields.</li>
+<li>Then <strong>compare it with Trapper</strong>: choose the collection and the criteria it was uploaded with,
+   and <strong>Compare</strong>. It reuses the subjects of the first phase, and adds the missing and extra images
+   and the metadata fields that differ from what an upload would set.</li>
 </ol>
 <table>
 <thead>
@@ -1939,7 +1944,7 @@ left half-written.</p>
 </tr>
 <tr>
 <td>Unmatched</td>
-<td>Subjects with no Trapper media id in their metadata.</td>
+<td>Subjects whose Trapper media can't be read from their metadata (<code>external_id</code>, <code>origin</code>, or the <code>Filename</code>'s <code>&lt;media id&gt;_x_</code> prefix of older uploads).</td>
 </tr>
 <tr>
 <td>Metadata issues</td>

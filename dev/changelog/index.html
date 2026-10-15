@@ -873,6 +873,12 @@ adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>
   or never some.</li>
 <li><strong>Settings</strong> page (⚙️): Trapper and Zooniverse accounts, parallel transfers and retries, the
   export's defaults, and the sequence criteria new uploads start from.</li>
+<li>The CSV's <strong>classificationProbability</strong> column: each observation's probability, chained over the
+  voted species (the first runner-up included, even when it is not kept) — the same in every workflow, and the one in the
+  observation's comment.</li>
+<li>Importing into Trapper checks each CSV's scientific names against Trapper's species catalog first,
+  and reports the unknown ones (with their rows) instead of sending a file Trapper answers with a 500.
+  Trapper's HTML error pages are shown as one line.</li>
 <li>Option to also remove <strong>vehicles</strong> from middle sequences.</li>
 <li>Option to <strong>collapse empty sequences</strong>: a sequence left with only "empty" images is reduced to
   its second one — wildintel-tools' own <code>collapse_empty_sequences</code>.</li>
@@ -908,7 +914,10 @@ adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>
 <li>Workflow 17553's voter can be loaded, and votes humans as <em>Homo sapiens</em>.</li>
 <li>Workflows 29186/17553 keep the <em>k</em> most voted species, not <em>k+1</em>.</li>
 <li>"No animal" votes are ignored when volunteers saw several species.</li>
-<li>Humans are <em>Homo sapiens</em> in every workflow (29187 wrote <em>Homo Sapiens</em>).</li>
+<li>Humans are <em>Homo sapiens</em> in every workflow (29187 wrote <em>Homo Sapiens</em>; 29186 made them an
+  <em>animal</em> called "human").</li>
+<li>Every workflow's voter knows the same observation types (animal, human, vehicle, blank,
+  unclassified, unknown) and differs only in how it breaks a tie.</li>
 <li>A subject whose classifications were all discarded no longer stops the whole export.</li>
 </ul>
 <h2 id="released">Released<a class="headerlink" href="#released" title="Permanent link">&para;</a></h2>
