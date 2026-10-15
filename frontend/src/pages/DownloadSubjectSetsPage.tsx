@@ -221,7 +221,10 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
         Download the images of one or more Zooniverse subject sets to this computer — each subject set into a folder of its own.
       </p>
 
-      <ZooniverseProjectPicker title="Subject sets" disabled={running} onChange={handlePick}>
+      <ZooniverseProjectPicker
+        title="Subject sets" stepNumber={1} description="The project and the subject sets to download."
+        disabled={running} useSavedConnection done={chosen.size > 0} framed onChange={handlePick}
+      >
         <div className="mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
           <label className="flex items-center gap-2.5 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700 text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer">
             <input
@@ -253,7 +256,7 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
       {chosen.size > 0 && (
         <>
           <Divider />
-          <StepHeading n={3}>Download</StepHeading>
+          <StepHeading n={2}>Download</StepHeading>
           <div className="mb-3">
             <label className={labelClass} htmlFor="download-folder">Folder</label>
             <input

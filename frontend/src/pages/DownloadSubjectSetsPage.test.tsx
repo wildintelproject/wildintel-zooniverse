@@ -40,8 +40,8 @@ beforeEach(() => {
 })
 
 async function chooseSubjectSets(...names: string[]) {
-  await userEvent.click(await screen.findByRole('button', { name: /test connection/i }))
-  await userEvent.selectOptions(await screen.findByLabelText('Zooniverse project'), '30567')
+  await userEvent.click(await screen.findByLabelText('Project'))
+  await userEvent.click(await screen.findByRole('option', { name: /European Camera Trap Project/ }))
   for (const name of names) await userEvent.click(await screen.findByRole('checkbox', { name: new RegExp(name) }))
 }
 
@@ -65,7 +65,7 @@ describe('DownloadSubjectSetsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /^download$/i }))
 
     expect(mockedApi.zooniverseDownloadSubjectSets).toHaveBeenCalledWith(
-      { username: 'SimSan', password: '' }, [128950], '/home/me/Documents/wildintel-zooniverse/downloads', true,
+      { username: '', password: '' }, [128950], '/home/me/Documents/wildintel-zooniverse/downloads', true,
       expect.any(Function), expect.any(AbortSignal), { include: null, exclude: [] },
     )
     run.send({ type: 'subject_set', id: 128950, name: 'Kittehs', total: 4, folder: '/dl/128950_Kittehs' })
