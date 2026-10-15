@@ -100,7 +100,8 @@ errors are fixed: workflow 17553's voter works (wildintel-tools' couldn't be loa
 are voted as *Homo sapiens* in every workflow; workflows 29186/17553 keep the *k* most voted
 species (wildintel-tools kept *k+1*); and "no animal" votes are ignored when volunteers saw
 several species, as intended. Every workflow votes the same way — only how a tie is broken
-differs — and each observation gets its `classificationProbability`.
+differs — and each observation gets its `classificationProbability`: its votes over its votes plus
+those of the next species in the ranking (so species sharing a photo don't penalise each other).
 
 The CSVs are then imported into Trapper through its API — as expert classifications, approved
 only if asked — right away if asked, or from the result, file by file. (wildintel-tools filled in

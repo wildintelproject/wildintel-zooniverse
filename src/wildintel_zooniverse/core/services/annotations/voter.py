@@ -29,11 +29,12 @@ OBSERVATION_TYPES = {"animal", "human", "vehicle", "blank", "unclassified", "unk
 
 class SpeciesVoter(AnnotationsVoter):
     """The vote every workflow shares: the k most voted species, each with
-    the median of its HOWMANY answers as count, and a probability chained
-    over the ranking (each species' share against the next one in the
-    ranking, scaled by what the ones before it left). The next one counts
-    even when it is not kept, so a single species voted against another one
-    is not a certainty.
+    the median of its HOWMANY answers as count, and its probability: its
+    votes over its votes plus the next species' in the ranking. The next one
+    counts even when it is not kept, so a single species voted against
+    another one is not a certainty; and species that share a photo don't
+    penalise each other (6 cows, 4 birds and 2 horses: the birds' 4 / (4 + 2),
+    not what the cows left).
 
     What differs between workflows is only how a tie is broken: _rank."""
 
@@ -55,16 +56,13 @@ class SpeciesVoter(AnnotationsVoter):
         return math.ceil(median(valid)) if valid else None
 
     @staticmethod
-    def _confidences(idx: int, votes: int, ranking: list, accumulated_conf: float) -> tuple[float, float]:
+    def _confidence(idx: int, votes: int, ranking: list) -> float:
         if idx + 1 < len(ranking):
-            votes_next = ranking[idx + 1][1]
-            pre_conf = votes / (votes + votes_next)
-        else:
-            pre_conf = 1.0
-        return pre_conf, pre_conf * (1.0 - accumulated_conf)
+            return votes / (votes + ranking[idx + 1][1])
+        return 1.0
 
     @staticmethod
-    def _to_observation(species: str, count: Optional[int], pre_conf: float, confidence: float, sid) -> Zoo2TrapperObservation:
+    def _to_observation(species: str, count: Optional[int], confidence: float, sid) -> Zoo2TrapperObservation:
         observation_type = "animal"
         if species.lower() in OBSERVATION_TYPES:
             observation_type = species.lower()
@@ -74,7 +72,7 @@ class SpeciesVoter(AnnotationsVoter):
             scientificName=species,
             classificationProbability=round(confidence, 4),
             count=count,
-            observationComments=f"Automatically classified by Zooniverse for subject {sid} with confidences {pre_conf:.2f} {confidence:.2f}",
+            observationComments=f"Automatically classified by Zooniverse for subject {sid} with confidence {confidence:.2f}",
         )
 
     @classmethod
@@ -87,13 +85,10 @@ class SpeciesVoter(AnnotationsVoter):
         species_count = Counter(species for species, _ in user_opinions if not (k > 1 and species == BLANK))
         k = max(1, k)
         ranking = cls._rank(species_count)[: k + 1]  # the one after the last kept only sets its probability
-        result = []
-        accumulated_conf = 0.0
-        for idx, (species, votes) in enumerate(ranking[:k]):
-            pre_conf, confidence = cls._confidences(idx, votes, ranking, accumulated_conf)
-            accumulated_conf += confidence
-            result.append(cls._to_observation(species, cls._howmany_median(species_howmany, species), pre_conf, confidence, sid))
-        return result
+        return [
+            cls._to_observation(species, cls._howmany_median(species_howmany, species), cls._confidence(idx, votes, ranking), sid)
+            for idx, (species, votes) in enumerate(ranking[:k])
+        ]
 
 
 class Workflow29186AnnotationsVoter(SpeciesVoter):

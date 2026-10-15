@@ -158,7 +158,7 @@ def test_writes_the_observations_csv_trapper_imports(fake, tmp_path: Path):
         ("40", "Vulpes vulpes", "1", "zooniverse@wildintel-project.org"),
     ]
     assert rows[0]["classificationProbability"] == "1.0"
-    assert rows[0]["observationComments"] == "Automatically classified by Zooniverse for subject 501 with confidences 1.00 1.00"
+    assert rows[0]["observationComments"] == "Automatically classified by Zooniverse for subject 501 with confidence 1.00"
 
     zoo = _read(done["zoo_annotations_file"]["path"])
     assert [(r["subject_id"], r["scientific_name"], r["answers"]) for r in zoo][:2] == [

@@ -44,9 +44,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   or never some.
 - **Settings** page (⚙️): Trapper and Zooniverse accounts, parallel transfers and retries, the
   export's defaults, and the sequence criteria new uploads start from.
-- The CSV's **classificationProbability** column: each observation's probability, chained over the
-  voted species (the first runner-up included, even when it is not kept) — the same in every workflow, and the one in the
-  observation's comment.
+- The CSV's **classificationProbability** column: each observation's probability: its votes over its
+  votes plus those of the next species in the ranking (the first runner-up included, even when it is not
+  kept) — the same in every workflow, and the one in the observation's comment. Species sharing a photo
+  don't penalise each other: with 6 cows, 4 birds and 2 horses the birds get 4 / (4 + 2).
 - Importing into Trapper checks each CSV's scientific names against Trapper's species catalog first,
   and reports the unknown ones (with their rows) instead of sending a file Trapper answers with a 500.
   Trapper's HTML error pages are shown as one line.

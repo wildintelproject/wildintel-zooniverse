@@ -34,7 +34,7 @@ def test_every_workflow_votes_the_same_way_but_for_ties():
     ]
     assert results[0] == results[1] == results[2]
     assert [(o["observationType"], o["scientificName"]) for o in results[0]] == [("animal", "Vulpes vulpes"), ("human", "Homo sapiens")]
-    assert [o["classificationProbability"] for o in results[0]] == [0.6, 0.2667]
+    assert [o["classificationProbability"] for o in results[0]] == [0.6, 0.6667]
 
 
 def test_a_species_voted_against_another_is_not_a_certainty_even_when_only_one_is_kept():
@@ -128,3 +128,14 @@ def test_oder_delta_maps_every_choice_of_its_workflow():
     assert extractor.trapper_name("EUROPEANBADGER") == "Meles meles"
     # 27 choices: the 4 common ones plus 23 of its own.
     assert len(registry.WORKFLOWS[31813].mapping) == 27
+
+
+def test_species_sharing_a_photo_dont_penalise_each_other():
+    from wildintel_zooniverse.core.services.annotations.voter import Workflow29186AnnotationsVoter
+
+    opinions = _opinions(*["Bos taurus"] * 6, *["Aves"] * 4, *["Equus caballus"] * 2, k=3)
+    result = Workflow29186AnnotationsVoter.run(opinions)
+    # Each one's votes against the next one's — the birds' 4 / (4 + 2), not what the cows left.
+    assert [(o.scientificName, o.classificationProbability) for o in result] == [
+        ("Bos taurus", 0.6), ("Aves", 0.6667), ("Equus caballus", 1.0),
+    ]
