@@ -37,14 +37,16 @@ LIST_PAGE_SIZE = 200
 MEDIA_PAGE_SIZE = 1000
 
 
-def _client(url: str, username: str, password: str) -> TrapperClient:
+def _client(url: str, username: str, password: str, timeout: int | None = None) -> TrapperClient:
     logger.debug("Trapper client for %s as %s", url, username)
-    return TrapperClient(base_url=url.rstrip("/"), user_name=username, user_password=password)
+    options = {"timeout": timeout} if timeout else {}  # else the SDK's own
+    return TrapperClient(base_url=url.rstrip("/"), user_name=username, user_password=password, **options)
 
 
-def client(url: str, username: str, password: str) -> TrapperClient:
-    """A Trapper client, for services doing more than listing."""
-    return _client(url, username, password)
+def client(url: str, username: str, password: str, timeout: int | None = None) -> TrapperClient:
+    """A Trapper client, for services doing more than listing — with timeout
+    seconds to wait for each answer, if it needs longer than the SDK's 30."""
+    return _client(url, username, password, timeout) if timeout else _client(url, username, password)
 
 
 def get_connection_defaults() -> dict:

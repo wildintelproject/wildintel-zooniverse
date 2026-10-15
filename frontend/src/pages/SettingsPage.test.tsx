@@ -73,7 +73,7 @@ describe('SettingsPage', () => {
       },
       ZOONIVERSE: {
         user_name: 'bob', user_password: 'pw', upload_workers: 4, upload_attempts: 5, upload_retry_delay: 30,
-        export_classified_by: 'zooniverse@wildintel-project.org', export_max_file_size_mb: 1.5, export_output_dir: '~/exports',
+        export_classified_by: 'zooniverse@wildintel-project.org', export_max_file_size_mb: 1.5, export_import_timeout: 600, export_output_dir: '~/exports',
       },
       SEQUENCES: { ...APP_SETTINGS.SEQUENCES, remove_middle_vehicles: true },
     })

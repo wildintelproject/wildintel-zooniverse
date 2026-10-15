@@ -123,7 +123,7 @@ The settings are those of the web app's ⚙️ page — see its
 |---|---|
 | `GENERAL` | `log_level` (`ERROR`, `WARNING`, `INFO`, `DEBUG`) |
 | `TRAPPER` | `base_url`, `user_name`, `user_password`, `download_workers`, `download_attempts`, `download_retry_delay` |
-| `ZOONIVERSE` | `user_name`, `user_password`, `upload_workers`, `upload_attempts`, `upload_retry_delay`, `export_classified_by`, `export_max_file_size_mb`, `export_output_dir` |
+| `ZOONIVERSE` | `user_name`, `user_password`, `upload_workers`, `upload_attempts`, `upload_retry_delay`, `export_classified_by`, `export_max_file_size_mb`, `export_import_timeout`, `export_output_dir` |
 | `SEQUENCES` | `max_interval`, `images_per_sequence`, `only_classified`, `remove_middle_humans`, `remove_middle_vehicles` — the upload criteria's defaults |
 
 A value is checked before it's saved: `config set SEQUENCES.max_interval zero` is refused.

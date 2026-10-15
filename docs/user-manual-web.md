@@ -109,6 +109,7 @@ Changes apply to the next upload, dry run, download or export — not to one alr
 | Folder | Where the exports are written — each in a folder of its own inside it. Blank: `exports` in the app's documents folder (see [section 7](#7-where-the-app-keeps-its-files)). |
 | Classified by | Who exported classifications are classified by, in Trapper (`zooniverse@wildintel-project.org`). |
 | Largest CSV | Classification exports bigger than this are split into several files (1.5 MB). |
+| Import timeout | Seconds the app waits for Trapper to import each CSV (600). Trapper imports a file before it answers, which takes minutes for a big one. |
 
 ### Sequences
 

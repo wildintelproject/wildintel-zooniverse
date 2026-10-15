@@ -13,6 +13,7 @@ const LIMITS = {
   delay: { min: 0, max: 3600 },
   positive: { min: 1, max: Number.MAX_SAFE_INTEGER },
   fileSizeMb: { min: 0.01, max: 1000, decimal: true },
+  importTimeout: { min: 30, max: 7200 },
 }
 
 type Limits = { min: number; max: number; decimal?: boolean }
@@ -96,6 +97,7 @@ interface Draft {
   uploadDelay: string
   exportClassifiedBy: string
   exportMaxSizeMb: string
+  exportImportTimeout: string
   exportOutputDir: string
   maxInterval: string
   imagesPerSequence: string
@@ -124,6 +126,7 @@ function toDraft(s: AppSettings): Draft {
     uploadDelay: String(s.ZOONIVERSE.upload_retry_delay),
     exportClassifiedBy: s.ZOONIVERSE.export_classified_by,
     exportMaxSizeMb: String(s.ZOONIVERSE.export_max_file_size_mb),
+    exportImportTimeout: String(s.ZOONIVERSE.export_import_timeout),
     exportOutputDir: s.ZOONIVERSE.export_output_dir ?? '',
     maxInterval: String(s.SEQUENCES.max_interval),
     imagesPerSequence: String(s.SEQUENCES.images_per_sequence),
@@ -146,7 +149,7 @@ const NUMBER_FIELDS: Record<SectionId, [NumberKey, Limits][]> = {
   trapper: [['downloadWorkers', LIMITS.workers], ['downloadAttempts', LIMITS.attempts], ['downloadDelay', LIMITS.delay]],
   zooniverse: [
     ['uploadWorkers', LIMITS.workers], ['uploadAttempts', LIMITS.attempts], ['uploadDelay', LIMITS.delay],
-    ['exportMaxSizeMb', LIMITS.fileSizeMb],
+    ['exportMaxSizeMb', LIMITS.fileSizeMb], ['exportImportTimeout', LIMITS.importTimeout],
   ],
   sequences: [['maxInterval', LIMITS.positive], ['imagesPerSequence', LIMITS.positive]],
 }
@@ -169,6 +172,7 @@ function toUpdate(d: Draft): AppSettingsUpdate | null {
       user_name: d.zooUser.trim() || null, user_password: d.zooPassword,
       upload_workers: n('uploadWorkers'), upload_attempts: n('uploadAttempts'), upload_retry_delay: n('uploadDelay'),
       export_classified_by: d.exportClassifiedBy.trim(), export_max_file_size_mb: n('exportMaxSizeMb'),
+      export_import_timeout: n('exportImportTimeout'),
       export_output_dir: d.exportOutputDir.trim() || null,
     },
     SEQUENCES: {
@@ -683,6 +687,7 @@ export default function SettingsPage({ onClose }: Props) {
                 />
               </BoxField>
               <NumberBox label="Largest CSV" value={draft.exportMaxSizeMb} limits={LIMITS.fileSizeMb} onChange={text('exportMaxSizeMb')} unit="MB — bigger exports are split" />
+              <NumberBox label="Import timeout" value={draft.exportImportTimeout} limits={LIMITS.importTimeout} onChange={text('exportImportTimeout')} unit="seconds Trapper has to import each CSV" />
             </Row>
           </div>
         )}

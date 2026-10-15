@@ -251,6 +251,8 @@ export interface AppSettings {
     export_classified_by: string
     /** Larger exports are split into several CSVs. */
     export_max_file_size_mb: number
+    /** Seconds to wait for Trapper to import each CSV. */
+    export_import_timeout: number
     /** Where exported CSVs are written — null: "exports" in the app's documents. */
     export_output_dir: string | null
   }

@@ -63,7 +63,7 @@
     },
     ZOONIVERSE: {
       user_name: 'field.team', has_password: true, upload_workers: 4, upload_attempts: 5, upload_retry_delay: 30,
-      export_classified_by: 'zooniverse@wildintel-project.org', export_max_file_size_mb: 1.5,
+      export_classified_by: 'zooniverse@wildintel-project.org', export_max_file_size_mb: 1.5, export_import_timeout: 600,
     },
     SEQUENCES: { max_interval: 90, images_per_sequence: 5, only_classified: true, remove_middle_humans: true, remove_middle_vehicles: false },
   }

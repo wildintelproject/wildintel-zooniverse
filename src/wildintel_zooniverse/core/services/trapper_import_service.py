@@ -20,6 +20,9 @@ from collections import Counter
 from collections.abc import Iterator
 from pathlib import Path
 
+import httpx
+
+from wildintel_zooniverse.core import config
 from wildintel_zooniverse.core.logging_setup import debugging
 from wildintel_zooniverse.core.services import trapper_service
 
@@ -69,6 +72,13 @@ def short_error(exc: Exception) -> str:
     return text if len(text) <= 500 else text[:500] + "…"
 
 
+def timeout_detail(seconds: int) -> str:
+    """Trapper imports a file before it answers: when it takes longer than
+    the timeout the app gives up waiting, but Trapper keeps going."""
+    return (f"Trapper didn't answer within {seconds} s. It may still be importing the file: check the observations "
+            "in Trapper before importing it again — or raise the import timeout in the settings.")
+
+
 def import_stream(
     trapper: tuple[str, str, str], classification_project_id: int, files: list[Path], *, approve: bool = False,
 ) -> Iterator[dict]:
@@ -81,7 +91,8 @@ def import_stream(
       - {"type": "done", "imported", "failed"}.
 
     The connection is checked right away (errors raise here)."""
-    client = trapper_service.client(*trapper)
+    timeout = config.load_settings().ZOONIVERSE.export_import_timeout
+    client = trapper_service.client(*trapper, timeout=timeout)
     # Connection and access to the project, up front — one light query.
     client.classification_projects.get_project_collections(classification_project_id, page=1, page_size=1)
     logger.info("Importing %d CSV file(s) into Trapper classification project %s (approve=%s)",
@@ -105,11 +116,14 @@ def import_stream(
                     project_id=classification_project_id, file=path,
                     approve=approve, import_bboxes=False,
                     import_expert_classifications=True, import_ai_classifications=False,
+                    # A timeout isn't retried: the file may be imported by then, and sending it again only loads Trapper.
+                    retry_attempts=1,
                 )
             except Exception as exc:
                 failed += 1
                 logger.warning("Importing %s into Trapper failed: %s", path.name, exc, exc_info=debugging())
-                yield {"type": "failed", "path": str(path), "detail": short_error(exc)}
+                detail = timeout_detail(timeout) if isinstance(exc, httpx.TimeoutException) else short_error(exc)
+                yield {"type": "failed", "path": str(path), "detail": detail}
                 continue
             data = getattr(result, "data", None)
             message = getattr(data, "message", None)

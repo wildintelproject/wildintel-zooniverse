@@ -55,9 +55,10 @@ def test_imports_each_csv_as_wildintel_tools_did(fake_trapper, csvs):
     # Only expert classifications, no bboxes, not approved — wildintel-tools' own.
     fake_trapper.client.classification_results.import_classifications.assert_any_call(
         project_id=10, file=csvs[0], approve=False, import_bboxes=False,
-        import_expert_classifications=True, import_ai_classifications=False,
+        import_expert_classifications=True, import_ai_classifications=False, retry_attempts=1,
     )
-    fake_trapper.factory.assert_called_with("https://trapper.example.org", "alice", "s3cret")
+    # With the settings' timeout for each answer — a file is imported before Trapper answers.
+    fake_trapper.factory.assert_called_with("https://trapper.example.org", "alice", "s3cret", 600)
 
 
 def test_approving_is_optional(fake_trapper, csvs):
@@ -126,3 +127,31 @@ def test_an_html_error_page_is_shown_as_one_line(fake_trapper, csvs):
     [failed] = [line for line in lines if line["type"] == "failed"]
     assert "HTTP 500" in failed["detail"]
     assert "<" not in failed["detail"] and len(failed["detail"]) < 400
+
+
+def test_a_timeout_says_trapper_may_still_be_importing_and_isnt_retried(fake_trapper, csvs):
+    import httpx
+
+    fake_trapper.client.classification_results.import_classifications.side_effect = httpx.ReadTimeout("The read operation timed out")
+    lines = _ndjson(_client().post("/api/export/import", json={
+        **CREDS, "classification_project_id": 10, "files": [str(csvs[0])],
+    }))
+    [failed] = [line for line in lines if line["type"] == "failed"]
+    assert "didn't answer within 600 s" in failed["detail"] and "may still be importing" in failed["detail"]
+    assert fake_trapper.client.classification_results.import_classifications.call_args.kwargs["retry_attempts"] == 1
+
+
+def test_the_import_timeout_is_a_setting(fake_trapper, csvs):
+    from wildintel_zooniverse.core import config
+
+    def set_timeout(seconds: int) -> None:
+        settings = config.load_settings()
+        settings.ZOONIVERSE.export_import_timeout = seconds
+        config.save_settings(settings)
+
+    set_timeout(1800)
+    try:
+        _ndjson(_client().post("/api/export/import", json={**CREDS, "classification_project_id": 10, "files": [str(csvs[0])]}))
+        assert fake_trapper.factory.call_args.args[3] == 1800
+    finally:
+        set_timeout(600)
