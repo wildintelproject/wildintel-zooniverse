@@ -174,3 +174,15 @@ def test_media_ids_are_read_as_wildintel_tools_does(metadata, expected):
     from wildintel_zooniverse.core.services import validation_service
 
     assert validation_service.media_id_of(metadata) == expected
+
+
+def test_older_uploads_are_matched_by_their_filename_and_their_duplicates_found(fake, monkeypatch):
+    from wildintel_zooniverse.core.services import zooniverse_service
+
+    old = [{"id": 201, "metadata": {"Filename": "7_x_D_x_IMG_7.JPG"}}, {"id": 202, "metadata": {"filename": "7_x_D_x_IMG_7.JPG"}},
+           {"id": 203, "metadata": {"Filename": "IMG_0001.JPG"}}]
+    monkeypatch.setattr(zooniverse_service, "iter_subjects", lambda u, p, ss_id: iter({**s, "url": None, "file_name": ""} for s in old))
+    report = _ndjson(_client().post("/api/validation/subject-set", json={**CREDS, "subject_set_id": 8}))[-2]
+
+    assert report["unmatched"] == [203]
+    assert report["duplicated"] == [{"media_id": 7, "subject_ids": [201, 202]}]

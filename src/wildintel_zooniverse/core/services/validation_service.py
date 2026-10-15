@@ -7,7 +7,8 @@ from Zooniverse, not from a subjects export CSV.
 
 On its own, the subject set is checked for:
   - unmatched subjects: no Trapper media id can be read from their
-    metadata (external_id or origin, "…:media:<id>"),
+    metadata (external_id or origin, "…:media:<id>", or the Filename's
+    "<media id>_x_…" prefix of older uploads),
   - duplicated media: a media id in more than one subject,
   - metadata issues: a required field missing — and, compared with Trapper,
     a field that isn't what an upload would set (image_name aside, as
@@ -62,6 +63,14 @@ def media_id_of(metadata: dict) -> int | None:
     return None
 
 
+def any_media_id_of(metadata: dict) -> int | None:
+    """The media a subject is by any of the ways it was recorded (see
+    subject_media) — older uploads only have the Filename's prefix."""
+    from wildintel_zooniverse.core.services.subject_media import media_id_of as any_way  # it imports this module
+
+    return any_way(metadata)
+
+
 def metadata_issues(metadata: dict, media_id: int | None, trapper_url: str | None) -> list[str]:
     issues = []
     missing = [f for f in REQUIRED_METADATA_FIELDS if not metadata.get(f)]
@@ -113,7 +122,7 @@ def validate_stream(
             yield {"type": "subjects", "id": subject_set["id"], "name": subject_set["display_name"],
                    "total": subject_set["subjects_count"]}
             for subject in zooniverse_service.iter_subjects(*zooniverse, subject_set_id):
-                listed.append({"id": subject["id"], "media_id": media_id_of(subject["metadata"]), "metadata": subject["metadata"]})
+                listed.append({"id": subject["id"], "media_id": any_media_id_of(subject["metadata"]), "metadata": subject["metadata"]})
                 if len(listed) % PROGRESS_EVERY == 0:
                     yield {"type": "progress", "phase": "subjects", "done": len(listed)}
             yield {"type": "progress", "phase": "subjects", "done": len(listed)}
