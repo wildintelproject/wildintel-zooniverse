@@ -3,13 +3,13 @@ import { api } from '../api'
 import IdListsEditor, { NO_LISTS } from '../components/IdListsEditor'
 import type { IdLists } from '../components/IdListsEditor'
 import ProgressBar from '../components/ProgressBar'
+import Combobox from '../components/Combobox'
+import FieldLabel from '../components/FieldLabel'
 import TrapperSelectionForm from '../components/TrapperSelectionForm'
 import ZooniverseProjectPicker, { Divider, SmallSpinner, StepHeading } from '../components/ZooniverseProjectPicker'
 import type { ZooniversePick } from '../components/ZooniverseProjectPicker'
 import type { MetadataEvent, MetadataStatus, MetadataSubjectResult, TrapperSelection } from '../types'
 
-const inputClass = 'w-full px-3 py-2 text-sm rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono'
-const labelClass = 'block text-sm font-semibold mb-1.5 text-zinc-700 dark:text-zinc-300'
 const hintClass = 'text-xs text-zinc-500 dark:text-zinc-400 mt-1'
 const btnOutline = 'px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 flex items-center gap-2'
 const btnPrimary = 'px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2'
@@ -202,35 +202,35 @@ export default function UpdateMetadataPage({ onBack }: Props) {
         names an upload would set today. Only the fields that differ change; the rest of each subject&rsquo;s metadata stays.
       </p>
 
-      <ZooniverseProjectPicker title="Subject set" disabled={running} onChange={handlePick}>
+      <ZooniverseProjectPicker
+        title="Subject set" stepNumber={1} description="The project and the subject set whose metadata is rebuilt."
+        disabled={running} useSavedConnection done={Boolean(chosen)} framed onChange={handlePick}
+      >
         <div className="mb-6">
-          <label className={labelClass} htmlFor="metadata-subject-set">Subject set</label>
-          <select
-            id="metadata-subject-set" className={inputClass} disabled={running}
-            value={subjectSetId} onChange={(e) => { setSubjectSetId(e.target.value); setRun(null) }}
-          >
-            <option value="">Select a subject set…</option>
-            {subjectSets.map((s) => (
-              <option key={s.id} value={String(s.id)}>{s.display_name} — {s.subjects_count.toLocaleString()} subjects (#{s.id})</option>
-            ))}
-          </select>
+          <FieldLabel htmlFor="metadata-subject-set" done={Boolean(chosen)}>Subject set</FieldLabel>
+          <Combobox
+            id="metadata-subject-set" disabled={running}
+            options={subjectSets.map((s) => ({ value: String(s.id), label: `${s.display_name} — ${s.subjects_count.toLocaleString()} subjects (#${s.id})` }))}
+            value={subjectSetId} onChange={(value) => { setSubjectSetId(value); setRun(null) }}
+            placeholder="Select a subject set…" clearLabel="Clear subject set"
+          />
         </div>
       </ZooniverseProjectPicker>
 
       {chosen && (
         <>
           <Divider />
-          <StepHeading n={3}>Trapper images</StepHeading>
+          <StepHeading n={2} done={selection !== null}>Trapper images</StepHeading>
           <p className={`${hintClass} mb-4`}>
             The collection and deployments the subject set was uploaded from — each subject&rsquo;s file name and deployment
             come from them. Subjects whose image isn&rsquo;t among them are left as they are.
           </p>
           <div className="p-4 mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
-            <TrapperSelectionForm onSelectionChange={handleSelectionChange} />
+            <TrapperSelectionForm onSelectionChange={handleSelectionChange} useSavedConnection />
           </div>
 
           <Divider />
-          <StepHeading n={4}>Update</StepHeading>
+          <StepHeading n={3}>Update</StepHeading>
           <IdListsEditor
             kind="subject" initial={NO_LISTS} onCommit={setSubjectLists} disabled={running} className="mb-4"
             intro={<>

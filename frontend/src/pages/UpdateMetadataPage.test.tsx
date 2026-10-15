@@ -54,25 +54,26 @@ beforeEach(() => {
 })
 
 async function chooseEverything() {
-  await userEvent.click(await screen.findByRole('button', { name: /test connection/i }))
-  await userEvent.selectOptions(await screen.findByLabelText('Zooniverse project'), '30567')
-  await userEvent.selectOptions(await screen.findByLabelText('Subject set'), '128950')
-  await waitFor(() => expect(screen.getByLabelText('Trapper URL')).toHaveValue('https://trapper.example.org'))
-  await userEvent.click(screen.getAllByRole('button', { name: /test connection/i })[1])
+  await userEvent.click(await screen.findByLabelText('Project'))
+  await userEvent.click(await screen.findByRole('option', { name: /European Camera Trap Project/ }))
+  await userEvent.click(await screen.findByLabelText('Subject set'))
+  await userEvent.click(await screen.findByRole('option', { name: /#128950/ }))
   await userEvent.type(await screen.findByLabelText('Research project'), 'Doñana')
   await userEvent.click(await screen.findByRole('option', { name: 'DONA — Doñana' }))
   await userEvent.type(await screen.findByLabelText('Classification project'), 'Main')
   await userEvent.click(await screen.findByRole('option', { name: 'Main CP' }))
-  await userEvent.selectOptions(await screen.findByLabelText('Collection'), '33')
+  await userEvent.click(await screen.findByLabelText('Collection'))
+  await userEvent.click(await screen.findByRole('option', { name: /R0033/ }))
   await screen.findByText('R0033-DONA_0001_A')
 }
 
 describe('UpdateMetadataPage', () => {
   it('needs a subject set and the Trapper images first', async () => {
     render(<UpdateMetadataPage onBack={vi.fn()} />)
-    await userEvent.click(await screen.findByRole('button', { name: /test connection/i }))
-    await userEvent.selectOptions(await screen.findByLabelText('Zooniverse project'), '30567')
-    await userEvent.selectOptions(await screen.findByLabelText('Subject set'), '128950')
+    await userEvent.click(await screen.findByLabelText('Project'))
+    await userEvent.click(await screen.findByRole('option', { name: /European Camera Trap Project/ }))
+    await userEvent.click(await screen.findByLabelText('Subject set'))
+    await userEvent.click(await screen.findByRole('option', { name: /#128950/ }))
     expect(screen.getByRole('button', { name: /^dry run$/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /^update metadata$/i })).toBeDisabled()
   })
@@ -84,7 +85,7 @@ describe('UpdateMetadataPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /^dry run$/i }))
 
     expect(mockedApi.updateMetadata).toHaveBeenCalledWith(
-      { username: 'SimSan', password: '' }, 128950, expect.objectContaining({ collection: { pk: 33, name: 'R0033' } }), true,
+      { username: '', password: '' }, 128950, expect.objectContaining({ collection: { pk: 33, name: 'R0033' } }), true,
       expect.any(Function), expect.any(AbortSignal), { include: null, exclude: [] },
     )
     run.send({ type: 'trapper', total: 2 })

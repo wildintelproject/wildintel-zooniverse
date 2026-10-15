@@ -67,6 +67,8 @@ interface Props {
   description?: ReactNode
   /** The step is complete: a tick shows at its right. */
   done?: boolean
+  /** The project and what the children add are drawn inside a bordered box. */
+  framed?: boolean
   onChange: (pick: ZooniversePick) => void
   /** Shown under the project once one is chosen — the subject set choice. */
   children?: ReactNode
@@ -75,7 +77,7 @@ interface Props {
 /** Steps 1 and 2 of a Utils page: connect to Zooniverse (the saved account
  * pre-filled), then pick one of the user's projects, whose subject sets
  * are loaded for the page to choose from. */
-export default function ZooniverseProjectPicker({ title, disabled = false, loadSubjectSets = true, useSavedConnection = false, stepNumber, description, done, onChange, children }: Props) {
+export default function ZooniverseProjectPicker({ title, disabled = false, loadSubjectSets = true, useSavedConnection = false, stepNumber, description, done, framed = false, onChange, children }: Props) {
   const [form, setForm] = useState<ZooniverseCredentials>({ username: '', password: '' })
   const [hasSavedPassword, setHasSavedPassword] = useState(false)
   const [conn, setConn] = useState<{ status: ConnStatus; message: string }>({ status: 'idle', message: '' })
@@ -220,19 +222,21 @@ export default function ZooniverseProjectPicker({ title, disabled = false, loadS
         <>
           {!useSavedConnection && <Divider />}
           {title && <StepHeading n={stepNumber ?? 2} description={description} done={done}>{title}</StepHeading>}
-          <div className="mb-4">
-            <FieldLabel htmlFor="zoo-pick-project" done={useSavedConnection && Boolean(projectId)}>{useSavedConnection ? 'Project' : 'Zooniverse project'}</FieldLabel>
-            {projectField}
-            {useSavedConnection && conn.status === 'error' && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{conn.message}</p>}
+          <div className={framed ? 'p-4 mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700 [&>:last-child]:mb-0' : undefined}>
+            <div className="mb-4">
+              <FieldLabel htmlFor="zoo-pick-project" done={useSavedConnection && Boolean(projectId)}>{useSavedConnection ? 'Project' : 'Zooniverse project'}</FieldLabel>
+              {projectField}
+              {useSavedConnection && conn.status === 'error' && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{conn.message}</p>}
+            </div>
+            {subjectSets.loading && <p className={hintClass}>Loading the project&rsquo;s subject sets…</p>}
+            {subjectSets.error && <p className="text-sm text-red-600 dark:text-red-400">{subjectSets.error}</p>}
+            {projectId && !loadSubjectSets && children}
+            {projectId && loadSubjectSets && !subjectSets.loading && !subjectSets.error && (
+              subjectSets.items.length === 0
+                ? <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">This project has no subject sets.</p>
+                : children
+            )}
           </div>
-          {subjectSets.loading && <p className={hintClass}>Loading the project&rsquo;s subject sets…</p>}
-          {subjectSets.error && <p className="text-sm text-red-600 dark:text-red-400">{subjectSets.error}</p>}
-          {projectId && !loadSubjectSets && children}
-          {projectId && loadSubjectSets && !subjectSets.loading && !subjectSets.error && (
-            subjectSets.items.length === 0
-              ? <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">This project has no subject sets.</p>
-              : children
-          )}
         </>
       )}
     </>

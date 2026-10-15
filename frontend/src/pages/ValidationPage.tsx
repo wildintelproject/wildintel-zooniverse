@@ -278,7 +278,7 @@ export default function ValidationPage({ onBack }: Props) {
 
       <ZooniverseProjectPicker
         title="Subject set" stepNumber={1} description="The project and the subject set to check."
-        disabled={running} useSavedConnection done={Boolean(chosen)} onChange={handlePick}
+        disabled={running} useSavedConnection done={Boolean(chosen)} framed onChange={handlePick}
       >
         <div className="mb-6">
           <FieldLabel htmlFor="validate-subject-set" done={Boolean(chosen)}>Subject set</FieldLabel>
