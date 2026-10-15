@@ -103,7 +103,8 @@ several species, as intended. Every workflow votes the same way — only how a t
 differs — and each observation gets its `classificationProbability`: its votes over its votes plus
 those of the next species in the ranking (so species sharing a photo don't penalise each other).
 Subjects that are the same Trapper image (uploaded twice) vote together, once, and a volunteer who
-classified it in both counts once, with their most recent classification.
+classified it in both counts once, with their first valid classification. Classifications that mix "no animal"
+with a species are discarded, and a HOWMANY range ("11-50", "51+") counts its lower bound.
 
 The CSVs are then imported into Trapper through its API — as expert classifications, approved
 only if asked — right away if asked, or from the result, file by file. (wildintel-tools filled in

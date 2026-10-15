@@ -12,6 +12,7 @@ class ClassificationInfo(BaseModel):
     classification_id: Optional[str]
     user_name: Optional[str]
     user_id: Optional[str]
+    created_at: Optional[str] = None
     annotations: list[Any] = Field(default_factory=list)
     subject_name: Optional[str]
     retired: bool = False

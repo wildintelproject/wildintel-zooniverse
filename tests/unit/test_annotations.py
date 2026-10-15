@@ -139,3 +139,59 @@ def test_species_sharing_a_photo_dont_penalise_each_other():
     assert [(o.scientificName, o.classificationProbability) for o in result] == [
         ("Bos taurus", 0.6), ("Aves", 0.6667), ("Equus caballus", 1.0),
     ]
+
+
+def _info(cid, *choices, user=None, created_at=None, sid=1):
+    from wildintel_zooniverse.core.services.annotations.models import ClassificationInfo
+
+    annotations = [{"task": "T0", "value": [{"choice": c, "answers": {}, "filters": {}} for c in choices]}]
+    return ClassificationInfo(classification_id=str(cid), user_name=user, user_id=None, annotations=annotations,
+                              subject_name=None, sid=sid, created_at=created_at)
+
+
+def _extractor():
+    from wildintel_zooniverse.core.services.annotations import registry
+
+    return registry.extractor_and_voter(29186)[0]
+
+
+def test_a_contradictory_classification_is_discarded():
+    # "No animal" together with a species can't be: that classification doesn't count.
+    [(k, _, choices)] = _extractor().run([_info(1, "NOANIMAL", "REDFOX", user="a"), _info(2, "REDFOX", user="b")])
+    assert (k, [name for name, _ in choices]) == (1, ["Vulpes vulpes"])
+
+
+def test_a_volunteer_counts_once_with_their_first_valid_classification():
+    classifications = [
+        _info(1, user="a"),                       # no choices: not valid, doesn't use up their vote
+        _info(2, "REDFOX", user="a"),
+        _info(3, "REDDEER", user="a"),            # a repeat
+        _info(4, "NOANIMAL", "REDDEER", user="b"),  # contradictory: doesn't use up theirs either
+        _info(5, "REDDEER", user="b"),
+        _info(6, "REDFOX"),                       # unknown volunteer: stays
+        _info(7, "REDFOX"),
+    ]
+    [(_, _, choices)] = _extractor().run(classifications)
+    assert [name for name, _ in choices] == ["Vulpes vulpes", "Cervus elaphus", "Vulpes vulpes", "Vulpes vulpes"]
+
+
+def test_classifications_are_taken_in_the_order_they_were_made():
+    classifications = [
+        _info(1, "REDDEER", user="a", created_at="2026-10-02T10:00:00 UTC"),
+        _info(2, "REDFOX", user="a", created_at="2026-10-01T10:00:00 UTC"),
+    ]
+    [(_, _, choices)] = _extractor().run(classifications)
+    assert [name for name, _ in choices] == ["Vulpes vulpes"]  # a's first, by its date
+
+
+def test_howmany_ranges_count_their_lower_bound_not_their_digits():
+    from wildintel_zooniverse.core.services.annotations.voter import Workflow29186AnnotationsVoter
+
+    def counted(*answers):
+        opinions = [(1, 42, [("Bos taurus", {"HOWMANY": a}) for a in answers])]
+        return Workflow29186AnnotationsVoter.run(opinions)[0].count
+
+    assert counted("1150") == 11   # the "11-50" option, not 1.150 animals
+    assert counted("51") == 51
+    assert counted("11ORMORE") == 11
+    assert counted("3", "5") == 4  # a number is still a number

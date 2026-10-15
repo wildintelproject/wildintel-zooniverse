@@ -42,12 +42,25 @@ class SpeciesVoter(AnnotationsVoter):
     def _rank(species_count: Counter) -> list[tuple[str, int]]:
         raise NotImplementedError
 
-    @staticmethod
-    def _group_howmany(user_opinions: list) -> defaultdict:
+    # HOWMANY answers that are a range, not a number: their lower bound.
+    # "1150" is the "11-50" option (it is NOT 1150 animals), "51" is "51+",
+    # "11ORMORE" is the old "11 or more" option.
+    HOWMANY_RANGES = {"1150": 11, "51": 51, "11ORMORE": 11}
+
+    @classmethod
+    def _howmany_value(cls, val) -> Optional[int]:
+        if val is None:
+            return None
+        val = str(val).strip().upper()
+        if val in cls.HOWMANY_RANGES:
+            return cls.HOWMANY_RANGES[val]
+        return int(val) if val.isdigit() else None
+
+    @classmethod
+    def _group_howmany(cls, user_opinions: list) -> defaultdict:
         species_howmany = defaultdict(list)
         for species, attrs in user_opinions:
-            val = attrs.get("HOWMANY")
-            species_howmany[species].append(int(val) if val is not None and str(val).isdigit() else None)
+            species_howmany[species].append(cls._howmany_value(attrs.get("HOWMANY")))
         return species_howmany
 
     @staticmethod
@@ -81,7 +94,8 @@ class SpeciesVoter(AnnotationsVoter):
             return None
         k, sid, user_opinions = observations[0]
         species_howmany = cls._group_howmany(user_opinions)
-        # If k > 1 (volunteers saw several species), "no animal" isn't counted.
+        # If k > 1 (volunteers saw several species), "no animal" can't be one of
+        # them: its votes leave the ranking (neither kept nor "next").
         species_count = Counter(species for species, _ in user_opinions if not (k > 1 and species == BLANK))
         k = max(1, k)
         ranking = cls._rank(species_count)[: k + 1]  # the one after the last kept only sets its probability

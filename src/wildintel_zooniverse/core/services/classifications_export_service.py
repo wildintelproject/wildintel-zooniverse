@@ -149,29 +149,10 @@ def group_rows(rows: Iterator[dict], workflow_id: int) -> dict[int, SubjectClass
                 entry = subjects[sid] = SubjectClassifications(media_id_of(data), [])
             entry.classifications.append(ClassificationInfo(
                 classification_id=row.get("classification_id"), user_name=row.get("user_name"),
-                user_id=row.get("user_id"), subject_name=name, retired=retired is not None,
+                user_id=row.get("user_id"), subject_name=name, retired=retired is not None, created_at=row.get("created_at") or None,
                 retirement_reason=retired, annotations=annotations if isinstance(annotations, list) else [], sid=sid,
             ))
     return subjects
-
-
-def last_vote_per_user(classifications: list[ClassificationInfo]) -> list[ClassificationInfo]:
-    """One opinion per volunteer: their most recent — a classification id
-    only grows. Who a volunteer is: their user id, else their user name
-    (a not-logged-in one has a name of their own); those with neither stay.
-    Needed because a media's subjects vote together: a volunteer who saw the
-    same image in two of them would count twice."""
-    def order(c: ClassificationInfo) -> tuple[int, str]:
-        text = str(c.classification_id or "")
-        return (int(text), text) if text.isdigit() else (-1, text)
-
-    last: dict[str, ClassificationInfo] = {}
-    for c in classifications:
-        who = c.user_id or c.user_name
-        if who and (who not in last or order(c) >= order(last[who])):
-            last[who] = c
-    # In the order they came: a tie goes to the species voted first.
-    return [c for c in classifications if not (c.user_id or c.user_name) or last[c.user_id or c.user_name] is c]
 
 
 # ── The CSVs ────────────────────────────────────────────────────────────
@@ -435,7 +416,7 @@ def export_stream(
             elif entry.media_id not in observations:
                 reason = "not_in_trapper"
             else:
-                classifications = last_vote_per_user([c for s_ in sids for c in subjects[s_].classifications])
+                classifications = [c for s_ in sids for c in subjects[s_].classifications]
                 extracted = extractor.run(classifications)
                 decisions = voter.run(extracted) if extracted else None
                 if not extracted:

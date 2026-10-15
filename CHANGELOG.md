@@ -42,8 +42,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   *Update metadata* (with a dry run) and *Subjects* (look subjects up by id, or browse a subject
   set's). *Download subject sets* and *Update metadata* take subject lists: only some subjects,
   or never some.
-- A volunteer counts once per image in the export's votes: with several subjects of the same image (uploaded
-  twice) voting together, only their most recent classification is kept.
+- A volunteer counts once per image in the export's votes — their first valid classification, in the order
+  they were made — also when several subjects of the same image (uploaded twice) vote together. Classifications
+  that mix "no animal" with a species are discarded, and the HOWMANY ranges ("11-50", "51+") count their
+  lower bound, not their digits.
 - **Settings** page (⚙️): Trapper and Zooniverse accounts, parallel transfers and retries, the
   export's defaults, and the sequence criteria new uploads start from.
 - The CSV's **classificationProbability** column: each observation's probability: its votes over its
