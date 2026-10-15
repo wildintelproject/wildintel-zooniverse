@@ -33,8 +33,7 @@ beforeEach(() => {
 })
 
 async function connect() {
-  await userEvent.click(await screen.findByRole('button', { name: /test connection/i }))
-  await screen.findByText(/Connected as SimSan/)
+  await screen.findByLabelText('Subject ids') // the projects are loaded
 }
 
 describe('SubjectsPage', () => {
@@ -48,7 +47,7 @@ describe('SubjectsPage', () => {
     expect(screen.getByText(/1 not an id, ignored/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Look up' }))
 
-    expect(mockedApi.zooniverseLookupSubjects).toHaveBeenCalledWith({ username: 'SimSan', password: '' }, [501, 502, 999])
+    expect(mockedApi.zooniverseLookupSubjects).toHaveBeenCalledWith({ username: '', password: '' }, [501, 502, 999])
     const found = await screen.findByRole('list', { name: 'Subjects found' })
     const first = within(found).getByRole('listitem', { name: 'Subject 501' })
     expect(within(first).getByRole('link', { name: '7' })).toHaveAttribute('href', 'https://trapper.example.org/storage/resource/media/7/file/')
@@ -63,16 +62,18 @@ describe('SubjectsPage', () => {
     }))
     render(<SubjectsPage onBack={vi.fn()} />)
     await connect()
-    await userEvent.selectOptions(await screen.findByLabelText('Zooniverse project'), '30567')
-    await userEvent.selectOptions(await screen.findByLabelText('Subject set'), '128950')
+    await userEvent.click(await screen.findByLabelText('Project'))
+    await userEvent.click(await screen.findByRole('option', { name: /European Camera Trap Project/ }))
+    await userEvent.click(await screen.findByLabelText('Subject set'))
+    await userEvent.click(await screen.findByRole('option', { name: /#128950/ }))
 
-    expect(mockedApi.zooniverseSubjectSetPage).toHaveBeenCalledWith({ username: 'SimSan', password: '' }, 128950, 1)
+    expect(mockedApi.zooniverseSubjectSetPage).toHaveBeenCalledWith({ username: '', password: '' }, 128950, 1)
     expect(await screen.findByText(/of 3 · 120 subjects/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /previous/i })).toBeDisabled()
     expect(screen.getByRole('listitem', { name: 'Subject 601' })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /next/i }))
-    expect(mockedApi.zooniverseSubjectSetPage).toHaveBeenLastCalledWith({ username: 'SimSan', password: '' }, 128950, 2)
+    expect(mockedApi.zooniverseSubjectSetPage).toHaveBeenLastCalledWith({ username: '', password: '' }, 128950, 2)
     expect(await screen.findByRole('listitem', { name: 'Subject 602' })).toBeInTheDocument()
   })
 })

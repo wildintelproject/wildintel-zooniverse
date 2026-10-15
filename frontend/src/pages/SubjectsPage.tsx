@@ -1,5 +1,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
+import Combobox from '../components/Combobox'
+import FieldLabel from '../components/FieldLabel'
 import ZooniverseProjectPicker, { Divider, SmallSpinner, StepHeading } from '../components/ZooniverseProjectPicker'
 import type { ZooniversePick } from '../components/ZooniverseProjectPicker'
 import { parseIds } from '../lib/mediaIds'
@@ -131,18 +133,18 @@ export default function SubjectsPage({ onBack }: Props) {
         each is, their subject sets and their metadata.
       </p>
 
-      <ZooniverseProjectPicker title="Browse a subject set" onChange={handlePick}>
+      <ZooniverseProjectPicker
+        title="Browse a subject set" stepNumber={1} description="The project and a subject set, a page of its subjects at a time."
+        useSavedConnection done={Boolean(subjectSetId)} framed onChange={handlePick}
+      >
         <div className="mb-4">
-          <label className={labelClass} htmlFor="subjects-subject-set">Subject set</label>
-          <select
-            id="subjects-subject-set" className={inputClass} value={subjectSetId}
-            onChange={(e) => { setSubjectSetId(e.target.value); loadPage(e.target.value, 1) }}
-          >
-            <option value="">Select a subject set…</option>
-            {subjectSets.map((s) => (
-              <option key={s.id} value={String(s.id)}>{s.display_name} — {s.subjects_count.toLocaleString()} subjects (#{s.id})</option>
-            ))}
-          </select>
+          <FieldLabel htmlFor="subjects-subject-set" done={Boolean(subjectSetId)}>Subject set</FieldLabel>
+          <Combobox
+            id="subjects-subject-set"
+            options={subjectSets.map((s) => ({ value: String(s.id), label: `${s.display_name} — ${s.subjects_count.toLocaleString()} subjects (#${s.id})` }))}
+            value={subjectSetId} onChange={(value) => { setSubjectSetId(value); loadPage(value, 1) }}
+            placeholder="Select a subject set…" clearLabel="Clear subject set"
+          />
         </div>
         {browse.status === 'error' && <p className="text-sm text-red-600 dark:text-red-400">{browse.error}</p>}
         {subjectSetId && browsed && (
@@ -170,7 +172,7 @@ export default function SubjectsPage({ onBack }: Props) {
       {pick?.connected && (
         <>
           <Divider />
-          <StepHeading n={3}>Look up subjects by id</StepHeading>
+          <StepHeading n={2}>Look up subjects by id</StepHeading>
           <label className={labelClass} htmlFor="subjects-ids">Subject ids</label>
           <textarea
             id="subjects-ids" className={`${inputClass} h-20 text-xs`} value={idsText} onChange={(e) => setIdsText(e.target.value)}
