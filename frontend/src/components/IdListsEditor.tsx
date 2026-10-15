@@ -71,6 +71,9 @@ interface Props {
   status?: ReactNode
   disabled?: boolean
   className?: string
+  /** 'cards': always open, the two lists side by side — a list is on while it
+   * has ids (no checkbox) — with a note on how they combine. */
+  layout?: 'collapsible' | 'cards'
 }
 
 /** A collapsible whitelist and blacklist of ids — an upload's Trapper
@@ -78,7 +81,7 @@ interface Props {
  * its ids; never the blacklist's, which wins when an id is in both (a
  * warning says so). Each can be typed, pasted or loaded from a file (see
  * parseIds). */
-export default function IdListsEditor({ kind, initial, onCommit, intro, status, disabled = false, className = 'mt-4' }: Props) {
+export default function IdListsEditor({ kind, initial, onCommit, intro, status, disabled = false, className = 'mt-4', layout = 'collapsible' }: Props) {
   const words = WORDS[kind]
   const [whitelistOn, setWhitelistOn] = useState(initial.include != null)
   const [includeText, setIncludeText] = useState((initial.include ?? []).join('\n'))
@@ -98,6 +101,49 @@ export default function IdListsEditor({ kind, initial, onCommit, intro, status, 
     includeIds !== null && `only ${includeIds.length.toLocaleString()} ${words.noun}(s)`,
     excludeIds.length > 0 && `never ${excludeIds.length.toLocaleString()} ${words.noun}(s)`,
   ].filter(Boolean).join(' · ')
+
+  const inBothNote = inBoth.length > 0 && (
+    <p className="text-xs text-amber-700 dark:text-amber-400 mt-3" role="status">
+      {inBoth.length === 1 ? '1 id is' : `${inBoth.length.toLocaleString()} ids are`} in both lists — never these wins,
+      so {inBoth.length === 1 ? 'it' : 'they'} won&rsquo;t be {kind === 'media' ? 'uploaded' : 'processed'}:{' '}
+      <span className="font-mono">{inBoth.slice(0, 10).join(', ')}{inBoth.length > 10 ? '…' : ''}</span>
+    </p>
+  )
+
+  if (layout === 'cards') {
+    const card = 'p-4 rounded-lg border border-zinc-200 dark:border-zinc-700'
+    return (
+      <div className={className}>
+        {intro && <p className={`${hintClass} mb-3`}>{intro}</p>}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className={card}>
+            <IdList
+              id={`${kind}-whitelist`} kind={kind} label={`Only these ${words.plural}`} disabled={disabled}
+              hint={`Whitelist · only the ids listed are ${kind === 'media' ? 'uploaded' : 'processed'}.`}
+              text={includeText}
+              onText={setIncludeText}
+              onCommit={(t) => { setWhitelistOn(parseIds(t, kind).ids.length > 0); commit(parseIds(t, kind).ids.length > 0, t, excludeText) }}
+            />
+          </div>
+          <div className={card}>
+            <IdList
+              id={`${kind}-blacklist`} kind={kind} label={`Never these ${words.plural}`} disabled={disabled}
+              hint="Blacklist · the ids listed are left out."
+              text={excludeText} onText={setExcludeText}
+              onCommit={(t) => commit(parseIds(includeText, kind).ids.length > 0, includeText, t)}
+            />
+          </div>
+        </div>
+        <div className="mt-4 p-4 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-sm text-zinc-600 dark:text-zinc-300">
+          <p className="font-semibold text-zinc-700 dark:text-zinc-200 mb-1">How the filters apply</p>
+          With a whitelist, only those {words.plural} are considered. The blacklist leaves out {words.plural} even if
+          they&rsquo;re in the whitelist. Without a whitelist, every eligible {words.noun} is considered, except the excluded ones.
+        </div>
+        {inBothNote}
+        {status}
+      </div>
+    )
+  }
 
   return (
     <div className={`${className} rounded-lg border border-zinc-200 dark:border-zinc-700`}>
@@ -134,13 +180,7 @@ export default function IdListsEditor({ kind, initial, onCommit, intro, status, 
               text={excludeText} onText={setExcludeText} onCommit={(t) => commit(whitelistOn, includeText, t)}
             />
           </div>
-          {inBoth.length > 0 && (
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-3" role="status">
-              {inBoth.length === 1 ? '1 id is' : `${inBoth.length.toLocaleString()} ids are`} in both lists — never these wins,
-              so {inBoth.length === 1 ? 'it' : 'they'} won&rsquo;t be {kind === 'media' ? 'uploaded' : 'processed'}:{' '}
-              <span className="font-mono">{inBoth.slice(0, 10).join(', ')}{inBoth.length > 10 ? '…' : ''}</span>
-            </p>
-          )}
+          {inBothNote}
           {status}
         </div>
       )}

@@ -5,8 +5,9 @@ import type { IdLists } from '../components/IdListsEditor'
 import ProgressBar from '../components/ProgressBar'
 import Combobox from '../components/Combobox'
 import FieldLabel from '../components/FieldLabel'
+import Step from '../components/WizardStep'
 import TrapperSelectionForm from '../components/TrapperSelectionForm'
-import ZooniverseProjectPicker, { Divider, SmallSpinner, StepHeading } from '../components/ZooniverseProjectPicker'
+import ZooniverseProjectPicker, { SmallSpinner } from '../components/ZooniverseProjectPicker'
 import type { ZooniversePick } from '../components/ZooniverseProjectPicker'
 import type { MetadataEvent, MetadataStatus, MetadataSubjectResult, TrapperSelection } from '../types'
 
@@ -144,6 +145,11 @@ export default function UpdateMetadataPage({ onBack }: Props) {
   const [confirming, setConfirming] = useState(false)
   const [subjectLists, setSubjectLists] = useState<IdLists>(NO_LISTS)
   const abortRef = useRef<AbortController | null>(null)
+  // The step that's open, and the furthest one unlocked.
+  const [open, setOpen] = useState(1)
+  const [reached, setReached] = useState(1)
+  const [showDetails, setShowDetails] = useState(false)
+  const [mode, setMode] = useState<'dry' | 'update'>('dry')
 
   useEffect(() => () => abortRef.current?.abort(), [])
 
@@ -155,6 +161,11 @@ export default function UpdateMetadataPage({ onBack }: Props) {
   const subjectSets = pick?.subjectSets.items ?? []
   const chosen = subjectSets.find((s) => String(s.id) === subjectSetId)
   const ready = Boolean(chosen && selection) && !running
+  const status = (n: number): 'open' | 'done' | 'locked' => (n === open ? 'open' : n <= reached && (n < 4 || run) ? 'done' : 'locked')
+  function next(n: number) {
+    setOpen(n)
+    setReached((r) => Math.max(r, n))
+  }
 
   function stop() {
     abortRef.current?.abort()
@@ -165,6 +176,7 @@ export default function UpdateMetadataPage({ onBack }: Props) {
     if (!chosen || !selection || !pick) return
     stop()
     setConfirming(false)
+    next(4)
     const controller = new AbortController()
     abortRef.current = controller
     setRun({ dryRun, status: 'running', counts: NO_COUNTS, changed: [], fields: {} })
@@ -198,162 +210,210 @@ export default function UpdateMetadataPage({ onBack }: Props) {
     <div>
       <h4 className="text-lg font-semibold mb-1">Update metadata</h4>
       <p className="text-zinc-500 dark:text-zinc-400 mb-6 text-sm">
-        Rewrite a subject set&rsquo;s metadata from the Trapper collection it was uploaded from — the links, license and file
-        names an upload would set today. Only the fields that differ change; the rest of each subject&rsquo;s metadata stays.
+        Updates the metadata of Zooniverse subjects using the data of the original images in Trapper.
       </p>
 
-      <ZooniverseProjectPicker
-        title="Subject set" stepNumber={1} description="The project and the subject set whose metadata is rebuilt."
-        disabled={running} useSavedConnection done={Boolean(chosen)} framed onChange={handlePick}
+      <Step
+        n={1} title="Target subject set" status={status(1)} canEdit={!running} onEdit={() => setOpen(1)}
+        description="Subject set that contains the subjects whose metadata will be updated."
+        summary={chosen && <>{pick?.projectName}<br />{chosen.display_name} · {chosen.subjects_count.toLocaleString()} subjects</>}
       >
-        <div className="mb-6">
-          <FieldLabel htmlFor="metadata-subject-set" done={Boolean(chosen)}>Subject set</FieldLabel>
-          <Combobox
-            id="metadata-subject-set" disabled={running}
-            options={subjectSets.map((s) => ({ value: String(s.id), label: `${s.display_name} — ${s.subjects_count.toLocaleString()} subjects (#${s.id})` }))}
-            value={subjectSetId} onChange={(value) => { setSubjectSetId(value); setRun(null) }}
-            placeholder="Select a subject set…" clearLabel="Clear subject set"
-          />
+        <ZooniverseProjectPicker disabled={running} useSavedConnection framed onChange={handlePick}>
+          <div className="mb-6">
+            <FieldLabel htmlFor="metadata-subject-set" done={Boolean(chosen)}>Subject set</FieldLabel>
+            <Combobox
+              id="metadata-subject-set" disabled={running}
+              options={subjectSets.map((s) => ({ value: String(s.id), label: `${s.display_name} — ${s.subjects_count.toLocaleString()} subjects (#${s.id})` }))}
+              value={subjectSetId} onChange={(value) => { setSubjectSetId(value); setRun(null) }}
+              placeholder="Select a subject set…" clearLabel="Clear subject set"
+            />
+          </div>
+        </ZooniverseProjectPicker>
+        <div className="flex justify-end mt-4">
+          <button type="button" className={btnPrimary} disabled={!chosen} onClick={() => next(2)}>Continue to Trapper images</button>
         </div>
-      </ZooniverseProjectPicker>
+      </Step>
 
-      {chosen && (
-        <>
-          <Divider />
-          <StepHeading n={2} done={selection !== null}>Trapper images</StepHeading>
-          <p className={`${hintClass} mb-4`}>
-            The collection and deployments the subject set was uploaded from — each subject&rsquo;s file name and deployment
-            come from them. Subjects whose image isn&rsquo;t among them are left as they are.
-          </p>
-          <div className="p-4 mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700">
+      <Step
+        n={2} title="Trapper deployments" status={status(2)} canEdit={!running} onEdit={() => setOpen(2)}
+        description="Trapper deployments associated with the images."
+        summary={selection && <>
+          {selection.research_project.name} · {selection.classification_project.name}<br />
+          {selection.collection.name} · {selection.all_deployments ? 'all deployments' : `${selection.deployments.length} deployment(s)`}
+        </>}
+      >
+        {reached >= 2 && (
+          <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
             <TrapperSelectionForm onSelectionChange={handleSelectionChange} useSavedConnection />
           </div>
+        )}
+        <div className="flex justify-end mt-4">
+          <button type="button" className={btnPrimary} disabled={!selection} onClick={() => next(3)}>Continue to review</button>
+        </div>
+      </Step>
 
-          <Divider />
-          <StepHeading n={3}>Update</StepHeading>
-          <IdListsEditor
-            kind="subject" initial={NO_LISTS} onCommit={setSubjectLists} disabled={running} className="mb-4"
-            intro={<>
-              Only some subjects, or never some — wildintel-tools&rsquo; <span className="font-mono">--white-list</span> /{' '}
-              <span className="font-mono">--black-list</span>. Load a list of subject ids, a CSV with a{' '}
-              <span className="font-mono">subject_id</span> column, a <em>Validation &amp; audit</em> report (its subjects with
-              metadata issues) or this page&rsquo;s own log.
-            </>}
-          />
-          <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-sm text-zinc-600 dark:text-zinc-300">
-                {!selection
-                  ? 'Choose the Trapper images first.'
-                  : run
-                    ? <>
-                      {run.dryRun && <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 mr-2 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Dry run</span>}
-                      <strong>{done.toLocaleString()}</strong> of {total.toLocaleString()} subjects checked
-                    </>
-                    : 'Try a dry run first: it shows every change without making it.'}
-              </span>
-              {running
-                ? <button type="button" className={btnOutline} onClick={stop}><SmallSpinner />Stop</button>
-                : (
-                  <div className="flex gap-2">
-                    <button type="button" className={btnOutline} disabled={!ready} onClick={() => start(true)}>
-                      {run?.dryRun ? 'Dry run again' : 'Dry run'}
-                    </button>
-                    <button type="button" className={btnPrimary} disabled={!ready || confirming} onClick={() => setConfirming(true)}>
-                      Update metadata
-                    </button>
-                  </div>
-                )}
-            </div>
+      <Step
+        n={3} title="Review and update" status={status(3)} canEdit={!running} onEdit={() => setOpen(3)}
+        description="Review the changes before applying them."
+        summary={<>
+          {mode === 'dry' ? 'Dry-run' : 'Update'} · {subjectLists.include === null && subjectLists.exclude.length === 0
+            ? 'all eligible subjects'
+            : [subjectLists.include !== null && `only ${subjectLists.include.length.toLocaleString()}`,
+              subjectLists.exclude.length > 0 && `never ${subjectLists.exclude.length.toLocaleString()}`].filter(Boolean).join(' · ')}
+        </>}
+      >
+      <h5 className="text-sm font-semibold mb-1">A. Subject selection</h5>
+      <p className={`${hintClass} mb-3`}>Optional. Without filters, every eligible subject is processed.</p>
+      <IdListsEditor
+        kind="subject" initial={NO_LISTS} onCommit={setSubjectLists} disabled={running} className="mb-6" layout="cards"
+        intro={null}
+      />
 
-            {confirming && chosen && (
-              <div className="mt-3 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-sm text-zinc-700 dark:text-zinc-300">
-                <p>
-                  Update the metadata of <strong>{chosen.display_name}</strong>&rsquo;s subjects in Zooniverse? The fields that
-                  differ are overwritten — this app can&rsquo;t undo it. A dry run shows exactly what would change.
-                </p>
-                <div className="flex gap-2 mt-3">
-                  <button type="button" className={btnPrimary} onClick={() => start(false)}>Yes, update</button>
-                  <button type="button" className={btnOutline} onClick={() => setConfirming(false)}>Cancel</button>
-                </div>
-              </div>
-            )}
-
-            {run?.trapper && (
-              <div className="mt-3">
-                <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-300 mb-1">
-                  <span>Trapper deployments fetched</span>
-                  <span>{run.trapper.done} of {run.trapper.total} · {run.trapper.media.toLocaleString()} images</span>
-                </div>
-                <ProgressBar
-                  percent={run.trapper.total ? Math.round((run.trapper.done / run.trapper.total) * 100) : 100}
-                  label="Trapper deployments fetched" tone={run.subjects ? 'emerald' : 'blue'}
-                />
-              </div>
-            )}
-            {run?.subjects && (
-              <div className="mt-3">
-                <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-300 mb-1">
-                  <span>Subjects checked</span>
-                  <span>{done.toLocaleString()} of {total.toLocaleString()}</span>
-                </div>
-                <ProgressBar
-                  percent={run.status === 'done' ? 100 : total ? Math.min(100, Math.round((done / total) * 100)) : 0}
-                  label="Subjects checked"
-                  tone={run.status === 'done' ? (run.counts.failed ? 'amber' : 'emerald') : 'blue'}
-                />
-              </div>
-            )}
-
-            {run && run.subjects && (
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
-                {shownStatuses.map((status) => (
-                  <div key={status} className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700" title={STATUS_LABELS[status].hint}>
-                    <div className={`text-lg font-semibold ${STATUS_LABELS[status].tone}`}>{run.counts[status].toLocaleString()}</div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">{STATUS_LABELS[status].label}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {run && Object.keys(run.fields).length > 0 && (
-              <p className="text-xs text-zinc-600 dark:text-zinc-300 mt-3">
-                {run.dryRun ? 'Would change' : 'Changed'}:{' '}
-                {Object.entries(run.fields).sort((a, b) => b[1] - a[1]).map(([field, n]) => (
-                  <span key={field} className="inline-block mr-3"><span className="font-mono">{field}</span> in {n.toLocaleString()}</span>
-                ))}
-              </p>
-            )}
-
-            {run?.status === 'done' && (
-              <p className={`text-sm mt-3 ${run.counts.failed ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                {run.dryRun
-                  ? `Dry run finished: ${run.counts.would_update.toLocaleString()} subject(s) would be updated — nothing was changed.`
-                  : `Update finished: ${run.counts.updated.toLocaleString()} subject(s) updated${run.counts.failed ? `, ${run.counts.failed.toLocaleString()} failed — update again to retry them` : ''}.`}
-              </p>
-            )}
-            {run?.status === 'stopped' && (
-              <p className={hintClass}>{run.dryRun ? 'Stopped.' : 'Stopped — the subjects already updated stay updated.'}</p>
-            )}
-            {run?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{run.error}</p>}
-
-            {run && run.changed.length > 0 && (
-              <>
-                <div className="flex items-center justify-between gap-3 mt-4">
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {run.changed.length > SHOWN_CHANGES
-                      ? `The last ${SHOWN_CHANGES} of ${run.changed.length.toLocaleString()} subjects with changes`
-                      : 'Subjects with changes'}
-                    {run.changed.length >= KEPT_CHANGES && ' (the log keeps the first 2,000)'}
-                  </span>
-                  <button type="button" className={btnOutline} onClick={() => chosen && downloadLog(run, chosen.id)}>Download log (JSON)</button>
-                </div>
-                <ChangesTable rows={run.changed} />
-              </>
-            )}
-          </div>
-        </>
+      <h5 className="text-sm font-semibold mb-1">B. Execution mode</h5>
+      <p className={`${hintClass} mb-3`}>What do you want to do with the selected subjects?</p>
+      <div role="radiogroup" aria-label="Execution mode" className="space-y-3 mb-3">
+        {([
+          ['dry', 'Dry-run — Simulate the update', 'Works out the changes and spots problems without modifying any metadata.'],
+          ['update', 'Update — Apply the changes', 'Updates the metadata of the selected subjects.'],
+        ] as const).map(([value, label, hint]) => (
+          <label key={value} className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="radio" name="metadata-mode" className="mt-1" checked={mode === value} disabled={running}
+              onChange={() => { setMode(value); setConfirming(false) }}
+            />
+            <span>
+              <span className="block text-sm font-semibold text-zinc-800 dark:text-zinc-100">{label}</span>
+              <span className="block text-sm text-zinc-500 dark:text-zinc-400">{hint}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {mode === 'update' && (
+        <div className="mb-3 p-3 rounded-lg border border-amber-500/70 text-sm">
+          <p className="font-semibold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+            <svg role="img" aria-label="Warning" className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.5l9.5 16.5h-19L12 3.5zM12 10v4.5M12 17.2v.1" />
+            </svg>
+            Real update
+          </p>
+          <p className="text-zinc-600 dark:text-zinc-300">Check the dry run&rsquo;s result first to confirm the scope of the changes.</p>
+        </div>
       )}
+      <div>
+        {mode === 'dry'
+          ? <button type="button" className={`${btnPrimary} w-full justify-center py-3 text-base`} disabled={!ready} onClick={() => start(true)}>{run?.dryRun ? 'Run dry-run again' : 'Run dry-run'}</button>
+          : <button type="button" className={`${btnPrimary} w-full justify-center py-3 text-base`} disabled={!ready || confirming} onClick={() => setConfirming(true)}>Review and update</button>}
+
+        {confirming && chosen && (
+          <div className="mt-3 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-sm text-zinc-700 dark:text-zinc-300">
+            <p>
+              Update the metadata of <strong>{chosen.display_name}</strong>&rsquo;s subjects in Zooniverse? The fields that
+              differ are overwritten — this app can&rsquo;t undo it. A dry run shows exactly what would change.
+            </p>
+            <div className="flex gap-2 mt-3">
+              <button type="button" className={btnPrimary} onClick={() => start(false)}>Yes, update</button>
+              <button type="button" className={btnOutline} onClick={() => setConfirming(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
+
+      </div>
+      </Step>
+
+      <Step
+        n={4} title="Update results" status={status(4)} canEdit={false} onEdit={() => setOpen(4)}
+        description="Progress and changes of the run."
+      >
+      <div>
+        {run && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-3">
+            {run.dryRun && <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 mr-2 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">Dry run</span>}
+            <strong>{done.toLocaleString()}</strong> of {total.toLocaleString()} subjects checked
+          </p>
+        )}
+        {running && (
+          <button type="button" className={`${btnOutline} mb-3`} onClick={stop}><SmallSpinner />Stop</button>
+        )}
+
+        {run?.trapper && (
+          <div className="mt-3">
+            <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-300 mb-1">
+              <span>Trapper deployments fetched</span>
+              <span>{run.trapper.done} of {run.trapper.total} · {run.trapper.media.toLocaleString()} images</span>
+            </div>
+            <ProgressBar
+              percent={run.trapper.total ? Math.round((run.trapper.done / run.trapper.total) * 100) : 100}
+              label="Trapper deployments fetched" tone={run.subjects ? 'emerald' : 'blue'}
+            />
+          </div>
+        )}
+        {run?.subjects && (
+          <div className="mt-3">
+            <div className="flex justify-between text-xs text-zinc-600 dark:text-zinc-300 mb-1">
+              <span>Subjects checked</span>
+              <span>{done.toLocaleString()} of {total.toLocaleString()}</span>
+            </div>
+            <ProgressBar
+              percent={run.status === 'done' ? 100 : total ? Math.min(100, Math.round((done / total) * 100)) : 0}
+              label="Subjects checked"
+              tone={run.status === 'done' ? (run.counts.failed ? 'amber' : 'emerald') : 'blue'}
+            />
+          </div>
+        )}
+
+        {run && run.subjects && (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
+            {shownStatuses.map((status) => (
+              <div key={status} className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700" title={STATUS_LABELS[status].hint}>
+                <div className={`text-lg font-semibold ${STATUS_LABELS[status].tone}`}>{run.counts[status].toLocaleString()}</div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">{STATUS_LABELS[status].label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {run && Object.keys(run.fields).length > 0 && (
+          <p className="text-xs text-zinc-600 dark:text-zinc-300 mt-3">
+            {run.dryRun ? 'Would change' : 'Changed'}:{' '}
+            {Object.entries(run.fields).sort((a, b) => b[1] - a[1]).map(([field, n]) => (
+              <span key={field} className="inline-block mr-3"><span className="font-mono">{field}</span> in {n.toLocaleString()}</span>
+            ))}
+          </p>
+        )}
+
+        {run?.status === 'done' && (
+          <p className={`text-sm mt-3 ${run.counts.failed ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+            {run.dryRun
+              ? `Dry run finished: ${run.counts.would_update.toLocaleString()} subject(s) would be updated — nothing was changed.`
+              : `Update finished: ${run.counts.updated.toLocaleString()} subject(s) updated${run.counts.failed ? `, ${run.counts.failed.toLocaleString()} failed — update again to retry them` : ''}.`}
+          </p>
+        )}
+        {run?.status === 'stopped' && (
+          <p className={hintClass}>{run.dryRun ? 'Stopped.' : 'Stopped — the subjects already updated stay updated.'}</p>
+        )}
+        {run?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{run.error}</p>}
+
+        {run && run.changed.length > 0 && (
+          <>
+            <div className="flex items-center justify-between gap-3 mt-4">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                {run.changed.length > SHOWN_CHANGES
+                  ? `The last ${SHOWN_CHANGES} of ${run.changed.length.toLocaleString()} subjects with changes`
+                  : 'Subjects with changes'}
+                {run.changed.length >= KEPT_CHANGES && ' (the log keeps the first 2,000)'}
+              </span>
+              <div className="flex gap-2">
+                <button type="button" className={btnOutline} aria-expanded={showDetails} onClick={() => setShowDetails((v) => !v)}>
+                  {showDetails ? 'Hide details' : 'Show details'}
+                </button>
+                <button type="button" className={btnOutline} onClick={() => chosen && downloadLog(run, chosen.id)}>Export report</button>
+              </div>
+            </div>
+            {showDetails && <ChangesTable rows={run.changed} />}
+          </>
+        )}
+      </div>
+      </Step>
 
       <div className="mt-10">
         <button type="button" className={btnOutline} onClick={onBack} disabled={running}>Back</button>
