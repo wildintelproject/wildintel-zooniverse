@@ -78,11 +78,11 @@ describe('WizardPage', () => {
   it('retrieving classifications opens its own page, and comes back', async () => {
       render(<WizardPage />)
     await userEvent.click(screen.getByRole('button', { name: /retrieve classifications/i }))
-    expect(screen.getByRole('heading', { name: 'Zooniverse project' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '1. Zooniverse project' })).toBeInTheDocument()
     expect(screen.getByText('What do you want to do?').closest('.hidden')).not.toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
-    expect(screen.queryByRole('heading', { name: 'Zooniverse project' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '1. Zooniverse project' })).not.toBeInTheDocument()
     expect(screen.getByText('What do you want to do?').closest('.hidden')).toBeNull()
   })
 

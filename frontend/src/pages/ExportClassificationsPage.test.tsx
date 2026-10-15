@@ -4,11 +4,10 @@ import userEvent from '@testing-library/user-event'
 import { api } from '../api'
 import ExportClassificationsPage from './ExportClassificationsPage'
 import type { ExportEvent, ExportResult } from '../types'
-import { APP_SETTINGS, CLASSIFICATION_PROJECTS, COLLECTIONS, DEPLOYMENTS, RESEARCH_PROJECTS, ZOONIVERSE_PROJECTS } from '../test/fixtures'
+import { CLASSIFICATION_PROJECTS, COLLECTIONS, DEPLOYMENTS, RESEARCH_PROJECTS, ZOONIVERSE_PROJECTS } from '../test/fixtures'
 
 vi.mock('../api', () => ({
   api: {
-    getSettings: vi.fn(),
     zooniverseGetConfig: vi.fn(),
     zooniverseTestConnection: vi.fn(),
     zooniverseProjects: vi.fn(),
@@ -54,7 +53,6 @@ function controlledExport() {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockedApi.getSettings.mockResolvedValue(APP_SETTINGS)
   mockedApi.zooniverseGetConfig.mockResolvedValue({ user_name: 'SimSan', has_password: true })
   mockedApi.zooniverseTestConnection.mockResolvedValue({ ok: true, login: 'SimSan', display_name: 'SimSan' })
   mockedApi.zooniverseProjects.mockResolvedValue({ results: ZOONIVERSE_PROJECTS })
@@ -78,7 +76,9 @@ async function chooseWorkflow() {
   await userEvent.click(await screen.findByRole('option', { name: /Doñana National Park \(#29186\)/ }))
 }
 
-const next = () => userEvent.click(screen.getByRole('button', { name: /^next$/i }))
+const cont = (to: RegExp) => userEvent.click(screen.getByRole('button', { name: to }))
+const toTrapper = () => cont(/continue to trapper deployments/i)
+const toExport = () => cont(/continue to export/i)
 
 async function chooseTrapperImages() {
   await userEvent.type(await screen.findByLabelText('Research project'), 'Doñana')
@@ -93,9 +93,9 @@ async function chooseTrapperImages() {
 /** The three steps, up to the summary with its Export CSV button. */
 async function reachSummary() {
   await chooseWorkflow()
-  await next()
+  await toTrapper()
   await chooseTrapperImages()
-  await next()
+  await toExport()
 }
 
 describe('ExportClassificationsPage', () => {
@@ -126,7 +126,7 @@ describe('ExportClassificationsPage', () => {
     expect(mockedApi.zooniverseProjects).toHaveBeenCalledWith({ username: '', password: '' })
     // Trapper's research projects load once its step is reached.
     expect(mockedApi.trapperResearchProjects).not.toHaveBeenCalled()
-    await next()
+    await toTrapper()
     await waitFor(() => expect(mockedApi.trapperResearchProjects).toHaveBeenCalledWith({ url: '', username: '', password: '' }))
   })
 
@@ -158,11 +158,12 @@ describe('ExportClassificationsPage', () => {
     expect(mockedApi.zooniverseWorkflowExport).not.toHaveBeenCalled()
   })
 
-  it('goes step by step: Zooniverse, Trapper images, then the summary and the export', async () => {
+  it('goes step by step: Zooniverse, Trapper deployments, then the review and the export', async () => {
     render(<ExportClassificationsPage onBack={vi.fn()} />)
     await screen.findByLabelText('Project')
-    expect(screen.getByRole('heading', { name: 'Zooniverse project' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^next$/i })).toBeDisabled() // no workflow yet
+    expect(screen.getByRole('heading', { name: '1. Zooniverse project' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /continue to trapper deployments/i })).toBeDisabled() // no workflow yet
+    expect(screen.getAllByRole('img', { name: 'Locked' })).toHaveLength(3)
 
     // A tick for each choice: the project, then the workflow.
     expect(screen.queryByRole('img', { name: 'Done' })).not.toBeInTheDocument()
@@ -172,32 +173,25 @@ describe('ExportClassificationsPage', () => {
     await userEvent.click(await screen.findByLabelText('Workflow'))
     await userEvent.click(await screen.findByRole('option', { name: /Doñana National Park \(#29186\)/ }))
     expect(screen.getAllByRole('img', { name: 'Done' })).toHaveLength(2)
-    await next()
-    expect(screen.getByRole('heading', { name: 'Trapper images' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^next$/i })).toBeDisabled() // no images yet
+    await toTrapper()
+    expect(screen.getByText('Completed')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /continue to export/i })).toBeDisabled() // no images yet
 
-    // The first step stays mounted (hidden): its two ticks are still there, and none of Trapper's yet.
-    expect(screen.getAllByRole('img', { name: 'Done' })).toHaveLength(2)
     await chooseTrapperImages()
-    // A tick for each of them: research project, classification project, collection, deployments.
-    expect(screen.getAllByRole('img', { name: 'Done' })).toHaveLength(2 + 4)
-    await next()
-    expect(screen.getByRole('heading', { name: 'Summary' })).toBeInTheDocument()
-    expect(screen.getByText('European Camera Trap Project')).toBeInTheDocument()
+    await toExport()
+    expect(screen.getAllByText('Completed')).toHaveLength(2)
+    expect(screen.getByText(/European Camera Trap Project/)).toBeInTheDocument()
     expect(screen.getAllByText(/Doñana National Park/).length).toBeGreaterThan(0)
-    expect(screen.getByText(/The latest, of 20 Sep 2026, 10:00 UTC/)).toBeInTheDocument()
-    expect(screen.getByText('Main CP')).toBeInTheDocument()
-    expect(screen.getByText(/classified by zooniverse@wildintel-project.org/)).toBeInTheDocument()
+    expect(screen.getByText(/Classifications export: the latest, of 20 Sep 2026, 10:00 UTC/)).toBeInTheDocument()
+    expect(screen.getByText(/Main CP/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /export csv/i })).toBeEnabled()
 
-    // Back keeps what was chosen.
-    await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
+    // A closed step keeps what was chosen.
+    await userEvent.click(screen.getByRole('button', { name: 'Edit Trapper deployments' }))
     expect(screen.getByLabelText('Collection')).toHaveDisplayValue(/R0033/)
-    await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
-    expect(screen.getByLabelText('Workflow')).toHaveDisplayValue(/Doñana National Park/)
   })
 
-  it('leaves for the task choice from its first step', async () => {
+  it('leaves for the task choice', async () => {
     const onBack = vi.fn()
     render(<ExportClassificationsPage onBack={onBack} />)
     await userEvent.click(screen.getByRole('button', { name: /^back$/i }))

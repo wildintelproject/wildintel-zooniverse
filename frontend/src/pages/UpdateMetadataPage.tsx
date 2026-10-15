@@ -6,6 +6,7 @@ import ProgressBar from '../components/ProgressBar'
 import Combobox from '../components/Combobox'
 import FieldLabel from '../components/FieldLabel'
 import Step from '../components/WizardStep'
+import { deploymentsSummary } from '../lib/deploymentsSummary'
 import TrapperSelectionForm from '../components/TrapperSelectionForm'
 import ZooniverseProjectPicker, { SmallSpinner } from '../components/ZooniverseProjectPicker'
 import type { ZooniversePick } from '../components/ZooniverseProjectPicker'
@@ -239,7 +240,7 @@ export default function UpdateMetadataPage({ onBack }: Props) {
         description="Trapper deployments associated with the images."
         summary={selection && <>
           {selection.research_project.name} · {selection.classification_project.name}<br />
-          {selection.collection.name} · {selection.all_deployments ? 'all deployments' : `${selection.deployments.length} deployment(s)`}
+          {selection.collection.name} · {deploymentsSummary(selection)}
         </>}
       >
         {reached >= 2 && (
