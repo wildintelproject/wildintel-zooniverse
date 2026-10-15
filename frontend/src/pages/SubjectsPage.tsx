@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import ZooniverseProjectPicker, { Divider, SmallSpinner, StepHeading } from '../components/ZooniverseProjectPicker'
 import type { ZooniversePick } from '../components/ZooniverseProjectPicker'
@@ -55,18 +55,16 @@ function SubjectCard({ subject }: { subject: ZooniverseSubjectInfo }) {
           <summary className="text-xs cursor-pointer text-zinc-600 dark:text-zinc-300">
             Metadata ({Object.keys(subject.metadata).length} fields)
           </summary>
-          <table className="mt-1 text-xs w-full">
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {Object.entries(subject.metadata).map(([k, v]) => (
-                <tr key={k}>
-                  <td className="py-0.5 pr-3 font-mono text-zinc-500 dark:text-zinc-400 align-top whitespace-nowrap">{k}</td>
-                  <td className="py-0.5 font-mono break-all">
-                    {isUrl(v) ? <a href={v} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 underline">{v}</a> : value(v)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <dl className="mt-1 text-xs grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5">
+            {Object.entries(subject.metadata).map(([k, v]) => (
+              <Fragment key={k}>
+                <dt className="font-mono text-zinc-500 dark:text-zinc-400">{k}</dt>
+                <dd className="font-mono break-all">
+                  {isUrl(v) ? <a href={v} target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 underline">{v}</a> : value(v)}
+                </dd>
+              </Fragment>
+            ))}
+          </dl>
         </details>
       </div>
     </li>
