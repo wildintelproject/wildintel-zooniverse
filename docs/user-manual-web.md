@@ -363,8 +363,9 @@ several species were seen, "no animal" answers don't count.
 
 ## 6. Utilities
 
-**🧰 Utils**, on the first step, opens four tools. Each starts by connecting to Zooniverse and
-choosing a project.
+**🧰 Utils**, on the first step, opens four tools. Each uses the Zooniverse and Trapper
+accounts saved in the [settings](#3-settings) — there is nothing to fill in or test — and starts
+by choosing a project.
 
 ![The four utilities](img/screenshots/utils.png){ loading=lazy }
 
@@ -388,19 +389,21 @@ left half-written.
 
 ### Validation & audit
 
-Checks a subject set.
+Checks a subject set in two phases.
 
 1. Choose the **subject set**.
-2. **Compare with what an upload would send** (on by default): choose the Trapper collection and
-   the criteria it was uploaded with. Otherwise only the subject set itself is checked.
-3. **Validate**.
+2. **Validate** it on its own, without Trapper: duplicated images, subjects that can't be traced
+   back to Trapper, and missing metadata fields.
+3. Then **compare it with Trapper**: choose the collection and the criteria it was uploaded with,
+   and **Compare**. It reuses the subjects of the first phase, and adds the missing and extra images
+   and the metadata fields that differ from what an upload would set.
 
 | Finding | Meaning |
 |---|---|
 | Missing | Images an upload would send that aren't in the subject set. *(compared)* |
 | Extra | Images in the subject set an upload wouldn't send. *(compared)* |
 | Duplicated | A Trapper image in more than one subject. |
-| Unmatched | Subjects with no Trapper media id in their metadata. |
+| Unmatched | Subjects whose Trapper media can't be read from their metadata (`external_id`, `origin`, or the `Filename`'s `<media id>_x_` prefix of older uploads). |
 | Metadata issues | Required fields missing — and, compared, fields different from what an upload would set. |
 
 With a comparison, a table shows each deployment's expected, uploaded and missing images. Each

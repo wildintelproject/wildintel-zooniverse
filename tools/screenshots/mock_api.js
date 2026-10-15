@@ -143,16 +143,21 @@
     return events
   }
 
-  const validationEvents = () => {
+  const validationEvents = (compared) => {
     const subjects = 26114
     const deployments = DEPLOYMENTS.map((d) => { const c = counts(d); return { ...c, expected: c.selected } })
     const expected = deployments.reduce((s, d) => s + d.expected, 0)
     const missing = Array.from({ length: 37 }, (_, i) => ({ media_id: 4300000 + i * 17, deployment_id: DEPLOYMENTS[2].deployment_id, file_name: `IMG_${2200 + i}.JPG` }))
-    return [
+    const alone = [
       { type: 'subjects', id: 134791, name: 'Doñana_2_R0033_33_2026-03', total: subjects },
       { type: 'progress', phase: 'subjects', done: subjects },
+    ]
+    const fetched = [
       { type: 'trapper', total: 6 },
       ...deployments.map((d) => ({ type: 'deployment', ...counts(DEPLOYMENTS.find((x) => x.deployment_id === d.deployment_id)) })),
+    ]
+    return [
+      ...(compared ? fetched : alone),
       {
         type: 'report', subject_set: { id: 134791, name: 'Doñana_2_R0033_33_2026-03' }, subjects, media: subjects - 3,
         uploaded: [], duplicated: [
@@ -164,12 +169,15 @@
           { subject_id: 98000611, media_id: null, issues: ['no #mediaID'] },
           { subject_id: 98001702, media_id: 4001702, issues: ['external_id points to another Trapper instance'] },
         ],
-        compared: true, expected, missing, extra: [{ media_id: 3999001, subject_ids: [97999001] }],
-        deployments: deployments.map((d) => ({
-          deployment_id: d.deployment_id, expected: d.expected,
-          missing: d.deployment_id === DEPLOYMENTS[2].deployment_id ? 37 : 0,
-          uploaded: d.expected - (d.deployment_id === DEPLOYMENTS[2].deployment_id ? 37 : 0),
-        })),
+        compared,
+        ...(compared ? {
+          expected, missing, extra: [{ media_id: 3999001, subject_ids: [97999001] }],
+          deployments: deployments.map((d) => ({
+            deployment_id: d.deployment_id, expected: d.expected,
+            missing: d.deployment_id === DEPLOYMENTS[2].deployment_id ? 37 : 0,
+            uploaded: d.expected - (d.deployment_id === DEPLOYMENTS[2].deployment_id ? 37 : 0),
+          })),
+        } : {}),
       },
       { type: 'done' },
     ]
@@ -234,7 +242,7 @@
       '/api/upload/dry-run': () => ({ events: uploadEvents(true), hold: true }),
       '/api/upload/start': () => ({ events: uploadEvents(false), hold: true }),
       '/api/zooniverse/download-subject-sets': () => ({ events: downloadEvents(), hold: true }),
-      '/api/validation/subject-set': () => ({ events: validationEvents() }),
+      '/api/validation/subject-set': (body) => ({ events: validationEvents(Boolean(body.trapper)) }),
       '/api/metadata/update': () => ({ events: metadataEvents() }),
       '/api/export/classifications': () => ({ events: exportEvents() }),
       '/api/export/import': (body) => ({

@@ -169,22 +169,6 @@ def settings(page: Page) -> None:
     save(page, "settings")
 
 
-def pick_trapper(page: Page) -> None:
-    """A Trapper selection form on the page: connect, and pick R0033."""
-    page.get_by_role("button", name="Test Connection").last.click()
-    expect(page.get_by_text("research project(s) available")).to_be_visible()
-    page.get_by_label("Research project").select_option("2")
-    page.get_by_label("Classification project").select_option("10")
-    page.get_by_label("Collection", exact=True).select_option("33")
-    expect(page.get_by_label("R0033-DONA_0001_A")).to_be_visible()
-
-
-def connect_zooniverse(page: Page) -> None:
-    page.get_by_role("button", name="Test Connection").first.click()
-    expect(page.get_by_text("Connected as field.team")).to_be_visible()
-    page.get_by_label("Zooniverse project").select_option("30567")
-
-
 def choose(page: Page, label: str, option: str | re.Pattern) -> None:
     """A dropdown that can be typed in: open it, pick the option."""
     page.get_by_label(label, exact=True).click()
@@ -204,13 +188,18 @@ def classifications_zooniverse(page: Page) -> None:
     expect(page.get_by_text("Classification export available")).to_be_visible()
 
 
-def classifications_trapper(page: Page) -> None:
-    classifications_zooniverse(page)
-    page.get_by_role("button", name="Next", exact=True).click()
+def pick_trapper(page: Page) -> None:
+    """A Trapper selection form on the page (the saved account): pick R0033."""
     choose(page, "Research project", re.compile("DONA"))
     choose(page, "Classification project", re.compile("Doñana 2024"))
     choose(page, "Collection", re.compile("R0033"))
     expect(page.get_by_label("R0033-DONA_0001_A")).to_be_visible()
+
+
+def classifications_trapper(page: Page) -> None:
+    classifications_zooniverse(page)
+    page.get_by_role("button", name="Next", exact=True).click()
+    pick_trapper(page)
 
 
 @shot("classifications-zooniverse")
@@ -249,10 +238,15 @@ def utils(page: Page) -> None:
     save(page, "utils")
 
 
+def pick_subject_set(page: Page, name: str | re.Pattern) -> None:
+    choose(page, "Project", re.compile("European Camera Trap Project"))
+    choose(page, "Subject set", name)
+
+
 @shot("download-subject-sets")
 def download_subject_sets(page: Page) -> None:
     to_util(page, "Download subject sets")
-    connect_zooniverse(page)
+    choose(page, "Project", re.compile("European Camera Trap Project"))
     page.get_by_text("Pilot — autumn 2025").click()
     page.get_by_text("Doñana_2_R0031_31_2025-12").click()
     page.get_by_role("button", name="Download", exact=True).click()
@@ -263,19 +257,20 @@ def download_subject_sets(page: Page) -> None:
 @shot("validation")
 def validation(page: Page) -> None:
     to_util(page, "Validation & audit")
-    connect_zooniverse(page)
-    page.get_by_label("Subject set", exact=True).select_option("134791")
-    pick_trapper(page)
+    pick_subject_set(page, re.compile("#134791"))
     page.get_by_role("button", name="Validate", exact=True).click()
+    compare = page.get_by_role("button", name="Compare", exact=True)
+    expect(compare).to_be_visible()
+    pick_trapper(page)
+    compare.click()
     expect(page.get_by_role("button", name="Download report (JSON)")).to_be_visible()
-    save(page, "validation", top=heading(page, "Validate"), bottom=page.get_by_role("button", name="Back", exact=True))
+    save(page, "validation", top=heading(page, "Validate the subject set"), bottom=page.get_by_role("button", name="Back", exact=True))
 
 
 @shot("update-metadata")
 def update_metadata(page: Page) -> None:
     to_util(page, "Update metadata")
-    connect_zooniverse(page)
-    page.get_by_label("Subject set", exact=True).select_option("134791")
+    pick_subject_set(page, re.compile("#134791"))
     pick_trapper(page)
     page.get_by_role("button", name="Dry run", exact=True).click()
     expect(page.get_by_role("button", name="Download log (JSON)")).to_be_visible()
@@ -285,7 +280,6 @@ def update_metadata(page: Page) -> None:
 @shot("subjects")
 def subjects(page: Page) -> None:
     to_util(page, "Subjects")
-    connect_zooniverse(page)
     page.get_by_label("Subject ids", exact=True).fill("98000004, 98000005\n98999999")
     page.get_by_role("button", name="Look up").click()
     page.get_by_text("Metadata (6 fields)").first.click()
