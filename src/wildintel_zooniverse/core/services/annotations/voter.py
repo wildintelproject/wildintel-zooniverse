@@ -118,3 +118,8 @@ class Workflow29187AnnotationsVoter(SpeciesVoter):
     @staticmethod
     def _rank(species_count: Counter) -> list[tuple[str, int]]:
         return sorted(species_count.items(), key=lambda x: (-x[1], x[0]))
+
+
+class Workflow31813AnnotationsVoter(Workflow29187AnnotationsVoter):
+    """Workflow 31813 (Oder Delta) — 29187's voter: a tie goes to the species
+    first in alphabetical order, so the same votes always give the same result."""

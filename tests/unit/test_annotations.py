@@ -114,3 +114,17 @@ def test_the_extractor_maps_a_choice_with_the_workflows_own_mapping():
     # Not in the workflow's mapping: unknown.
     assert registry.extractor_and_voter(29187)[0].trapper_name("IBERIANLYNX") == "unknown"
     assert AnnotationsExtractor({}).trapper_name("REDDEER") == "unknown"
+
+
+def test_oder_delta_maps_every_choice_of_its_workflow():
+    from wildintel_zooniverse.core.services.annotations import registry
+    from wildintel_zooniverse.core.services.annotations.voter import Workflow29187AnnotationsVoter
+
+    extractor, voter = registry.extractor_and_voter(31813)
+    assert issubclass(voter, Workflow29187AnnotationsVoter)
+    assert extractor.trapper_name("FELISSP") == "Felis"
+    assert extractor.trapper_name("VEHICLE") == "vehicle"
+    assert extractor.trapper_name("CERVIDREDROEDEER") == "Cervidae"
+    assert extractor.trapper_name("EUROPEANBADGER") == "Meles meles"
+    # 27 choices: the 4 common ones plus 23 of its own.
+    assert len(registry.WORKFLOWS[31813].mapping) == 27

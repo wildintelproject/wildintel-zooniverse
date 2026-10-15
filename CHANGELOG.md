@@ -36,7 +36,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Retrieve classifications**: a workflow's Zooniverse classifications, voted into
   observations, written as a CSV for Trapper's classification import (split by size) — and
   **imported into Trapper** through its API, from the result or right when the export ends.
-  Workflows 17553, 29186 and 29187.
+  Workflows 17553, 29186, 29187 and 31813 (Oder Delta).
 - **Utils**: *Download subject sets*, *Validation & audit* (duplicated, unmatched, missing and
   extra images, metadata — and every image uploaded, downloadable as a list of media ids),
   *Update metadata* (with a dry run) and *Subjects* (look subjects up by id, or browse a subject

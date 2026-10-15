@@ -12,6 +12,7 @@ from wildintel_zooniverse.core.services.annotations import mappings
 from wildintel_zooniverse.core.services.annotations.extractor import AnnotationsExtractor
 from wildintel_zooniverse.core.services.annotations.voter import (
     AnnotationsVoter, Workflow17553AnnotationsVoter, Workflow29186AnnotationsVoter, Workflow29187AnnotationsVoter,
+    Workflow31813AnnotationsVoter,
 )
 
 
@@ -26,6 +27,7 @@ WORKFLOWS: dict[int, Workflow] = {
     17553: Workflow("IberianCameraTrapR1_1_2_3", mappings.DONANA, Workflow17553AnnotationsVoter),
     29186: Workflow("Doñana National Park", mappings.DONANA, Workflow29186AnnotationsVoter),
     29187: Workflow("Tatra National Park", mappings.TATRA, Workflow29187AnnotationsVoter),
+    31813: Workflow("Oder Delta", mappings.ODER_DELTA, Workflow31813AnnotationsVoter),
 }
 
 

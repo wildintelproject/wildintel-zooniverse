@@ -58,3 +58,31 @@ TATRA = {
     "MUSTELID": "Mustelidae",
     "BIRDGENERAL": "Aves",
 }
+
+# Workflow 31813 (Oder Delta).
+ODER_DELTA = {
+    **COMMON,
+    "VEHICLE": "vehicle",
+    "BIRD": "Aves",
+    "WOLF": "Canis lupus",
+    "DOMESTICDOG": "Canis familiaris",
+    "ROEDEER": "Capreolus capreolus",
+    "CERVIDREDROEDEER": "Cervidae",
+    "REDDEER": "Cervus elaphus",
+    "FALLOWDEER": "Dama dama",
+    "FELISSP": "Felis",
+    "DOMESTICCAT": "Felis catus",
+    "WILDCAT": "Felis silvestris",
+    "EUROPEANHARE": "Lepus europaeus",
+    "EURASIANLYNX": "Lynx lynx",
+    "MARTENPINEORSTONEMARTEN": "Martes",
+    "STONEMARTEN": "Martes foina",
+    "PINEMARTEN": "Martes martes",
+    "EUROPEANBADGER": "Meles meles",
+    "MUSTELID": "Mustelidae",
+    "RACCOONDOG": "Nyctereutes procyonoides",
+    "RACCOON": "Procyon lotor",
+    "REDSQUIRREL": "Sciurus vulgaris",
+    "WILDBOAR": "Sus scrofa",
+    "REDFOX": "Vulpes vulpes",
+}
