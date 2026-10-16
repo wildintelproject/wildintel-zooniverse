@@ -41,7 +41,7 @@ async function walkToDeployments() {
   await chooseCombo('Research project', 'Doñana', 'DONA — Doñana')
   await chooseCombo('Classification project', 'Main', 'Main CP')
   await userEvent.selectOptions(await screen.findByLabelText('Collection'), '33')
-  await screen.findByText('R0033-DONA_0001_A')
+  await screen.findByText(/\d+ of \d+ deployments selected/)
 }
 
 describe('TrapperSelectionForm', () => {
@@ -55,8 +55,15 @@ describe('TrapperSelectionForm', () => {
     // by the collection's own pk — only deployments with images in it come back
     expect(mockedApi.trapperDeployments).toHaveBeenCalledWith(expect.anything(), 2, 33)
     expect(screen.getByText(/70\/100 approved/)).toBeInTheDocument()
-    expect(screen.getByText('2 of 2 selected · 350 images')).toBeInTheDocument()
-    expect(screen.getByText(/200 images · 2024-09-05 → 2024-11-05/)).toBeInTheDocument()
+    expect(screen.getByText('2 of 2 deployments selected')).toBeInTheDocument()
+    expect(screen.getByText('350 images included')).toBeInTheDocument()
+    // The list is folded away until asked for.
+    expect(screen.queryByRole('checkbox', { name: 'R0033-DONA_0001_A' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Change selection' }))
+    expect(screen.getByText('200 images')).toBeInTheDocument()
+    expect(screen.getByText('2024-09-05 → 2024-11-05')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Hide list' }))
+    expect(screen.queryByRole('checkbox', { name: 'R0033-DONA_0001_A' })).not.toBeInTheDocument()
     expect(onSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({
       research_project: { pk: 2, name: 'Doñana' },
       classification_project: { pk: 10, name: 'Main CP' },
@@ -70,14 +77,16 @@ describe('TrapperSelectionForm', () => {
     render(<TrapperSelectionForm onSelectionChange={onSelectionChange} />)
     await walkToDeployments()
 
+    await userEvent.click(screen.getByRole('button', { name: 'Change selection' }))
     await userEvent.click(screen.getByRole('checkbox', { name: 'R0033-DONA_0007_B' }))
     expect(onSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({
       deployments: [{ pk: 4, deployment_id: 'R0033-DONA_0001_A', image_count: 150 }], all_deployments: false,
     }))
 
-    expect(screen.getByText('1 of 2 selected · 150 images')).toBeInTheDocument()
+    expect(screen.getByText('1 of 2 deployments selected')).toBeInTheDocument()
+    expect(screen.getByText('150 images included')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('checkbox', { name: /select all/i })) // back to all
-    expect(screen.getByText('2 of 2 selected · 350 images')).toBeInTheDocument()
+    expect(screen.getByText('2 of 2 deployments selected')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('checkbox', { name: /select all/i })) // none
     expect(onSelectionChange).toHaveBeenLastCalledWith(null)
     expect(screen.getByText(/choose at least one deployment/i)).toBeInTheDocument()
@@ -105,6 +114,7 @@ describe('TrapperSelectionForm', () => {
     await chooseCombo('Classification project', 'Main', 'Main CP')
     await userEvent.selectOptions(await screen.findByLabelText('Collection'), '33')
 
+    await userEvent.click(await screen.findByRole('button', { name: 'Change selection' }))
     await userEvent.type(await screen.findByLabelText('Filter deployments'), 'SITE_1')
     expect(screen.getByText('R0033-SITE_10')).toBeInTheDocument()
     expect(screen.queryByText('R0033-SITE_02')).not.toBeInTheDocument()

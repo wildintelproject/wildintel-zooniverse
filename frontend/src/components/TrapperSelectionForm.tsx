@@ -85,6 +85,8 @@ export default function TrapperSelectionForm({ onSelectionChange, useSavedConnec
   // Chosen deployment pks — starts with every one of them chosen.
   const [chosenDeployments, setChosenDeployments] = useState<Set<number>>(new Set())
   const [deploymentFilter, setDeploymentFilter] = useState('')
+  // The list of deployments to choose from, folded away behind the summary.
+  const [listOpen, setListOpen] = useState(false)
 
   // Prefill url/username (and whether a password is saved) from settings.toml
   // — the password itself never reaches the frontend: leaving the field
@@ -120,6 +122,7 @@ export default function TrapperSelectionForm({ onSelectionChange, useSavedConnec
     setDeployments(emptyLevel)
     setChosenDeployments(new Set())
     setDeploymentFilter('')
+    setListOpen(false)
   }
 
   function setField(key: keyof TrapperCredentials, value: string) {
@@ -401,40 +404,56 @@ export default function TrapperSelectionForm({ onSelectionChange, useSavedConnec
           )}
           {deployments.items.length > 0 && (
             <div>
-              <div className="flex items-center gap-3 mb-2 flex-wrap">
-                <label className="flex items-center gap-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer">
-                  <input
-                    type="checkbox" checked={allChosen}
-                    onChange={() => setChosenDeployments(allChosen ? new Set() : new Set(deployments.items.map((d) => d.pk)))}
-                  />
-                  Select all
-                </label>
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {chosenDeployments.size} of {deployments.items.length} selected · {chosenImages.toLocaleString()} images
-                </span>
-                {deployments.items.length > 8 && (
-                  <input
-                    aria-label="Filter deployments" className={`${inputClass} flex-1 min-w-[10rem]`} placeholder="Filter by id or location"
-                    value={deploymentFilter} onChange={(e) => setDeploymentFilter(e.target.value)}
-                  />
-                )}
+              <div className={`flex items-center justify-between gap-3 flex-wrap p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 ${listOpen ? 'rounded-b-none' : ''}`}>
+                <div>
+                  <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                    {chosenDeployments.size.toLocaleString()} of {deployments.items.length.toLocaleString()} deployments selected
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">{chosenImages.toLocaleString()} images included</p>
+                </div>
+                <button
+                  type="button" aria-expanded={listOpen} onClick={() => setListOpen((v) => !v)}
+                  className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  {listOpen ? 'Hide list' : 'Change selection'}
+                </button>
               </div>
-              <ul className="border border-zinc-300 dark:border-zinc-700 rounded divide-y divide-zinc-200 dark:divide-zinc-700 max-h-72 overflow-y-auto">
-                {shownDeployments.map((d) => (
-                  <li key={d.pk}>
-                    <label className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                      <input
-                        type="checkbox" checked={chosenDeployments.has(d.pk)} onChange={() => toggleDeployment(d.pk)}
-                        aria-label={d.deployment_id}
-                      />
-                      <span className="font-mono text-zinc-900 dark:text-zinc-100">{d.deployment_id}</span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-auto whitespace-nowrap">
-                        {d.image_count.toLocaleString()} images · {day(d.start_date)} → {day(d.end_date)}
-                      </span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
+              {listOpen && (
+                <div className="border border-t-0 border-zinc-200 dark:border-zinc-700 rounded-b-lg p-3">
+                  <div className="relative mb-3">
+                    <svg aria-hidden="true" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                      <circle cx="11" cy="11" r="6.5" />
+                      <path strokeLinecap="round" d="M16 16l4 4" />
+                    </svg>
+                    <input
+                      aria-label="Filter deployments" className={`${inputClass} pl-9`} placeholder="Filter by id or location"
+                      value={deploymentFilter} onChange={(e) => setDeploymentFilter(e.target.value)}
+                    />
+                  </div>
+                  <label className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer border-b border-zinc-200 dark:border-zinc-700">
+                    <input
+                      type="checkbox" checked={allChosen}
+                      onChange={() => setChosenDeployments(allChosen ? new Set() : new Set(deployments.items.map((d) => d.pk)))}
+                    />
+                    Select all {deployments.items.length.toLocaleString()}
+                  </label>
+                  <ul className="divide-y divide-zinc-200 dark:divide-zinc-700 max-h-72 overflow-y-auto">
+                    {shownDeployments.map((d) => (
+                      <li key={d.pk}>
+                        <label className="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+                          <input
+                            type="checkbox" checked={chosenDeployments.has(d.pk)} onChange={() => toggleDeployment(d.pk)}
+                            aria-label={d.deployment_id}
+                          />
+                          <span className="font-mono text-zinc-900 dark:text-zinc-100">{d.deployment_id}</span>
+                          <span className="ml-auto text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{d.image_count.toLocaleString()} images</span>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap w-40 text-right">{day(d.start_date)} → {day(d.end_date)}</span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {chosenDeployments.size === 0 && (
                 <p className="text-sm text-red-600 dark:text-red-400 mt-2">Choose at least one deployment.</p>
               )}
