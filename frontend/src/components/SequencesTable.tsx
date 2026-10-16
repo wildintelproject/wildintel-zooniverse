@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react'
+import { formatDateTime, formatDuration } from '../lib/format'
 import type { DeploymentCounts, SequenceDetail } from '../types'
 
 /** Sequences shown per deployment — the CSV has them all. */
@@ -13,17 +14,6 @@ const FATES: { key: Fate; label: string; className: string }[] = [
   { key: 'removed_vehicle', label: 'Removed: vehicle', className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300' },
   { key: 'collapsed_empty', label: 'Collapsed: empty', className: 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300' },
 ]
-
-function time(iso: string): string {
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString()
-}
-
-function duration(seconds: number): string {
-  if (seconds < 60) return `${seconds} s`
-  const m = Math.floor(seconds / 60)
-  return m < 60 ? `${m} min ${seconds % 60} s` : `${Math.floor(m / 60)} h ${m % 60} min`
-}
 
 /** A sequence's images, by time, each coloured by what became of it — a
  * link to it in Trapper. */
@@ -83,8 +73,8 @@ export default function SequencesTable({ deployment, trapperUrl }: { deployment:
                   aria-expanded={open === s.number}
                 >
                   <td className="py-1 pr-2 font-mono">{open === s.number ? '▾' : '▸'} {s.number}</td>
-                  <td className="py-1 px-2">{time(s.start)}</td>
-                  <td className="py-1 px-2">{duration(s.duration_s)}</td>
+                  <td className="py-1 px-2">{formatDateTime(s.start, { seconds: true })}</td>
+                  <td className="py-1 px-2">{formatDuration(s.duration_s * 1000)}</td>
                   <td className="py-1 px-2 text-right">{s.images}</td>
                   <td className={`py-1 px-2 text-right ${removed ? 'text-amber-700 dark:text-amber-400' : ''}`}>{removed}</td>
                   <td className={`py-1 pl-2 text-right font-semibold ${s.uploaded.length ? '' : 'text-zinc-400'}`}>{s.uploaded.length}</td>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api } from '../api'
+import { formatDateTime } from '../lib/format'
 import type { SessionSummary } from '../types'
 
 interface Props {
@@ -18,14 +19,6 @@ const TASK_TITLES: Record<string, string> = { upload: 'Upload to Zooniverse', do
 const btnOutline = 'px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50'
 const btnPrimary = 'px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-40'
 const btnDanger = 'px-4 py-2 text-sm border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50'
-
-function formatDate(value: string): string {
-  try {
-    return new Date(value).toLocaleString()
-  } catch {
-    return value
-  }
-}
 
 function SessionCard({ session, onResume, onDiscarded }: { session: SessionSummary; onResume: () => void; onDiscarded: (taskId: string) => void }) {
   const [discarding, setDiscarding] = useState(false)
@@ -50,7 +43,7 @@ function SessionCard({ session, onResume, onDiscarded }: { session: SessionSumma
         <strong className="text-zinc-900 dark:text-zinc-100">
           {TASK_TITLES[session.task] ?? session.task}: {selection.collection.name}
         </strong>
-        <p className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5">Started {formatDate(session.created_at)}</p>
+        <p className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5">Started {formatDateTime(session.created_at)}</p>
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm mb-4">
         <dt className="text-zinc-500 dark:text-zinc-400">Research project</dt>
