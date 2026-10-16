@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse
 
 from wildintel_zooniverse.core import config
 from wildintel_zooniverse.core import logging_setup
+from wildintel_zooniverse.core.services import folder_picker
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -64,6 +65,23 @@ def save_settings(new: config.Settings) -> dict:
     config.save_settings(new)
     logging_setup.apply_level(logging_setup.effective_level())
     return _public(new)
+
+
+class BrowseFolderRequest(BaseModel):
+    # None uses the picker's own default title.
+    title: str | None = None
+
+
+@router.post("/browse-folder")
+def browse_folder(req: BrowseFolderRequest = BrowseFolderRequest()) -> dict:
+    """Opens the OS's native folder picker on the machine running the
+    backend (always the user's own — see services.folder_picker) and
+    returns {"path": ...}, or {"path": None} if cancelled."""
+    try:
+        path = folder_picker.pick_folder(req.title or "Select a folder")
+    except folder_picker.FolderPickerUnavailable as exc:
+        raise HTTPException(501, str(exc)) from exc
+    return {"path": path}
 
 
 @router.get("/log")

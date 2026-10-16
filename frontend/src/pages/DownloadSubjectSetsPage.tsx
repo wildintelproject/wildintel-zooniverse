@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api'
+import BackButton from '../components/BackButton'
+import ChoiceCard from '../components/ChoiceCard'
 import IdListsEditor, { NO_LISTS } from '../components/IdListsEditor'
 import type { IdLists } from '../components/IdListsEditor'
 import ProgressBar from '../components/ProgressBar'
+import { BigNumber, DetailsPanel, RunBanner, StatGrid } from '../components/RunPanels'
 import Step from '../components/WizardStep'
+import { formatAgo, formatDateTime, formatDuration } from '../lib/format'
 import ZooniverseProjectPicker, { SmallSpinner } from '../components/ZooniverseProjectPicker'
 import type { ZooniversePick } from '../components/ZooniverseProjectPicker'
 import type { DownloadEvent } from '../types'
@@ -44,6 +48,10 @@ interface Run {
   sets: SetProgress[]
   failures: Failure[]
   outputDir?: string
+  /** Epoch ms: when it started, its last event and when it ended. */
+  startedAt: number
+  lastEventAt: number
+  endedAt?: number
 }
 
 function processed(s: SetProgress): number {
@@ -60,7 +68,7 @@ function finishing(s: SetProgress): SetProgress {
   return s.status === 'downloading' ? { ...s, status: 'done', inFlight: [] } : s
 }
 
-function reduce(run: Run, event: DownloadEvent): Run {
+function reduceEvent(run: Run, event: DownloadEvent): Run {
   switch (event.type) {
     case 'subject_set':
       return updateSet(
@@ -81,10 +89,14 @@ function reduce(run: Run, event: DownloadEvent): Run {
       return event.status === 'failed' ? { ...next, failures: [...next.failures, event] } : next
     }
     case 'done':
-      return { ...run, status: 'done', outputDir: event.output_dir, sets: run.sets.map(finishing) }
+      return { ...run, status: 'done', outputDir: event.output_dir, sets: run.sets.map(finishing), endedAt: Date.now() }
     default:
       return run
   }
+}
+
+function reduce(run: Run, event: DownloadEvent): Run {
+  return { ...reduceEvent(run, event), lastEventAt: Date.now() }
 }
 
 function SetRow({ s }: { s: SetProgress }) {
@@ -125,6 +137,158 @@ function SetRow({ s }: { s: SetProgress }) {
   )
 }
 
+// ── The run's views: under way, finished, failed ────────────────────────
+
+interface Totals { downloaded: number; existing: number; failed: number; filtered_out: number; total: number }
+
+function totalsOf(run: Run): Totals {
+  return run.sets.reduce(
+    (t, s) => ({
+      downloaded: t.downloaded + s.downloaded, existing: t.existing + s.existing, failed: t.failed + s.failed,
+      filtered_out: t.filtered_out + s.filtered_out, total: t.total + s.total,
+    }),
+    { downloaded: 0, existing: 0, failed: 0, filtered_out: 0, total: 0 },
+  )
+}
+
+const handled = (t: Totals) => t.downloaded + t.existing + t.failed + t.filtered_out
+const percentOf = (t: Totals) => (t.total > 0 ? Math.min(100, Math.round((handled(t) / t.total) * 100)) : 0)
+
+function detailRows(run: Run, now: number): [string, string][] {
+  const rows: [string, string][] = [['Started', formatDateTime(run.startedAt, { seconds: true })]]
+  if (run.outputDir) rows.push(['Folder', run.outputDir])
+  if (run.endedAt) rows.push([run.status === 'done' ? 'Finished' : 'Interrupted', formatDateTime(run.endedAt, { seconds: true })])
+  else rows.push(['Last activity', formatAgo(new Date(run.lastEventAt).toISOString(), now) || 'just now'])
+  return rows
+}
+
+/** Each subject set's own progress, and the images that failed. */
+function SetsDetail({ run }: { run: Run }) {
+  return (
+    <>
+      <ul className="mt-2 max-h-80 overflow-auto divide-y divide-zinc-200 dark:divide-zinc-700 pr-1">
+        {run.sets.map((s) => <SetRow key={s.id} s={s} />)}
+      </ul>
+      {run.failures.length > 0 && (
+        <div className="mt-3 max-h-60 overflow-auto">
+          <table className="w-full text-xs">
+            <thead className="text-zinc-500 dark:text-zinc-400 text-left">
+              <tr>
+                <th className="py-1 pr-2 font-medium">Subject</th>
+                <th className="py-1 px-2 font-medium">File</th>
+                <th className="py-1 pl-2 font-medium">Error</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+              {run.failures.map((f) => (
+                <tr key={f.subject_id}>
+                  <td className="py-1 pr-2 font-mono">{f.subject_id}</td>
+                  <td className="py-1 px-2 font-mono break-all">{f.file_name}</td>
+                  <td className="py-1 pl-2 text-red-600 dark:text-red-400">{f.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  )
+}
+
+function RunningView({ run, now, onStop }: { run: Run; now: number; onStop: () => void }) {
+  const t = totalsOf(run)
+  const percent = percentOf(t)
+  const current = run.sets.find((s) => s.status === 'downloading')
+  const elapsed = (now - run.startedAt) / 1000
+  const rate = elapsed > 0 ? handled(t) / elapsed : null
+  const remaining = percent > 2 && percent < 100 ? ((now - run.startedAt) * (100 - percent)) / percent : null
+  return (
+    <div>
+      <RunBanner
+        tone="blue" title="Downloading the images…"
+        detail={current ? `${current.name} · ${processed(current).toLocaleString()} of ${current.total.toLocaleString()}` : 'Starting…'}
+      >
+        <button type="button" className={btnOutline} onClick={onStop}>Cancel</button>
+      </RunBanner>
+      <BigNumber
+        label="Images processed" value={handled(t)} percent={percent} tone="blue"
+        caption={`${percent}% of ${t.total.toLocaleString()} images`}
+      />
+      <StatGrid items={[
+        { value: rate !== null && rate > 0 ? `${rate.toFixed(rate < 10 ? 1 : 0)} images/s` : '—', label: 'Speed' },
+        { value: remaining !== null ? `~${formatDuration(remaining)}` : '—', label: 'Time left' },
+        { value: formatDuration(now - run.startedAt), label: 'Elapsed' },
+      ]} />
+      <DetailsPanel rows={detailRows(run, now)} defaultOpen><SetsDetail run={run} /></DetailsPanel>
+    </div>
+  )
+}
+
+function FinishedView({ run, now }: { run: Run; now: number }) {
+  const t = totalsOf(run)
+  const percent = t.total > 0 ? Math.min(100, Math.round((t.downloaded / t.total) * 100)) : 0
+  return (
+    <div>
+      <RunBanner
+        tone={t.failed ? 'amber' : 'emerald'} title="Download completed"
+        detail={<>
+          {t.downloaded.toLocaleString()} images downloaded
+          {t.existing > 0 && <>, {t.existing.toLocaleString()} already there</>}
+          {t.filtered_out > 0 && <>, {t.filtered_out.toLocaleString()} left out by the subject lists</>}
+          {t.failed > 0 && <>, {t.failed.toLocaleString()} failed — download again to retry them</>}.
+        </>}
+      />
+      <BigNumber
+        label="Images downloaded" value={t.downloaded} percent={percent} tone={t.failed ? 'amber' : 'emerald'}
+        caption={`${percent}% of ${t.total.toLocaleString()} images`}
+      />
+      <StatGrid items={[
+        { value: t.existing.toLocaleString(), label: 'Already there', hint: 'Skipped: they were in the folder already.' },
+        { value: t.filtered_out.toLocaleString(), label: 'Left out', hint: 'Left out by the subject lists.' },
+        { value: t.failed.toLocaleString(), label: 'Failed', hint: 'Couldn’t be downloaded.' },
+      ]} />
+      <DetailsPanel rows={detailRows(run, now)}><SetsDetail run={run} /></DetailsPanel>
+    </div>
+  )
+}
+
+function FailedView({ run, now, onRetry, disabled }: { run: Run; now: number; onRetry: () => void; disabled: boolean }) {
+  const cancelled = run.status === 'stopped'
+  const t = totalsOf(run)
+  const rows = detailRows(run, now)
+  if (run.error) rows.unshift(['Cause', run.error])
+  return (
+    <div>
+      <RunBanner
+        tone="red" title={cancelled ? 'The download was cancelled' : 'The download was interrupted'}
+        detail={run.error ?? 'It was stopped before it finished.'}
+      >
+        <button
+          type="button" disabled={disabled} onClick={onRetry}
+          className="px-4 py-2 text-sm bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded hover:opacity-90 disabled:opacity-40"
+        >
+          Retry
+        </button>
+      </RunBanner>
+      <BigNumber
+        label="Images processed before the stop" value={handled(t)} percent={percentOf(t)} tone="red"
+        caption={`${percentOf(t)}% of ${t.total.toLocaleString()} images`}
+      />
+      <div className="mt-3 rounded-lg border border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-700">
+        <div className="p-4">
+          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">What is kept</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">The {t.downloaded.toLocaleString()} image(s) already downloaded stay in their folders.</p>
+        </div>
+        <div className="p-4">
+          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">What Retry does</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Downloads again from the start — the images already there are skipped.</p>
+        </div>
+      </div>
+      <DetailsPanel rows={rows} defaultOpen><SetsDetail run={run} /></DetailsPanel>
+    </div>
+  )
+}
+
 // ── The page ────────────────────────────────────────────────────────────
 
 interface Props {
@@ -146,6 +310,10 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
   // The step that's open, and the furthest one unlocked.
   const [open, setOpen] = useState(1)
   const [reached, setReached] = useState(1)
+  const [browsing, setBrowsing] = useState(false)
+  const [browseError, setBrowseError] = useState<string | null>(null)
+  // A clock for the running download's timings.
+  const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
     api.zooniverseDownloadDefaults().then((d) => setOutputDir((dir) => dir || d.output_dir)).catch(() => {})
@@ -158,9 +326,16 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
   const subjectSets = pick?.subjectSets ?? { items: [], loading: false, error: null }
 
   const running = run?.status === 'running'
-  const status = (n: number): 'open' | 'done' | 'locked' => (
-    n === open ? 'open' : n <= reached && (n === 1 || chosen.size > 0) && (n < 3 || run) ? 'done' : 'locked'
-  )
+  useEffect(() => {
+    if (!running) return
+    setNow(Date.now())
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [running])
+  const status = (n: number): 'open' | 'done' | 'locked' | 'running' | 'error' => {
+    if (n === 3 && n === open && run) return run.status === 'running' ? 'running' : run.status === 'done' ? 'done' : 'error'
+    return n === open ? 'open' : n <= reached && (n === 1 || chosen.size > 0) && (n < 3 || run) ? 'done' : 'locked'
+  }
   function next(n: number) {
     setOpen(n)
     setReached((r) => Math.max(r, n))
@@ -179,6 +354,19 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
   const chosenSets = subjectSets.items.filter((s) => chosen.has(s.id))
   const chosenImages = chosenSets.reduce((sum, s) => sum + s.subjects_count, 0)
 
+  async function handleBrowse() {
+    setBrowsing(true)
+    setBrowseError(null)
+    try {
+      const { path } = await api.browseFolder('Select the folder the images go to')
+      if (path) setOutputDir(path)
+    } catch (e) {
+      setBrowseError(`${e instanceof Error ? e.message : 'Could not open the folder dialog.'} Type the path instead.`)
+    } finally {
+      setBrowsing(false)
+    }
+  }
+
   function stop() {
     abortRef.current?.abort()
     abortRef.current = null
@@ -189,8 +377,9 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
     next(3)
     const controller = new AbortController()
     abortRef.current = controller
+    const started = Date.now()
     const initial: Run = {
-      status: 'running', failures: [],
+      status: 'running', failures: [], startedAt: started, lastEventAt: started,
       sets: chosenSets.map((s) => ({
         id: s.id, name: s.display_name, total: s.subjects_count, status: 'waiting',
         downloaded: 0, existing: 0, failed: 0, filtered_out: 0, inFlight: [],
@@ -198,7 +387,7 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
     }
     setRun(initial)
     const end = (r: Run, status: 'stopped' | 'error', error?: string): Run => (
-      { ...r, status, error, sets: r.sets.map((s) => ({ ...s, inFlight: [] })) }
+      { ...r, status, error, endedAt: Date.now(), sets: r.sets.map((s) => ({ ...s, inFlight: [] })) }
     )
     try {
       await api.zooniverseDownloadSubjectSets(
@@ -215,16 +404,6 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
       if (abortRef.current === controller) abortRef.current = null
     }
   }
-
-  const totals = run && run.sets.reduce(
-    (t, s) => ({
-      downloaded: t.downloaded + s.downloaded, existing: t.existing + s.existing, failed: t.failed + s.failed,
-      filtered_out: t.filtered_out + s.filtered_out, total: t.total + s.total,
-    }),
-    { downloaded: 0, existing: 0, failed: 0, filtered_out: 0, total: 0 },
-  )
-  const done = totals ? totals.downloaded + totals.existing + totals.failed + totals.filtered_out : 0
-  const percent = run?.status === 'done' ? 100 : totals && totals.total > 0 ? Math.min(100, Math.round((done / totals.total) * 100)) : 0
 
   return (
     <div>
@@ -265,7 +444,8 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
           </ul>
         </div>
         </ZooniverseProjectPicker>
-        <div className="flex justify-end mt-4">
+        <div className="flex items-center justify-between gap-3 mt-4">
+          <BackButton onClick={onBack} />
           <button type="button" className={btnPrimary} disabled={chosen.size === 0} onClick={() => next(2)}>Continue to download</button>
         </div>
       </Step>
@@ -277,93 +457,52 @@ export default function DownloadSubjectSetsPage({ onBack }: Props) {
       >
         <div className="mb-3">
           <label className={labelClass} htmlFor="download-folder">Folder</label>
-          <input
-            id="download-folder" className={inputClass} disabled={running}
-            value={outputDir} onChange={(e) => setOutputDir(e.target.value)}
-          />
+          <div className="flex gap-2">
+            <input
+              id="download-folder" className={inputClass} disabled={running}
+              value={outputDir} onChange={(e) => setOutputDir(e.target.value)}
+            />
+            <button type="button" className={`${btnOutline} shrink-0`} disabled={running || browsing} onClick={handleBrowse}>
+              {browsing && <SmallSpinner />}{browsing ? 'Browsing…' : 'Browse…'}
+            </button>
+          </div>
+          {browseError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{browseError}</p>}
           <p className={hintClass}>On this computer. Each subject set goes into a folder of its own inside it.</p>
         </div>
-        <label className="flex items-start gap-2.5 cursor-pointer mb-5">
-          <input type="checkbox" className="mt-1" checked={overwrite} disabled={running} onChange={(e) => setOverwrite(e.target.checked)} />
-          <span>
-            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Download again images already there</span>
-            <span className={`block ${hintClass}`}>Otherwise they&rsquo;re skipped — running it again only downloads what&rsquo;s missing.</span>
-          </span>
-        </label>
+        <div className="mb-6">
+          <ChoiceCard
+            type="checkbox" name="Download again images already there" selected={overwrite} disabled={running}
+            onSelect={() => setOverwrite((v) => !v)}
+          >
+            <p className={hintClass}>Otherwise they&rsquo;re skipped — running it again only downloads what&rsquo;s missing.</p>
+          </ChoiceCard>
+        </div>
 
-        <h5 className="text-sm font-semibold mb-1">Subject selection</h5>
-        <p className={`${hintClass} mb-3`}>Optional. Without filters, every subject of the chosen subject sets is downloaded.</p>
+        <h5 className="text-sm font-semibold mb-1">Which subjects?</h5>
+        <p className={`${hintClass} mb-3`}>Optional. Without a list, every subject of the chosen subject sets is downloaded.</p>
         <IdListsEditor
-          kind="subject" initial={NO_LISTS} onCommit={setSubjectLists} disabled={running} className="mb-5" layout="cards" intro={null}
+          kind="subject" initial={NO_LISTS} onCommit={setSubjectLists} disabled={running} className="mb-5" layout="choices" intro={null}
         />
-        <button type="button" className={`${btnPrimary} w-full justify-center py-3 text-base`} disabled={!outputDir.trim() || chosen.size === 0} onClick={handleDownload}>
-          {run ? 'Download again' : 'Download'}
-        </button>
+        <div className="flex items-center justify-between gap-3">
+          <BackButton onClick={() => setOpen(1)} disabled={running} />
+          <button type="button" className={btnPrimary} disabled={!outputDir.trim() || chosen.size === 0} onClick={handleDownload}>
+            {run ? 'Download again' : 'Download'}
+          </button>
+        </div>
       </Step>
 
       <Step
-        n={3} title="Download results" status={status(3)} canEdit={false} onEdit={() => setOpen(3)}
+        n={3} title="Download results" status={status(3)} canEdit={!running} onEdit={() => setOpen(2)}
         description="Progress of each subject set."
+        summary={run && <>{totalsOf(run).downloaded.toLocaleString()} images downloaded</>}
+        badge={run?.status === 'stopped' ? 'Cancelled' : undefined}
+        expanded={run?.status === 'done' && open === 3}
       >
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <span className="text-sm text-zinc-600 dark:text-zinc-300">
-            {run && totals && <><strong>{done.toLocaleString()}</strong> of {totals.total.toLocaleString()} images</>}
-          </span>
-          {running && <button type="button" className={btnOutline} onClick={stop}><SmallSpinner />Stop</button>}
-        </div>
-          {run && (
-            <div className="mt-3">
-              <div className="flex justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                <span>Total</span>
-                <span>{percent}%</span>
-              </div>
-              <ProgressBar percent={percent} label="Total" tone={run.status === 'done' ? (run.failures.length > 0 ? 'amber' : 'emerald') : 'blue'} />
-              <ul className="mt-3 max-h-80 overflow-auto divide-y divide-zinc-200 dark:divide-zinc-700 pr-1">
-                {run.sets.map((s) => <SetRow key={s.id} s={s} />)}
-              </ul>
-            </div>
-          )}
-
-          {run?.status === 'done' && totals && (
-            <p className={`text-sm mt-2 ${totals.failed > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
-              Download finished: {totals.downloaded.toLocaleString()} images downloaded
-              {totals.existing > 0 && <>, {totals.existing.toLocaleString()} already there</>}
-              {totals.filtered_out > 0 && <>, {totals.filtered_out.toLocaleString()} left out by the subject lists</>}
-              {totals.failed > 0 && <>, {totals.failed.toLocaleString()} failed — download again to retry them</>}.
-              <span className="block font-mono text-xs text-zinc-500 dark:text-zinc-400 mt-1 break-all">{run.outputDir}</span>
-            </p>
-          )}
-          {run?.status === 'stopped' && <p className={hintClass}>Stopped — the images above are kept; downloading again skips them.</p>}
-          {run?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{run.error}</p>}
-
-          {run && run.failures.length > 0 && (
-            <div className="mt-3 max-h-60 overflow-auto">
-              <table className="w-full text-xs">
-                <thead className="text-zinc-500 dark:text-zinc-400 text-left">
-                  <tr>
-                    <th className="py-1 pr-2 font-medium">Subject</th>
-                    <th className="py-1 px-2 font-medium">File</th>
-                    <th className="py-1 pl-2 font-medium">Error</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                  {run.failures.map((f) => (
-                    <tr key={f.subject_id}>
-                      <td className="py-1 pr-2 font-mono">{f.subject_id}</td>
-                      <td className="py-1 px-2 font-mono break-all">{f.file_name}</td>
-                      <td className="py-1 pl-2 text-red-600 dark:text-red-400">{f.detail}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {run?.status === 'running' && <RunningView run={run} now={now} onStop={stop} />}
+        {run?.status === 'done' && <FinishedView run={run} now={now} />}
+        {run && (run.status === 'error' || run.status === 'stopped') && <FailedView run={run} now={now} onRetry={handleDownload} disabled={chosen.size === 0 || !outputDir.trim()} />}
+        <div className="mt-4"><BackButton onClick={() => setOpen(2)} disabled={running} /></div>
       </Step>
-
-      <div className="mt-10">
-        <button type="button" className={btnOutline} onClick={onBack} disabled={running}>Back</button>
-        {running && <p className={hintClass}>Stop the download to go back.</p>}
-      </div>
     </div>
   )
 }

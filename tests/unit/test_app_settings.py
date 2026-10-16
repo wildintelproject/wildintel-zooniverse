@@ -171,3 +171,32 @@ def test_a_config_can_be_downloaded_and_its_folder_opened(config_dir, monkeypatc
     assert client.post("/api/settings/configs/default/open-folder").json() == {"ok": True}
     assert client.post("/api/settings/configs/b/open-folder").json() == {"ok": True}
     assert opened == [config_dir, config_dir / "configs"]
+
+
+def test_browse_folder_returns_what_the_native_dialog_picked(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from wildintel_zooniverse.core.services import folder_picker
+    from wildintel_zooniverse.web.main import app
+
+    asked = []
+    monkeypatch.setattr(folder_picker, "pick_folder", lambda title="": asked.append(title) or "/home/me/downloads")
+    response = TestClient(app).post("/api/settings/browse-folder", json={"title": "Where to?"})
+    assert response.json() == {"path": "/home/me/downloads"} and asked == ["Where to?"]
+
+    monkeypatch.setattr(folder_picker, "pick_folder", lambda title="": None)
+    assert TestClient(app).post("/api/settings/browse-folder", json={}).json() == {"path": None}
+
+
+def test_browse_folder_says_when_there_is_no_dialog(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from wildintel_zooniverse.core.services import folder_picker
+    from wildintel_zooniverse.web.main import app
+
+    def unavailable(title=""):
+        raise folder_picker.FolderPickerUnavailable("No folder dialog tool found.")
+
+    monkeypatch.setattr(folder_picker, "pick_folder", unavailable)
+    response = TestClient(app).post("/api/settings/browse-folder", json={})
+    assert response.status_code == 501 and "No folder dialog" in response.json()["detail"]

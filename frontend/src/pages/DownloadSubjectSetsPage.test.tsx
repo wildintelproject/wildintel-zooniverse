@@ -12,7 +12,7 @@ vi.mock('../api', () => ({
     zooniverseTestConnection: vi.fn(),
     zooniverseProjects: vi.fn(),
     zooniverseSubjectSets: vi.fn(),
-    zooniverseDownloadDefaults: vi.fn(),
+    zooniverseDownloadDefaults: vi.fn(), browseFolder: vi.fn(),
     zooniverseDownloadSubjectSets: vi.fn(),
   },
 }))
@@ -59,6 +59,22 @@ describe('DownloadSubjectSetsPage', () => {
     expect(screen.getByLabelText('Folder')).toHaveValue('/home/me/Documents/wildintel-zooniverse/downloads')
   })
 
+  it('lets the folder be picked with the system dialog, or typed when there is none', async () => {
+    mockedApi.browseFolder.mockResolvedValueOnce({ path: '/mnt/disk/zooniverse' })
+    render(<DownloadSubjectSetsPage onBack={vi.fn()} />)
+    await chooseSubjectSets(true, 'Kittehs')
+    await userEvent.click(screen.getByRole('button', { name: 'Browse…' }))
+    expect(screen.getByLabelText('Folder')).toHaveValue('/mnt/disk/zooniverse')
+
+    mockedApi.browseFolder.mockResolvedValueOnce({ path: null }) // cancelled: nothing changes
+    await userEvent.click(screen.getByRole('button', { name: 'Browse…' }))
+    expect(screen.getByLabelText('Folder')).toHaveValue('/mnt/disk/zooniverse')
+
+    mockedApi.browseFolder.mockRejectedValueOnce(new Error('No folder dialog tool found.'))
+    await userEvent.click(screen.getByRole('button', { name: 'Browse…' }))
+    expect(await screen.findByText(/No folder dialog tool found\. Type the path instead\./)).toBeInTheDocument()
+  })
+
   it('downloads the chosen subject sets, with a bar for each and the files in flight', async () => {
     const run = controlledDownload()
     render(<DownloadSubjectSetsPage onBack={vi.fn()} />)
@@ -86,8 +102,11 @@ describe('DownloadSubjectSetsPage', () => {
     run.send({ type: 'done', downloaded: 2, existing: 1, failed: 1, output_dir: '/dl' })
     await run.finish()
 
-    expect(screen.getByRole('progressbar', { name: 'Total' })).toHaveAttribute('aria-valuenow', '100')
-    expect(screen.getByText(/Download finished: 2 images downloaded, 1 already there, 1 failed/)).toBeInTheDocument()
+    expect(screen.getByText('Download completed')).toBeInTheDocument()
+    expect(screen.getByText(/2 images downloaded, 1 already there, 1 failed — download again to retry them/)).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Images downloaded' })).toHaveAttribute('aria-valuenow', '50')
+    expect(screen.getByRole('button', { name: 'Edit Download results' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /^details$/i }))
     expect(screen.getByText('reset')).toBeInTheDocument()
   })
 
@@ -95,7 +114,9 @@ describe('DownloadSubjectSetsPage', () => {
     const run = controlledDownload()
     render(<DownloadSubjectSetsPage onBack={vi.fn()} />)
     await chooseSubjectSets(true, 'Kittehs')
+    await userEvent.click(screen.getByRole('radio', { name: /only specific subjects/i }))
     await userEvent.type(screen.getByLabelText('Only these subjects'), '1 2 3')
+    await userEvent.click(screen.getByRole('checkbox', { name: /leave some subjects out/i }))
     await userEvent.type(screen.getByLabelText('Never these subjects'), '3')
     await userEvent.tab()
     expect(screen.getByRole('status')).toHaveTextContent('1 id is in both lists')
@@ -116,12 +137,16 @@ describe('DownloadSubjectSetsPage', () => {
     render(<DownloadSubjectSetsPage onBack={onBack} />)
     await chooseSubjectSets(true, 'Kittehs')
     await userEvent.click(screen.getByRole('button', { name: /^download$/i }))
-    expect(screen.getByRole('button', { name: /^back$/i })).toBeDisabled()
+    // Every Back is disabled while it runs — but the first step's, hidden, isn't a way out either.
+    for (const back of screen.getAllByRole('button', { name: /^back$/i }).slice(1)) expect(back).toBeDisabled()
 
-    await userEvent.click(screen.getByRole('button', { name: /stop/i }))
-    expect(await screen.findByText(/stopped — the images above are kept/i)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
-    expect(onBack).toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: /^cancel$/i }))
+    expect(await screen.findByText('The download was cancelled')).toBeInTheDocument()
+    expect(screen.getByText('Cancelled')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeEnabled()
+    // From the results, Back returns to the step before — not out of the task.
+    await userEvent.click(screen.getAllByRole('button', { name: /^back$/i }).at(-1)!)
+    expect(onBack).not.toHaveBeenCalled()
   })
 
   it('shows why it failed', async () => {
@@ -129,6 +154,7 @@ describe('DownloadSubjectSetsPage', () => {
     render(<DownloadSubjectSetsPage onBack={vi.fn()} />)
     await chooseSubjectSets(true, 'Kittehs')
     await userEvent.click(screen.getByRole('button', { name: /^download$/i }))
-    expect(await screen.findByText(/Permission denied/)).toBeInTheDocument()
+    expect((await screen.findAllByText(/Permission denied/)).length).toBeGreaterThan(0)
+    expect(screen.getByText('The download was interrupted')).toBeInTheDocument()
   })
 })

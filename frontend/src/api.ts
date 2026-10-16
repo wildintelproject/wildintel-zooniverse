@@ -309,6 +309,10 @@ export const api = {
   activateConfig: (id: string) => post<ConfigInfo[]>(`/api/settings/configs/${encodeURIComponent(id)}/activate`, {}),
   openConfigFolder: (id: string) => post<{ ok: boolean }>(`/api/settings/configs/${encodeURIComponent(id)}/open-folder`, {}),
 
+  // The backend runs on the user's own machine, so it pops the OS's native
+  // folder dialog and returns what was picked (null if cancelled).
+  browseFolder: (title?: string) => post<{ path: string | null }>('/api/settings/browse-folder', { title: title ?? null }),
+
   // The reports the Utils tasks leave: what each run found and did.
   listReports: () => req<ReportSummary[]>('/api/reports'),
   getReport: (id: string) => req<Report>(`/api/reports/${encodeURIComponent(id)}`),
