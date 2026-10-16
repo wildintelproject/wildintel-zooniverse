@@ -89,7 +89,7 @@ describe('ValidationPage', () => {
     expect(screen.getByRole('progressbar', { name: 'Subjects listed' })).toHaveAttribute('aria-valuenow', '40')
 
     const { missing: _m, extra: _e, deployments: _d, expected: _x, ...alone } = REPORT
-    expect(screen.queryByText('Compare with Trapper')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^compare$/i })).not.toBeInTheDocument()
     run.send({ type: 'report', ...alone, compared: false })
     run.send({ type: 'done' })
     await run.finish()
@@ -114,7 +114,7 @@ describe('ValidationPage', () => {
     expect(mockedApi.validateSubjectSet).toHaveBeenLastCalledWith(expect.anything(), 128950, null, expect.any(Function), expect.any(AbortSignal))
 
     await userEvent.click(screen.getByRole('button', { name: /continue to comparison/i }))
-    expect(await screen.findByRole('heading', { name: '3. Compare with Trapper' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Compare with Trapper' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^compare$/i })).toBeDisabled()
     expect(screen.queryByRole('button', { name: /test connection/i })).not.toBeInTheDocument()
     await userEvent.type(await screen.findByLabelText('Research project'), 'Doñana')
@@ -123,7 +123,7 @@ describe('ValidationPage', () => {
     await userEvent.click(await screen.findByRole('option', { name: 'Main CP' }))
     await userEvent.click(await screen.findByLabelText('Collection'))
     await userEvent.click(await screen.findByRole('option', { name: /R0033/ }))
-    await screen.findByText('R0033-DONA_0001_A')
+    await screen.findByText(/\d+ of \d+ deployments selected/)
     expect(await screen.findByLabelText(/max\. gap within a sequence/i)).toHaveValue('300')
 
     const comparing = controlledValidation()

@@ -87,10 +87,10 @@ async function chooseTrapperImages() {
   await userEvent.click(await screen.findByRole('option', { name: 'Main CP' }))
   await userEvent.click(await screen.findByLabelText('Collection'))
   await userEvent.click(await screen.findByRole('option', { name: /R0033/ }))
-  await screen.findByText('R0033-DONA_0001_A')
+  await screen.findByText(/\d+ of \d+ deployments selected/)
 }
 
-/** The three steps, up to the summary with its Export CSV button. */
+/** The three steps, up to the summary with its Export classifications button. */
 async function reachSummary() {
   await chooseWorkflow()
   await toTrapper()
@@ -104,16 +104,17 @@ describe('ExportClassificationsPage', () => {
     await chooseWorkflow()
 
     expect(mockedApi.zooniverseWorkflows).toHaveBeenCalledWith({ username: '', password: '' }, 30567)
-    expect(await screen.findByText(/Classification export available/)).toBeInTheDocument()
-    expect(screen.getByText('20 Sep 2026, 10:00 UTC')).toBeInTheDocument()
+    expect(await screen.findByRole('radio', { name: /use the available export/i })).toBeChecked()
+    expect(screen.getByText(/20 Sep 2026, 10:00 UTC · starts downloading right away/)).toBeInTheDocument()
+    expect(screen.getByText(/classifications made after this date are not included/i)).toBeInTheDocument()
     expect(screen.getByText('Available')).toBeInTheDocument()
-    expect(screen.getByRole('checkbox', { name: /generate a new export/i })).not.toBeChecked()
+    expect(screen.getByRole('radio', { name: /generate a new export/i })).not.toBeChecked()
     // Folder, classified by and CSV size come from the settings: nothing to ask here.
     expect(screen.queryByLabelText('Folder')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Classified by')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Largest CSV (MB)')).not.toBeInTheDocument()
     // The export itself is the last step.
-    expect(screen.queryByRole('button', { name: /export csv/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /export classifications/i })).not.toBeInTheDocument()
   })
 
   it('uses the saved connection: no credentials to fill in, and the projects load by themselves', async () => {
@@ -161,7 +162,7 @@ describe('ExportClassificationsPage', () => {
   it('goes step by step: Zooniverse, Trapper deployments, then the review and the export', async () => {
     render(<ExportClassificationsPage onBack={vi.fn()} />)
     await screen.findByLabelText('Project')
-    expect(screen.getByRole('heading', { name: '1. Zooniverse project' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Zooniverse project' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /continue to trapper deployments/i })).toBeDisabled() // no workflow yet
     expect(screen.getAllByRole('img', { name: 'Locked' })).toHaveLength(3)
 
@@ -184,7 +185,7 @@ describe('ExportClassificationsPage', () => {
     expect(screen.getAllByText(/Doñana National Park/).length).toBeGreaterThan(0)
     expect(screen.getByText(/Classifications export: the latest, of 20 Sep 2026, 10:00 UTC/)).toBeInTheDocument()
     expect(screen.getByText(/Main CP/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /export csv/i })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /export classifications/i })).toBeEnabled()
 
     // A closed step keeps what was chosen.
     await userEvent.click(screen.getByRole('button', { name: 'Edit Trapper deployments' }))
@@ -203,7 +204,9 @@ describe('ExportClassificationsPage', () => {
     render(<ExportClassificationsPage onBack={vi.fn()} />)
     await chooseWorkflow()
     expect(await screen.findByText(/One will be made first/)).toBeInTheDocument()
-    expect(screen.queryByRole('checkbox', { name: /generate a new export/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: /use the available export/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /generate a new export/i })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /generate a new export/i })).toBeDisabled()
   })
 
   it('uses the file of an export Zooniverse still says is being created, and lets it be asked again', async () => {
@@ -212,9 +215,9 @@ describe('ExportClassificationsPage', () => {
     })
     render(<ExportClassificationsPage onBack={vi.fn()} />)
     await chooseWorkflow()
-    expect(await screen.findByText(/Classification export available/)).toBeInTheDocument()
+    expect(await screen.findByRole('radio', { name: /use the available export/i })).toBeChecked()
     expect(screen.getByText(/never finished — it can be asked again/)).toBeInTheDocument()
-    expect(screen.getByRole('checkbox', { name: /generate a new export/i })).toBeEnabled()
+    expect(screen.getByRole('radio', { name: /generate a new export/i })).toBeEnabled()
   })
 
   it('doesn’t let a new export be asked for within 24 hours of the last request', async () => {
@@ -225,7 +228,7 @@ describe('ExportClassificationsPage', () => {
     render(<ExportClassificationsPage onBack={vi.fn()} />)
     await chooseWorkflow()
     expect(await screen.findByText(/isn’t done yet — this one is used/)).toBeInTheDocument()
-    expect(screen.getByRole('checkbox', { name: /generate a new export/i })).toBeDisabled()
+    expect(screen.getByRole('radio', { name: /generate a new export/i })).toBeDisabled()
     expect(screen.getByText(/once every 24 hours.*next request will be available on/)).toBeInTheDocument()
   })
 
@@ -233,8 +236,8 @@ describe('ExportClassificationsPage', () => {
     const run = controlledExport()
     render(<ExportClassificationsPage onBack={vi.fn()} />)
     await reachSummary()
-    await userEvent.click(screen.getByRole('checkbox', { name: /generate a new export/i }))
-    await userEvent.click(screen.getByRole('button', { name: /export csv/i }))
+    await userEvent.click(screen.getByRole('radio', { name: /generate a new export/i }))
+    await userEvent.click(screen.getByRole('button', { name: /export classifications/i }))
 
     expect(mockedApi.exportClassifications).toHaveBeenCalledWith(
       { username: '', password: '' }, 29186, expect.objectContaining({ collection: { pk: 33, name: 'R0033' } }),
@@ -242,11 +245,13 @@ describe('ExportClassificationsPage', () => {
       expect.any(Function), expect.any(AbortSignal),
     )
 
+    expect(screen.getByRole('status', { name: 'In progress' })).toBeInTheDocument()
+    expect(screen.getByText('In progress')).toBeInTheDocument()
     run.send({ type: 'export', state: 'generating', updated_at: null })
     expect(screen.getByText(/Making a new classifications export/)).toBeInTheDocument()
     run.send({ type: 'export', state: 'ready', updated_at: '2026-09-26T09:00:00Z' })
     run.send({ type: 'classifications', rows: 5000, bytes: 512 * 1024, total_bytes: 1024 * 1024 })
-    expect(screen.getByRole('progressbar', { name: 'Classifications downloaded' })).toHaveAttribute('aria-valuenow', '50')
+    expect(screen.getByRole('progressbar', { name: 'Rows downloaded' })).toHaveAttribute('aria-valuenow', '50')
     run.send({ type: 'classifications_done', rows: 8, subjects: 5 })
     run.send({ type: 'trapper', total: 2 })
     run.send({ type: 'deployment', deployment_id: 'R0033-DONA_0001_A', media: 3, observations: 4 })
@@ -256,16 +261,21 @@ describe('ExportClassificationsPage', () => {
     run.send({ type: 'done', ...RESULT })
     await run.finish()
 
-    expect(screen.getByText(/Export finished: 2 of 5 subjects → 3 CSV rows/)).toBeInTheDocument()
+    expect(screen.getByText('Export completed')).toBeInTheDocument()
+    expect(screen.getByText(/3 observations ready to import into Trapper/)).toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'In progress' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit Export results' })).toBeInTheDocument()
     expect(screen.getByText('Images classified')).toBeInTheDocument()
     expect(screen.getByText('Subjects exported')).toBeInTheDocument()
     expect(screen.getByText(/Not in the Trapper selection/)).toBeInTheDocument()
-    // The files aren't listed one by one: a summary, and a button to the folder.
+    // The technical side is folded away, in Details.
+    expect(screen.queryByText(/plus the volunteers/)).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /^details$/i }))
     expect(screen.queryByText(/observations_wf29186_cp10_col33_20260926-100000\.csv/)).not.toBeInTheDocument()
     expect(screen.getByText(/3 rows · 900 KB.*plus the volunteers’ answers|3 rows · 1 KB.*plus the volunteers’ answers/)).toBeInTheDocument()
     mockedApi.openExportFolder.mockResolvedValue({ ok: true, path: '/exports' })
     expect(screen.getByText('/exports/wf29186_cp10_col33_20260926-100000')).toBeInTheDocument()
-    expect(screen.getByText(/and Zooniverse’s CSV \(5\.0 MB\)/)).toBeInTheDocument()
+    expect(screen.getByText(/and the original Zooniverse data \(5\.0 MB\)/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /open folder/i }))
     // This export's own folder, not the export folder.
     expect(mockedApi.openExportFolder).toHaveBeenCalledWith('/exports/wf29186_cp10_col33_20260926-100000')
@@ -274,13 +284,13 @@ describe('ExportClassificationsPage', () => {
     expect(mockedApi.importToTrapper).not.toHaveBeenCalled()
   })
 
-  it('keeps Zooniverse’s own CSV only when asked to', async () => {
+  it('keeps the original Zooniverse data only when asked to', async () => {
     controlledExport()
     render(<ExportClassificationsPage onBack={vi.fn()} />)
     await reachSummary()
-    expect(screen.getByRole('checkbox', { name: /keep zooniverse.s classifications csv/i })).not.toBeChecked()
-    await userEvent.click(screen.getByRole('checkbox', { name: /keep zooniverse.s classifications csv/i }))
-    await userEvent.click(screen.getByRole('button', { name: /export csv/i }))
+    expect(screen.getByRole('checkbox', { name: /keep the original zooniverse data/i })).not.toBeChecked()
+    await userEvent.click(screen.getByRole('checkbox', { name: /keep the original zooniverse data/i }))
+    await userEvent.click(screen.getByRole('button', { name: /export classifications/i }))
 
     expect(mockedApi.exportClassifications).toHaveBeenCalledWith(
       expect.anything(), 29186, expect.anything(),
@@ -295,7 +305,7 @@ describe('ExportClassificationsPage', () => {
     render(<ExportClassificationsPage onBack={vi.fn()} />)
     await reachSummary()
     await userEvent.click(screen.getByRole('checkbox', { name: /import into trapper when finished/i }))
-    await userEvent.click(screen.getByRole('button', { name: /export csv/i }))
+    await userEvent.click(screen.getByRole('button', { name: /export classifications/i }))
     run.send({ type: 'done', ...RESULT })
     await run.finish()
 
@@ -308,7 +318,11 @@ describe('ExportClassificationsPage', () => {
     mockedApi.exportClassifications.mockRejectedValue(new Error('Collection 33 is not in classification project 10.'))
     render(<ExportClassificationsPage onBack={vi.fn()} />)
     await reachSummary()
-    await userEvent.click(screen.getByRole('button', { name: /export csv/i }))
-    expect(await screen.findByText(/is not in classification project/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /export classifications/i }))
+    expect((await screen.findAllByText(/is not in classification project/)).length).toBeGreaterThan(0)
+    expect(screen.getByText('The export was interrupted')).toBeInTheDocument()
+    expect(screen.getByText('Error')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeEnabled()
+    expect(screen.getByText(/Nothing was written/)).toBeInTheDocument()
   })
 })

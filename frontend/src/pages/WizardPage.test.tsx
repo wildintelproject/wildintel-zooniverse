@@ -65,7 +65,7 @@ async function chooseImages() {
   await userEvent.click(await screen.findByRole('option', { name: 'Main CP' }))
   await userEvent.click(await screen.findByLabelText('Collection'))
   await userEvent.click(await screen.findByRole('option', { name: /R0033/ }))
-  await screen.findByText('R0033-DONA_0001_A')
+  await screen.findByText(/\d+ of \d+ deployments selected/)
 }
 
 describe('WizardPage', () => {
@@ -78,11 +78,11 @@ describe('WizardPage', () => {
   it('retrieving classifications opens its own page, and comes back', async () => {
       render(<WizardPage />)
     await userEvent.click(screen.getByRole('button', { name: /retrieve classifications/i }))
-    expect(screen.getByRole('heading', { name: '1. Zooniverse project' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Zooniverse project' })).toBeInTheDocument()
     expect(screen.getByText('What do you want to do?').closest('.hidden')).not.toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
-    expect(screen.queryByRole('heading', { name: '1. Zooniverse project' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Zooniverse project' })).not.toBeInTheDocument()
     expect(screen.getByText('What do you want to do?').closest('.hidden')).toBeNull()
   })
 
@@ -207,6 +207,7 @@ describe('WizardPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /^back$/i }))
     expect(screen.getByLabelText('Collection')).toHaveDisplayValue(/R0033/)
+    await userEvent.click(screen.getByRole('button', { name: 'Change selection' }))
     await userEvent.click(screen.getByRole('checkbox', { name: 'R0033-DONA_0007_B' }))
     await userEvent.click(screen.getByRole('button', { name: /^next$/i }))
 

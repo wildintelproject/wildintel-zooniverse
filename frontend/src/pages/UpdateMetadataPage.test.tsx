@@ -65,7 +65,7 @@ async function chooseEverything() {
   await userEvent.click(await screen.findByRole('option', { name: 'Main CP' }))
   await userEvent.click(await screen.findByLabelText('Collection'))
   await userEvent.click(await screen.findByRole('option', { name: /R0033/ }))
-  await screen.findByText('R0033-DONA_0001_A')
+  await screen.findByText(/\d+ of \d+ deployments selected/)
   await userEvent.click(screen.getByRole('button', { name: /continue to review/i }))
 }
 
@@ -93,7 +93,7 @@ describe('UpdateMetadataPage', () => {
       { username: '', password: '' }, 128950, expect.objectContaining({ collection: { pk: 33, name: 'R0033' } }), true,
       expect.any(Function), expect.any(AbortSignal), { include: null, exclude: [] },
     )
-    expect(screen.getByRole('heading', { name: '4. Update results' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Update results' })).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: 'Locked' })).not.toBeInTheDocument()
     run.send({ type: 'trapper', total: 2 })
     run.send({ type: 'deployment', deployment_id: 'R0033-DONA_0001_A', media: 150 })

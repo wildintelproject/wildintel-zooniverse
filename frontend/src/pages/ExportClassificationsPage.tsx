@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { api, type WorkflowExport } from '../api'
 import Combobox from '../components/Combobox'
 import FieldLabel from '../components/FieldLabel'
 import ProgressBar from '../components/ProgressBar'
 import TrapperImportPanel from '../components/TrapperImportPanel'
+import { formatAgo, formatBytes, formatDateTime, formatDuration } from '../lib/format'
 import TrapperSelectionForm from '../components/TrapperSelectionForm'
 import Step from '../components/WizardStep'
 import { deploymentsSummary } from '../lib/deploymentsSummary'
@@ -22,53 +24,21 @@ const SKIP_LABELS: Record<ExportSkipReason, { label: string; hint: string }> = {
   no_decision: { label: 'No decision', hint: 'The votes didn’t produce an observation.' },
 }
 
-function formatBytes(n: number): string {
-  return n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`
-}
-
-function formatDate(iso: string | null): string {
-  if (!iso) return 'unknown date'
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString()
-}
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-function utcTime(d: Date): string {
-  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')} UTC`
-}
-
-// "9 Oct 2026, 18:44 UTC" — Zooniverse's own style, whatever the time zone of the browser.
-function formatUtc(iso: string | null): string {
-  const d = iso ? new Date(iso) : null
-  if (!d || Number.isNaN(d.getTime())) return 'unknown date'
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${utcTime(d)}`
-}
-
-// "10 Oct at 18:44 UTC"
-function formatUtcNext(ms: number): string {
-  const d = new Date(ms)
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} at ${utcTime(d)}`
-}
-
 // Zooniverse makes one classifications export per workflow every 24 hours.
 const COOLDOWN_MS = 24 * 60 * 60 * 1000
-
-function formatAgo(iso: string | null, now = Date.now()): string {
-  const ms = iso ? now - new Date(iso).getTime() : NaN
-  if (Number.isNaN(ms)) return ''
-  const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? '' : 's'} ago`
-  const minutes = Math.max(0, Math.round(ms / 60000))
-  if (minutes < 60) return plural(minutes, 'minute')
-  if (minutes < 60 * 24) return plural(Math.round(minutes / 60), 'hour')
-  return plural(Math.round(minutes / 60 / 24), 'day')
-}
 
 // ── The run's progress ──────────────────────────────────────────────────
 
 interface Run {
   status: 'running' | 'done' | 'stopped' | 'error'
   error?: string
+  /** Epoch ms: when it started, its last event, and when it ended. */
+  startedAt: number
+  lastEventAt: number
+  endedAt?: number
+  downloadStartedAt?: number
+  trapperStartedAt?: number
+  votingStartedAt?: number
   export?: { state: 'generating' | 'ready'; updated_at: string | null }
   download?: { rows: number; bytes: number; total: number | null; done: boolean; subjects?: number }
   trapper?: { total: number; done: number; observations: number }
@@ -76,119 +46,315 @@ interface Run {
   result?: ExportResult
 }
 
-function reduce(run: Run, event: ExportEvent): Run {
+function reduceEvent(run: Run, event: ExportEvent): Run {
+  const now = Date.now()
   switch (event.type) {
     case 'export': return { ...run, export: { state: event.state, updated_at: event.updated_at } }
     case 'classifications':
-      return { ...run, download: { rows: event.rows, bytes: event.bytes, total: event.total_bytes, done: false } }
+      return { ...run, downloadStartedAt: run.downloadStartedAt ?? now, download: { rows: event.rows, bytes: event.bytes, total: event.total_bytes, done: false } }
     case 'classifications_done':
       return { ...run, download: { ...(run.download ?? { bytes: 0, total: null }), rows: event.rows, done: true, subjects: event.subjects } }
-    case 'trapper': return { ...run, trapper: { total: event.total, done: 0, observations: 0 } }
+    case 'trapper': return { ...run, trapperStartedAt: now, trapper: { total: event.total, done: 0, observations: 0 } }
     case 'deployment':
       return run.trapper
         ? { ...run, trapper: { ...run.trapper, done: run.trapper.done + 1, observations: run.trapper.observations + event.observations } }
         : run
-    case 'subjects': return { ...run, voting: { total: event.total, done: 0 } }
+    case 'subjects': return { ...run, votingStartedAt: now, voting: { total: event.total, done: 0 } }
     case 'progress': return run.voting ? { ...run, voting: { ...run.voting, done: event.done } } : run
     case 'done': {
       const { type: _type, ...result } = event
-      return { ...run, status: 'done', result }
+      return { ...run, status: 'done', result, endedAt: now }
     }
     default: return run
   }
 }
 
-function Phase({ label, detail, percent, state }: { label: string; detail: string; percent: number | null; state: 'running' | 'done' }) {
+function reduce(run: Run, event: ExportEvent): Run {
+  return { ...reduceEvent(run, event), lastEventAt: Date.now() }
+}
+
+/** One choice of the export: a card with a radio — or a checkbox. */
+function ExportOption({ name, selected, onSelect, type = 'radio', disabled = false, badge, badgeTone = 'zinc', children }: {
+  name: string; type?: 'radio' | 'checkbox'; selected: boolean; onSelect: () => void; disabled?: boolean
+  badge?: string; badgeTone?: 'emerald' | 'amber' | 'zinc'; children?: ReactNode
+}) {
+  const tones = {
+    emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+    zinc: 'bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300',
+  }
   return (
-    <div className="mt-3">
-      <div className="flex justify-between gap-3 text-xs text-zinc-600 dark:text-zinc-300 mb-1">
-        <span className="flex items-center gap-1.5">
-          {state === 'done' ? <span className="text-emerald-600">✓</span> : percent === null && <SmallSpinner />}
-          {label}
+    <label
+      className={[
+        'flex items-start gap-3 p-4 rounded-lg border',
+        selected ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-zinc-200 dark:border-zinc-700',
+        disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
+      ].join(' ')}
+    >
+      <input type={type} name={type === 'radio' ? 'classification-export' : undefined} className="mt-1" checked={selected} disabled={disabled} onChange={onSelect} />
+      <span className="flex-1 min-w-0">
+        <span className="flex items-center justify-between gap-3">
+          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{name}</span>
+          {badge && <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${tones[badgeTone]}`}>{badge}</span>}
         </span>
-        <span className="text-right">{detail}</span>
-      </div>
-      {percent !== null && <ProgressBar percent={state === 'done' ? 100 : percent} label={label} tone={state === 'done' ? 'emerald' : 'blue'} />}
+        {children}
+      </span>
+    </label>
+  )
+}
+
+/** Where the run is, as the running and failed views show it. */
+function progressOf(run: Run, now: number) {
+  const pct = (done: number, total: number) => (total ? Math.min(100, Math.round((done / total) * 100)) : 100)
+  if (run.voting) {
+    const { done, total } = run.voting
+    return {
+      title: 'Voting subjects…', detail: `${done.toLocaleString()} of ${total.toLocaleString()} subjects`,
+      big: { label: 'Subjects voted', value: done, percent: pct(done, total), caption: `${pct(done, total)}% of ${total.toLocaleString()} subjects` },
+      fraction: total ? done / total : null, since: run.votingStartedAt,
+    }
+  }
+  if (run.trapper) {
+    const { done, total, observations } = run.trapper
+    return {
+      title: 'Fetching Trapper deployments…', detail: `${done} of ${total} · ${observations.toLocaleString()} observations`,
+      big: { label: 'Deployments fetched', value: done, percent: pct(done, total), caption: `${pct(done, total)}% of ${total} deployments · ${observations.toLocaleString()} observations` },
+      fraction: total ? done / total : null, since: run.trapperStartedAt,
+    }
+  }
+  if (run.download) {
+    const { rows, bytes, total } = run.download
+    const percent = total ? Math.min(99, Math.round((bytes / total) * 100)) : null
+    return {
+      title: 'Downloading classifications…', detail: `${rows.toLocaleString()} rows · updated ${formatAgo(new Date(run.lastEventAt).toISOString(), now) || 'just now'}`,
+      big: { label: 'Rows downloaded', value: rows, percent, caption: `${percent !== null ? `${percent}% of ${formatBytes(total!)}` : formatBytes(bytes)}` },
+      fraction: percent !== null ? percent / 100 : null, since: run.downloadStartedAt,
+    }
+  }
+  if (run.export) {
+    return run.export.state === 'generating'
+      ? { title: 'Making a new classifications export in Zooniverse…', detail: 'This can take a few minutes.', big: null, fraction: null, since: undefined }
+      : { title: 'Zooniverse’s export is ready', detail: formatDateTime(run.export.updated_at, { utc: true }), big: null, fraction: null, since: undefined }
+  }
+  return { title: 'Starting…', detail: '', big: null, fraction: null, since: undefined }
+}
+
+/** The technical side of a run, as rows. */
+function detailRows(run: Run, now: number): [string, string][] {
+  const rows: [string, string][] = [['Started', formatDateTime(run.startedAt, { seconds: true })]]
+  if (run.export) rows.push(['Classifications export', run.export.state === 'ready' ? formatDateTime(run.export.updated_at, { utc: true }) : 'being made by Zooniverse'])
+  if (run.download) {
+    rows.push(['Classifications downloaded', `${run.download.rows.toLocaleString()} rows · ${formatBytes(run.download.bytes)}${run.download.subjects !== undefined ? ` · ${run.download.subjects.toLocaleString()} subjects` : ''}`])
+  }
+  if (run.trapper) rows.push(['Trapper deployments fetched', `${run.trapper.done} of ${run.trapper.total} deployments`])
+  if (run.voting) rows.push(['Subjects voted', `${run.voting.done.toLocaleString()} of ${run.voting.total.toLocaleString()}`])
+  if (run.endedAt) rows.push([run.status === 'done' ? 'Finished' : 'Interrupted', formatDateTime(run.endedAt, { seconds: true })])
+  else rows.push(['Last activity', `${formatAgo(new Date(run.lastEventAt).toISOString(), now) || 'just now'}`])
+  return rows
+}
+
+/** The technical side of an export, folded away. */
+function DetailsPanel({ rows, defaultOpen = false, children }: { rows: [string, string][]; defaultOpen?: boolean; children?: ReactNode }) {
+  const [shown, setShown] = useState(defaultOpen)
+  return (
+    <div className="mt-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
+      <button
+        type="button" aria-expanded={shown} onClick={() => setShown((v) => !v)}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-zinc-800 dark:text-zinc-100"
+      >
+        Details
+        <svg aria-hidden="true" className={`w-4 h-4 transition-transform ${shown ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
+        </svg>
+      </button>
+      {shown && (
+        <div className="px-4 pb-3">
+          <dl className="divide-y divide-zinc-100 dark:divide-zinc-800 text-sm">
+            {rows.map(([label, value]) => (
+              <div key={label} className="flex justify-between gap-4 py-2">
+                <dt className="text-zinc-500 dark:text-zinc-400">{label}</dt>
+                <dd className="text-zinc-800 dark:text-zinc-200 text-right break-words min-w-0">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          {children}
+        </div>
+      )}
     </div>
   )
 }
 
-function Result({ result, selection, autoImport }: { result: ExportResult; selection: TrapperSelection; autoImport: boolean }) {
-  const [folderError, setFolderError] = useState<string | null>(null)
-  const skipped = (Object.keys(SKIP_LABELS) as ExportSkipReason[]).filter((r) => result.skipped[r] > 0)
+function BigNumber({ label, value, percent, caption, tone }: { label: string; value: number; percent: number | null; caption: string; tone: 'blue' | 'emerald' | 'red' }) {
   return (
-    <div className="mt-4">
-      <p className={`text-sm font-semibold ${result.rows ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
-        {result.rows
-          ? `Export finished: ${result.exported.toLocaleString()} of ${result.subjects.toLocaleString()} subjects → ${result.rows.toLocaleString()} CSV rows.`
-          : 'Export finished, but no subject could be exported — nothing was written.'}
-      </p>
+    <div className="mt-3 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
+      <p className="text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
+      <p className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 my-1">{value.toLocaleString()}</p>
+      {percent !== null && <ProgressBar percent={percent} label={label} tone={tone} />}
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{caption}</p>
+    </div>
+  )
+}
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+/** The export under way: what it's doing, how far, and how long it takes. */
+function RunningView({ run, now, onStop }: { run: Run; now: number; onStop: () => void }) {
+  const p = progressOf(run, now)
+  const downloading = !run.voting && !run.trapper && run.download && !run.download.done && run.downloadStartedAt
+  const speed = downloading && now > run.downloadStartedAt! ? run.download!.bytes / 1048576 / ((now - run.downloadStartedAt!) / 1000) : null
+  const remaining = p.since && p.fraction && p.fraction > 0.02 && p.fraction < 1 ? ((now - p.since) * (1 - p.fraction)) / p.fraction : null
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 flex-wrap p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30">
+        <div>
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{p.title}</p>
+          {p.detail && <p className="text-sm text-zinc-600 dark:text-zinc-300">{p.detail}</p>}
+        </div>
+        <button type="button" className={btnOutline} onClick={onStop}>Cancel export</button>
+      </div>
+      {p.big && <BigNumber {...p.big} tone="blue" />}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
         {[
-          ['Subjects classified', result.subjects, 'Subjects with classifications in Zooniverse’s export.'],
-          ['Images classified', result.trapper_media, 'Images of the chosen collection and deployments with observations in the classification project.'],
-          ['Subjects exported', result.exported, 'Subjects whose image is in Trapper’s selection and whose votes gave a decision.'],
-          ['Observations voted', result.observations, 'A subject can give more than one: one per species.'],
-        ].map(([label, value, hint]) => (
-          <div key={label as string} className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700" title={hint as string}>
-            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{(value as number).toLocaleString()}</div>
+          [speed !== null ? `${speed.toFixed(speed < 10 ? 1 : 0)} MB/s` : '—', 'Speed'],
+          [remaining !== null ? `~${formatDuration(remaining)}` : '—', 'Time left'],
+          [formatDuration(now - run.startedAt), 'Elapsed'],
+        ].map(([value, label]) => (
+          <div key={label} className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{value}</div>
             <div className="text-xs text-zinc-500 dark:text-zinc-400">{label}</div>
           </div>
         ))}
       </div>
-      <p className={hintClass}>One row per voted observation and Trapper observation of its image — the one Trapper&rsquo;s import updates.</p>
+      <DetailsPanel rows={detailRows(run, now)} defaultOpen />
+    </div>
+  )
+}
+
+/** An export that failed, or that was cancelled. */
+function FailedView({ run, now, onRetry, disabled }: { run: Run; now: number; onRetry: () => void; disabled: boolean }) {
+  const cancelled = run.status === 'stopped'
+  const rows = detailRows(run, now)
+  if (run.error) rows.unshift(['Cause', run.error])
+  const p = progressOf(run, now)
+  const at = run.endedAt ? formatDateTime(run.endedAt, { seconds: true }) : ''
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 flex-wrap p-4 rounded-lg border border-red-300 dark:border-red-900 bg-red-50 dark:bg-red-950/30">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-red-800 dark:text-red-300">{cancelled ? 'The export was cancelled' : 'The export was interrupted'}</p>
+          <p className="text-sm text-red-700 dark:text-red-300 break-words">{run.error ?? 'It was stopped before it finished.'}</p>
+        </div>
+        <button
+          type="button" disabled={disabled} onClick={onRetry}
+          className="px-4 py-2 text-sm bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded hover:opacity-90 disabled:opacity-40 flex items-center gap-2"
+        >
+          Retry
+        </button>
+      </div>
+      {p.big && (
+        <BigNumber
+          label={`${p.big.label} before the stop`} value={p.big.value} percent={p.big.percent} tone="red"
+          caption={`${p.big.caption}${at ? ` · stopped at ${at}` : ''}`}
+        />
+      )}
+      <div className="mt-3 rounded-lg border border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-700">
+        <div className="p-4">
+          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">What is kept</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Nothing was written: the result files only exist once the export completes.</p>
+        </div>
+        <div className="p-4">
+          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">What Retry does</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Runs the export again from the start, with the same choices.</p>
+        </div>
+      </div>
+      <DetailsPanel rows={rows} defaultOpen />
+    </div>
+  )
+}
+
+function Result({ run, result, selection, autoImport, now }: { run: Run; result: ExportResult; selection: TrapperSelection; autoImport: boolean; now: number }) {
+  const [folderError, setFolderError] = useState<string | null>(null)
+  const skipped = (Object.keys(SKIP_LABELS) as ExportSkipReason[]).filter((r) => result.skipped[r] > 0)
+  const percent = result.subjects ? Math.min(100, Math.round((result.exported / result.subjects) * 100)) : 0
+  const folder = result.run_dir ?? undefined
+  return (
+    <div>
+      {result.rows ? (
+        <div className="flex items-center justify-between gap-3 flex-wrap p-4 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
+          <div>
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Export completed</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">{result.rows.toLocaleString()} observations ready to import into Trapper.</p>
+          </div>
+          <button
+            type="button" className={btnOutline}
+            onClick={() => { setFolderError(null); api.openExportFolder(folder).catch((e) => setFolderError(e instanceof Error ? e.message : 'Could not open the folder.')) }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+            </svg>
+            Open folder
+          </button>
+        </div>
+      ) : (
+        <p className="p-4 rounded-lg border border-amber-300 dark:border-amber-800 text-sm font-semibold text-amber-700 dark:text-amber-400">
+          Export finished, but no subject could be exported — nothing was written.
+        </p>
+      )}
+      {folderError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{folderError}</p>}
+
+      <BigNumber
+        label="Observations exported" value={result.rows} percent={percent} tone="emerald"
+        caption={`${percent}% of ${result.subjects.toLocaleString()} classified subjects exported`}
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+        {[
+          ['Subjects classified', result.subjects, 'Subjects with classifications in Zooniverse’s export.'],
+          ['Images classified', result.trapper_media, 'Images of the chosen collection and deployments with observations in the classification project.'],
+          ['Subjects exported', result.exported, 'Subjects whose image is in Trapper’s selection and whose votes gave a decision.'],
+        ].map(([label, value, hint]) => (
+          <div key={label as string} className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700" title={hint as string}>
+            <div className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{(value as number).toLocaleString()}</div>
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">{label}</div>
+          </div>
+        ))}
+      </div>
 
       {skipped.length > 0 && (
-        <div className="mt-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3">
-          <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Subjects not exported</p>
-          <ul className="space-y-1">
-            {skipped.map((r) => (
-              <li key={r} className="text-xs text-zinc-600 dark:text-zinc-300" title={SKIP_LABELS[r].hint}>
-                <strong>{result.skipped[r].toLocaleString()}</strong> — {SKIP_LABELS[r].label}
-                {result.samples[r] && (
-                  <span className="block font-mono text-zinc-400 dark:text-zinc-500 truncate">
-                    e.g. {result.samples[r]!.slice(0, 10).join(', ')}{result.samples[r]!.length > 10 ? '…' : ''}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+        <div className="mt-3 rounded-lg border border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-700">
+          {skipped.map((r) => (
+            <div key={r} className="p-4" title={SKIP_LABELS[r].hint}>
+              <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{SKIP_LABELS[r].label}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">{result.skipped[r].toLocaleString()} subjects</p>
+              {result.samples[r] && (
+                <p className="font-mono text-xs text-zinc-400 dark:text-zinc-500 truncate">
+                  e.g. {result.samples[r]!.slice(0, 10).join(', ')}{result.samples[r]!.length > 10 ? '…' : ''}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
-      {result.files.length > 0 && (
-        <>
-          <div className="flex items-center justify-between gap-3 flex-wrap mt-4">
-            <div>
-              <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                {result.files.length > 1 ? `Observations — split into ${result.files.length} files` : 'Observations'}
-              </p>
-              <p className="text-xs text-zinc-600 dark:text-zinc-300">
-                {result.files.reduce((sum, f) => sum + f.rows, 0).toLocaleString()} rows · {formatBytes(result.files.reduce((sum, f) => sum + f.bytes, 0))}
-                {result.zoo_annotations_file && ' · plus the volunteers’ answers'}
-                {result.raw_export_file && ` · and Zooniverse’s CSV (${formatBytes(result.raw_export_file.bytes)})`}
-              </p>
-              <p className="text-xs font-mono text-zinc-400 dark:text-zinc-500 break-all">{result.run_dir ?? result.output_dir}</p>
-            </div>
+      <DetailsPanel rows={detailRows(run, now)}>
+        {result.files.length > 0 && (
+          <div className="mt-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              {result.files.length > 1 ? `Observations — split into ${result.files.length} files` : 'Observations'}
+            </p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-300">
+              {result.files.reduce((sum, f) => sum + f.rows, 0).toLocaleString()} rows · {formatBytes(result.files.reduce((sum, f) => sum + f.bytes, 0))}
+              {result.zoo_annotations_file && ' · plus the volunteers’ answers'}
+              {result.raw_export_file && ` · and the original Zooniverse data (${formatBytes(result.raw_export_file.bytes)})`}
+            </p>
+            <p className="text-xs font-mono text-zinc-400 dark:text-zinc-500 break-all">{result.run_dir ?? result.output_dir}</p>
           </div>
-          {folderError && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{folderError}</p>}
-          <TrapperImportPanel
-            leading={
-              <button
-              type="button" className={btnOutline}
-              onClick={() => { setFolderError(null); api.openExportFolder(result.run_dir ?? undefined).catch((e) => setFolderError(e instanceof Error ? e.message : 'Could not open the folder.')) }}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-              </svg>
-              Open folder
-            </button>
-            }
-            files={result.files.map((f) => f.path)} trapperUrl={selection.url}
-            project={selection.classification_project} manualUrl={result.trapper_import_url} autoStart={autoImport}
-          />
-        </>
+        )}
+      </DetailsPanel>
+
+      {result.files.length > 0 && (
+        <TrapperImportPanel
+          files={result.files.map((f) => f.path)} trapperUrl={selection.url}
+          project={selection.classification_project} manualUrl={result.trapper_import_url} autoStart={autoImport}
+        />
       )}
     </div>
   )
@@ -227,6 +393,8 @@ export default function ExportClassificationsPage({ onBack }: Props) {
   const [exportedSelection, setExportedSelection] = useState<TrapperSelection | null>(null)
   const [run, setRun] = useState<Run | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  // A clock for the running export's timings.
+  const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => () => abortRef.current?.abort(), [])
 
@@ -269,10 +437,21 @@ export default function ExportClassificationsPage({ onBack }: Props) {
   }, [workflowId, creds])
 
   const running = run?.status === 'running'
+  useEffect(() => {
+    if (!running) return
+    setNow(Date.now())
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [running])
   const workflow = workflows.items.find((w) => String(w.id) === workflowId)
   const ready = Boolean(workflow?.exportable && selection) && !running
   const unlocked = (n: number) => (n === 1 ? true : n === 2 ? Boolean(workflow) : n === 3 ? Boolean(workflow && selection) : Boolean(run))
-  const status = (n: number): 'open' | 'done' | 'locked' => (n === open ? 'open' : n <= reached && unlocked(n) ? 'done' : 'locked')
+  const status = (n: number): 'open' | 'done' | 'locked' | 'running' | 'error' => {
+    if (n === 4 && n === open && run) {
+      return run.status === 'running' ? 'running' : run.status === 'done' ? 'done' : 'error'
+    }
+    return n === open ? 'open' : n <= reached && unlocked(n) ? 'done' : 'locked'
+  }
 
   function stop() {
     abortRef.current?.abort()
@@ -285,7 +464,9 @@ export default function ExportClassificationsPage({ onBack }: Props) {
     next(4)
     const controller = new AbortController()
     abortRef.current = controller
-    setRun({ status: 'running' })
+    const started = Date.now()
+    const initial: Run = { status: 'running', startedAt: started, lastEventAt: started }
+    setRun(initial)
     setExportedSelection(selection)
     try {
       await api.exportClassifications(
@@ -295,9 +476,9 @@ export default function ExportClassificationsPage({ onBack }: Props) {
       )
     } catch (e) {
       if (controller.signal.aborted) {
-        setRun((r) => (r && r.status === 'running' ? { ...r, status: 'stopped' } : r))
+        setRun((r) => (r && r.status === 'running' ? { ...r, status: 'stopped', endedAt: Date.now() } : r))
       } else {
-        setRun((r) => ({ ...r, status: 'error', error: e instanceof Error ? e.message : 'The export failed.' }))
+        setRun((r) => ({ ...(r ?? initial), status: 'error', error: e instanceof Error ? e.message : 'The export failed.', endedAt: Date.now() }))
       }
     } finally {
       if (abortRef.current === controller) abortRef.current = null
@@ -316,7 +497,7 @@ export default function ExportClassificationsPage({ onBack }: Props) {
     <div>
       <h4 className="text-lg font-semibold mb-1">Retrieve classifications</h4>
       <p className="text-zinc-500 dark:text-zinc-400 mb-6 text-sm">
-        Turn the classifications volunteers made in a Zooniverse workflow into a CSV of observations for Trapper.
+        Turn the classifications volunteers made in a Zooniverse workflow into observations ready to import into Trapper.
       </p>
 
       <Step
@@ -327,7 +508,7 @@ export default function ExportClassificationsPage({ onBack }: Props) {
           Classifications export: {regenerate && !cooling
             ? 'a new one is made first'
             : hasFile
-              ? `the latest, of ${formatUtc(latestExport!.file_date ?? latestExport!.updated_at)}`
+              ? `the latest, of ${formatDateTime(latestExport!.file_date ?? latestExport!.updated_at, { utc: true })}`
               : 'none yet — one is made first'}
         </>}
       >
@@ -353,71 +534,50 @@ export default function ExportClassificationsPage({ onBack }: Props) {
             Only workflows the app knows how to vote can be exported — each has its own species and answers.
           </p>
           {workflow && (
-            <div className="mt-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40 p-4">
+            <fieldset className="mt-4" disabled={running}>
+              <legend className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Classification export</legend>
               {latest.loading
                 ? <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><SmallSpinner /> Checking its classifications export…</p>
                 : (
-                  <>
-                    <div className="flex items-start gap-3">
-                      <svg className="w-5 h-5 mt-1 text-zinc-500 dark:text-zinc-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
-                        <ellipse cx="12" cy="6" rx="7" ry="3" />
-                        <path strokeLinecap="round" d="M5 6v12c0 1.66 3.13 3 7 3s7-1.34 7-3V6M5 12c0 1.66 3.13 3 7 3s7-1.34 7-3" />
-                      </svg>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-base font-medium text-zinc-900 dark:text-zinc-100">
-                          {hasFile ? 'Classification export available' : latestExport ? 'Classification export being made' : 'No classification export yet'}
-                        </p>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                          {hasFile
-                            ? formatUtc(latestExport!.file_date ?? latestExport!.updated_at)
-                            : latestExport
-                              ? cooling
-                                ? 'Zooniverse is making it — the export waits for it.'
-                                : `The last request (${formatAgo(latestExport.updated_at)}) never finished — a new export will be made first.`
-                              : 'One will be made first — it can take a few minutes.'}
-                        </p>
-                      </div>
-                      <span
-                        className={[
-                          'px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap',
-                          hasFile
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                            : latestExport
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-                              : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300',
-                        ].join(' ')}
-                      >
-                        {hasFile ? 'Available' : latestExport ? 'Pending' : 'None'}
-                      </span>
-                    </div>
-                    {hasFile && latestExport!.pending && (
-                      <p className={`${hintClass} mt-2`}>
-                        {cooling
-                          ? `A newer one was requested ${formatAgo(latestExport!.updated_at)} and isn’t done yet — this one is used.`
-                          : `A newer one was requested ${formatAgo(latestExport!.updated_at)} and never finished — it can be asked again.`}
-                      </p>
-                    )}
+                  <div className="space-y-3">
                     {hasFile && (
-                      <>
-                        <div className="border-t border-zinc-200 dark:border-zinc-700 my-4" />
-                        <label className={`flex items-center gap-3 ${cooling || running ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
-                          <input
-                            type="checkbox" checked={regenerate && !cooling} disabled={running || cooling}
-                            onChange={(e) => setRegenerate(e.target.checked)}
-                            className="w-6 h-6 rounded-full appearance-none border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 checked:bg-blue-600 checked:border-blue-600 flex-shrink-0"
-                          />
-                          <span className="text-base text-zinc-900 dark:text-zinc-100">Generate a new export</span>
-                        </label>
-                        <p className={`${hintClass} mt-2`}>
-                          {cooling
-                            ? `Zooniverse allows a new export once every 24 hours. The next request will be available on ${formatUtcNext(nextRequestAt!)}.`
-                            : 'The latest one lacks the classifications made since. A new one can take several minutes for a big workflow.'}
+                      <ExportOption
+                        name="Use the available export" selected={!(regenerate && !cooling)} onSelect={() => setRegenerate(false)}
+                        badge="Available" badgeTone="emerald"
+                      >
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                          {formatDateTime(latestExport!.file_date ?? latestExport!.updated_at, { utc: true })} · starts downloading right away
                         </p>
-                      </>
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Classifications made after this date are not included.</p>
+                        {latestExport!.pending && (
+                          <p className={hintClass}>
+                            {cooling
+                              ? `A newer one was requested ${formatAgo(latestExport!.updated_at)} and isn’t done yet — this one is used.`
+                              : `A newer one was requested ${formatAgo(latestExport!.updated_at)} and never finished — it can be asked again.`}
+                          </p>
+                        )}
+                      </ExportOption>
                     )}
-                  </>
+                    <ExportOption
+                      name="Generate a new export" selected={!hasFile || (regenerate && !cooling)} onSelect={() => setRegenerate(true)}
+                      disabled={!hasFile || cooling}
+                      badge={hasFile ? undefined : latestExport ? 'Pending' : 'None'} badgeTone={latestExport ? 'amber' : 'zinc'}
+                    >
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                        {hasFile
+                          ? cooling
+                            ? `Zooniverse allows a new export once every 24 hours. The next request will be available on ${formatDateTime(nextRequestAt!, { utc: true })}.`
+                            : 'Includes the latest classifications. Can take several minutes for a big workflow.'
+                          : latestExport
+                            ? cooling
+                              ? 'Zooniverse is making it — the export waits for it.'
+                              : `The last request (${formatAgo(latestExport.updated_at)}) never finished — a new export will be made first.`
+                            : 'One will be made first — it can take a few minutes.'}
+                      </p>
+                    </ExportOption>
+                  </div>
                 )}
-            </div>
+            </fieldset>
           )}
         </div>
       </ZooniverseProjectPicker>
@@ -442,82 +602,48 @@ export default function ExportClassificationsPage({ onBack }: Props) {
 
       <Step
         n={3} title="Review and export" status={status(3)} canEdit={!running} onEdit={() => setOpen(3)}
-        description="Check it, and start the export: the volunteers’ answers are voted and written as CSV files for Trapper’s classification import."
+        description="Check everything and start the export. Each observation gets one final answer, decided from the volunteers’ votes, ready to import into Trapper."
         summary={workflow && selection && <>Workflow {workflow.display_name} → collection {selection.collection.name}</>}
       >
         {workflow && selection && (
           <>
-          <label className="flex items-start gap-2.5 cursor-pointer mb-5">
-            <input type="checkbox" className="mt-1" checked={saveZoo} disabled={running} onChange={(e) => setSaveZoo(e.target.checked)} />
-            <span>
-              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Also save the volunteers&rsquo; answers</span>
-              <span className={`block ${hintClass}`}>A second CSV with each answer before voting — to check how an observation was decided.</span>
-            </span>
-          </label>
-          <label className="flex items-start gap-2.5 cursor-pointer mb-5 -mt-2">
-            <input type="checkbox" className="mt-1" checked={saveRaw} disabled={running} onChange={(e) => setSaveRaw(e.target.checked)} />
-            <span>
-              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Also keep Zooniverse&rsquo;s classifications CSV</span>
-              <span className={`block ${hintClass}`}>As Zooniverse exported it, in the export&rsquo;s folder — it can be big (hundreds of MB).</span>
-            </span>
-          </label>
-          <label className="flex items-start gap-2.5 cursor-pointer mb-5 -mt-2">
-            <input type="checkbox" className="mt-1" checked={autoImport} disabled={running} onChange={(e) => setAutoImport(e.target.checked)} />
-            <span>
-              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Import into Trapper when finished</span>
-              <span className={`block ${hintClass}`}>
-                Without asking again — as expert classifications, not approved. Otherwise, import it from the result.
-              </span>
-            </span>
-          </label>
+          <div className="space-y-3 mb-4">
+            <ExportOption name="Also save each volunteer’s answer" type="checkbox" selected={saveZoo} disabled={running} onSelect={() => setSaveZoo((v) => !v)}>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                Keeps every answer before the vote, so you can check how each observation was decided.
+              </p>
+            </ExportOption>
+            <ExportOption name="Also keep the original Zooniverse data" type="checkbox" selected={saveRaw} disabled={running} onSelect={() => setSaveRaw((v) => !v)}>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                A copy exactly as Zooniverse provided it, saved in the export folder. It can be large — hundreds of MB.
+              </p>
+            </ExportOption>
+            <ExportOption name="Import into Trapper when finished" type="checkbox" selected={autoImport} disabled={running} onSelect={() => setAutoImport((v) => !v)}>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                Imports the result automatically, as expert classifications (not approved). If you leave this off, you can import it later from the result screen.
+              </p>
+            </ExportOption>
+          </div>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+            You’ll get: the final result for Trapper{saveZoo && ' · each volunteer’s answer'}{saveRaw && ' · the original Zooniverse data'}
+          </p>
             <button type="button" className={`${btnPrimary} w-full justify-center py-3 text-base`} disabled={!ready} onClick={handleExport}>
-              {run ? 'Export again' : 'Export CSV'}
+              {run ? 'Export again' : 'Export classifications'}
             </button>
           </>
         )}
       </Step>
 
       <Step
-        n={4} title="Export results" status={status(4)} canEdit={false} onEdit={() => setOpen(4)}
+        n={4} title="Export results" status={status(4)} canEdit={!running} onEdit={() => setOpen(3)}
         description="Progress of the export and the files it wrote."
+        summary={run?.result && <>{run.result.rows.toLocaleString()} observations exported</>}
+        badge={run?.status === 'stopped' ? 'Cancelled' : undefined}
+        expanded={run?.status === 'done' && open === 4}
       >
-        {running && <button type="button" className={`${btnOutline} mb-3`} onClick={stop}><SmallSpinner />Stop</button>}
-        <div>
-          {run?.export && (
-            <Phase
-              label={run.export.state === 'generating' ? 'Making a new classifications export in Zooniverse…' : 'Classifications export'}
-              detail={run.export.state === 'ready' ? formatDate(run.export.updated_at) : 'this can take a few minutes'}
-              percent={null} state={run.export.state === 'ready' ? 'done' : 'running'}
-            />
-          )}
-          {run?.download && (
-            <Phase
-              label="Classifications downloaded"
-              detail={`${run.download.rows.toLocaleString()} rows${run.download.subjects !== undefined ? ` · ${run.download.subjects.toLocaleString()} subjects` : ` · ${formatBytes(run.download.bytes)}`}`}
-              percent={run.download.total ? Math.min(99, Math.round((run.download.bytes / run.download.total) * 100)) : null}
-              state={run.download.done ? 'done' : 'running'}
-            />
-          )}
-          {run?.trapper && (
-            <Phase
-              label="Trapper deployments fetched"
-              detail={`${run.trapper.done} of ${run.trapper.total} · ${run.trapper.observations.toLocaleString()} observations`}
-              percent={run.trapper.total ? Math.round((run.trapper.done / run.trapper.total) * 100) : 100}
-              state={run.voting ? 'done' : 'running'}
-            />
-          )}
-          {run?.voting && (
-            <Phase
-              label="Subjects voted"
-              detail={`${run.voting.done.toLocaleString()} of ${run.voting.total.toLocaleString()}`}
-              percent={run.voting.total ? Math.round((run.voting.done / run.voting.total) * 100) : 100}
-              state={run.status === 'done' ? 'done' : 'running'}
-            />
-          )}
-          {run?.status === 'stopped' && <p className={hintClass}>Stopped — nothing was written.</p>}
-          {run?.error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{run.error}</p>}
-          {run?.result && exportedSelection && <Result result={run.result} selection={exportedSelection} autoImport={autoImport} />}
-        </div>
+        {run?.status === 'running' && <RunningView run={run} now={now} onStop={stop} />}
+        {run && (run.status === 'error' || run.status === 'stopped') && <FailedView run={run} now={now} onRetry={handleExport} disabled={!ready} />}
+        {run?.result && exportedSelection && <Result run={run} result={run.result} selection={exportedSelection} autoImport={autoImport} now={now} />}
       </Step>
 
       <div className="mt-10">
