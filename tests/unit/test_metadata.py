@@ -165,3 +165,22 @@ def test_subject_lists_choose_which_subjects_are_updated(fake):
     }
     assert lines[-1]["filtered_out"] == 2
     assert [sid for sid, _ in fake] == [102]
+
+
+def test_every_run_leaves_a_report(fake):
+    client = _client()
+    client.post("/api/metadata/update", json=BODY)
+
+    listed = client.get("/api/reports").json()
+    assert len(listed) == 1 and listed[0]["kind"] == "update_metadata" and listed[0]["status"] == "done"
+    assert listed[0]["totals"]["would_update"] == 1
+    report = client.get(f"/api/reports/{listed[0]['id']}").json()
+    assert report["title"] == "Dry run of metadata — Doñana R0033"
+    assert report["parameters"]["dry_run"] is True and report["parameters"]["collection"] == "R0033"
+    # No credentials in it.
+    assert "s3cret" not in json.dumps(report) and "pw" not in report["parameters"].values()
+    assert [(e["subject_id"], e["field"]) for e in report["entries"]] == [(102, "link"), (102, "image_name"), (102, "Filename")]
+    csv = client.get(f"/api/reports/{listed[0]['id']}/download?format=csv").text
+    assert csv.splitlines()[0] == "subject_id,media_id,status,field,old,new,detail"
+    client.delete(f"/api/reports/{listed[0]['id']}")
+    assert client.get("/api/reports").json() == []

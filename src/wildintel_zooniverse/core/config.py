@@ -41,6 +41,11 @@ def get_sessions_dir() -> Path:
     return get_app_documents_dir() / "sessions"
 
 
+def get_reports_dir() -> Path:
+    """Where the reports of the runs are kept — see services.report_service."""
+    return get_app_documents_dir() / "reports"
+
+
 LogLevel = Literal["ERROR", "WARNING", "INFO", "DEBUG"]
 
 

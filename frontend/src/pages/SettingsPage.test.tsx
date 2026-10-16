@@ -8,7 +8,7 @@ import { APP_SETTINGS } from '../test/fixtures'
 vi.mock('../api', () => ({
   api: {
     getSettings: vi.fn(), saveSettings: vi.fn(), clearLog: vi.fn(),
-    checkForUpdate: vi.fn(), trapperTestConnection: vi.fn(), zooniverseTestConnection: vi.fn(), configs: vi.fn(), addConfig: vi.fn(), activateConfig: vi.fn(), openConfigFolder: vi.fn(),
+    checkForUpdate: vi.fn(), trapperTestConnection: vi.fn(), zooniverseTestConnection: vi.fn(), configs: vi.fn(), listReports: vi.fn(), addConfig: vi.fn(), activateConfig: vi.fn(), openConfigFolder: vi.fn(),
   },
 }))
 
@@ -28,6 +28,16 @@ beforeEach(() => {
 const section = (name: string) => userEvent.click(screen.getByRole('button', { name }))
 
 describe('SettingsPage', () => {
+  it('has a Reports section, with no Save button', async () => {
+    mockedApi.listReports.mockResolvedValue([])
+    render(<SettingsPage onClose={vi.fn()} />)
+    await screen.findByLabelText('Level')
+    await section('Reports')
+    expect(await screen.findByText(/no reports yet/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+  })
+
+
   it('shows one section at a time, from the sidebar', async () => {
     render(<SettingsPage onClose={vi.fn()} />)
     expect(await screen.findByLabelText('Level')).toHaveValue('INFO')

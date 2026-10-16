@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from wildintel_zooniverse.web.api.routers import trapper, upload, zooniverse
 from wildintel_zooniverse.web.api.routers.app_settings import open_folder
 from wildintel_zooniverse.core.schemas.requests import ExportClassificationsRequest, ImportToTrapperRequest
-from wildintel_zooniverse.core.services import classifications_export_service, trapper_import_service
+from wildintel_zooniverse.core.services import classifications_export_service, report_service, trapper_import_service
 from wildintel_zooniverse.core.logging_setup import debugging
 
 router = APIRouter(prefix="/api/export", tags=["export"])
@@ -72,15 +72,24 @@ def export_classifications(req: ExportClassificationsRequest) -> StreamingRespon
         logger.warning("Export failed to start: %s", exc, exc_info=debugging())
         raise upload._http_exc(exc) from exc
 
+    recorder = report_service.Recorder("export_classifications", {
+        "workflow_id": req.workflow_id, "regenerate": req.regenerate, "save_zoo_annotations": req.save_zoo_annotations,
+        "save_raw_export": req.save_raw_export, **report_service.selection_parameters(t.selection),
+    })
+
     def lines() -> Iterator[str]:
         try:
             for event in events:
+                recorder.feed(event)
                 yield json.dumps(event) + "\n"
         except Exception as exc:
             logger.warning("Export failed midway: %s", exc, exc_info=debugging())
-            yield json.dumps({"type": "error", "detail": upload._http_exc(exc).detail}) + "\n"
+            detail = upload._http_exc(exc).detail
+            recorder.fail(str(detail))
+            yield json.dumps({"type": "error", "detail": detail}) + "\n"
         finally:
             events.close()
+            recorder.save()
 
     return StreamingResponse(lines(), media_type="application/x-ndjson")
 

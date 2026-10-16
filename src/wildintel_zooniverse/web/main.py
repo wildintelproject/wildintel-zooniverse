@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from wildintel_zooniverse.web.api.routers import app_settings, export, health, metadata, sessions, trapper, upload, validation, zooniverse
+from wildintel_zooniverse.web.api.routers import app_settings, export, health, metadata, reports, sessions, trapper, upload, validation, zooniverse
 from wildintel_zooniverse.web.settings import configure_logging, settings
 
 configure_logging()
@@ -26,7 +26,7 @@ app.add_middleware(
 
 for _router in [
     health.router, trapper.router, zooniverse.router, sessions.router, upload.router, app_settings.router,
-    validation.router, metadata.router, export.router,
+    validation.router, metadata.router, export.router, reports.router,
 ]:
     app.include_router(_router)
 

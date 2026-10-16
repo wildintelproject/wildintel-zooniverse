@@ -19,7 +19,7 @@ from wildintel_zooniverse.core.schemas.requests import (
     DownloadSubjectSetsRequest, LookupSubjectsRequest, SubjectSetPageRequest, SubjectSetsRequest, WorkflowExportRequest,
     WorkflowsRequest, ZooniverseCredentials,
 )
-from wildintel_zooniverse.core.services import subject_download_service, subjects_service, zooniverse_service
+from wildintel_zooniverse.core.services import report_service, subject_download_service, subjects_service, zooniverse_service
 from wildintel_zooniverse.core.services.annotations import registry
 from wildintel_zooniverse.core.services.id_lists import IdLists
 from wildintel_zooniverse.core.logging_setup import debugging
@@ -144,14 +144,23 @@ def download_subject_sets(req: DownloadSubjectSetsRequest) -> StreamingResponse:
         logger.warning("Zooniverse call failed: %s", exc, exc_info=debugging())
         raise _http_exc(exc) from exc
 
+    recorder = report_service.Recorder("download_subject_sets", {
+        "subject_set_ids": req.subject_set_ids, "folder": str(output_dir), "overwrite": req.overwrite,
+        **report_service.lists_parameters(req.include_subjects, req.exclude_subjects),
+    })
+
     def lines() -> Iterator[str]:
         try:
             for event in events:
+                recorder.feed(event)
                 yield json.dumps(event) + "\n"
         except Exception as exc:
             logger.warning("Subject set download failed midway: %s", exc, exc_info=debugging())
-            yield json.dumps({"type": "error", "detail": _http_exc(exc).detail}) + "\n"
+            detail = _http_exc(exc).detail
+            recorder.fail(str(detail))
+            yield json.dumps({"type": "error", "detail": detail}) + "\n"
         finally:
             events.close()
+            recorder.save()
 
     return StreamingResponse(lines(), media_type="application/x-ndjson")

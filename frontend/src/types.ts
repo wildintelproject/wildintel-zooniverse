@@ -405,3 +405,25 @@ export interface ZooniverseSubjectInfo {
   /** The Trapper image it is, if its metadata says. */
   media_id: number | null
 }
+
+/** The report of a run of a Utils task (see the backend's report_service). */
+export type ReportKind = 'update_metadata' | 'validation' | 'download_subject_sets' | 'export_classifications'
+
+export interface ReportSummary {
+  id: string
+  kind: ReportKind
+  title: string
+  created_at: string
+  finished_at: string | null
+  status: 'done' | 'stopped' | 'error'
+  totals: Record<string, number>
+  /** How many rows the report has — it keeps only the first ones. */
+  entries_total: number
+}
+
+export interface Report extends ReportSummary {
+  error?: string
+  parameters: Record<string, string | number | boolean | number[] | null>
+  outputs: Record<string, string>
+  entries: Record<string, string | number | number[] | null>[]
+}

@@ -1,5 +1,5 @@
 import type {
-  AppSettings, AppSettingsUpdate, ConfigInfo, UpdateCheck, ClassificationProject, DownloadEvent, ExportEvent, MetadataEvent, Collection, Deployment, DeploymentCounts, PreviewEvent, ResearchProject, SessionSummary,
+  AppSettings, AppSettingsUpdate, ConfigInfo, UpdateCheck, ClassificationProject, DownloadEvent, ExportEvent, MetadataEvent, Collection, Deployment, DeploymentCounts, PreviewEvent, ResearchProject, Report, ReportSummary, SessionSummary,
   TrapperImportEvent, TrapperSelection, UploadCriteria, UploadEvent, ValidationEvent, ZooniverseDestination, ZooniverseProject, ZooniverseSubjectSet,
   ZooniverseSubjectInfo, ZooniverseWorkflow,
 } from './types'
@@ -308,6 +308,13 @@ export const api = {
   addConfig: (name: string) => post<ConfigInfo[]>('/api/settings/configs', { name }),
   activateConfig: (id: string) => post<ConfigInfo[]>(`/api/settings/configs/${encodeURIComponent(id)}/activate`, {}),
   openConfigFolder: (id: string) => post<{ ok: boolean }>(`/api/settings/configs/${encodeURIComponent(id)}/open-folder`, {}),
+
+  // The reports the Utils tasks leave: what each run found and did.
+  listReports: () => req<ReportSummary[]>('/api/reports'),
+  getReport: (id: string) => req<Report>(`/api/reports/${encodeURIComponent(id)}`),
+  deleteReport: (id: string) => req<{ status: string }>(`/api/reports/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  deleteOldReports: (days: number) => req<{ deleted: number }>(`/api/reports?older_than_days=${days}`, { method: 'DELETE' }),
+  reportUrl: (id: string, format: 'csv' | 'json') => `/api/reports/${encodeURIComponent(id)}/download?format=${format}`,
 
   listSessions: () => req<SessionSummary[]>('/api/sessions'),
 

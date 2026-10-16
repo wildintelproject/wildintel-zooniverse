@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from wildintel_zooniverse.web.api.routers import trapper, upload, zooniverse
 from wildintel_zooniverse.core.schemas.requests import UpdateMetadataRequest
-from wildintel_zooniverse.core.services import metadata_service
+from wildintel_zooniverse.core.services import metadata_service, report_service
 from wildintel_zooniverse.core.services.id_lists import IdLists
 from wildintel_zooniverse.core.logging_setup import debugging
 
@@ -39,14 +39,23 @@ def update_metadata(req: UpdateMetadataRequest) -> StreamingResponse:
         logger.warning("Metadata update failed to start: %s", exc, exc_info=debugging())
         raise upload._http_exc(exc) from exc
 
+    recorder = report_service.Recorder("update_metadata", {
+        "subject_set_id": req.subject_set_id, "dry_run": req.dry_run, **report_service.selection_parameters(t.selection),
+        **report_service.lists_parameters(req.include_subjects, req.exclude_subjects),
+    })
+
     def lines() -> Iterator[str]:
         try:
             for event in events:
+                recorder.feed(event)
                 yield json.dumps(event) + "\n"
         except Exception as exc:
             logger.warning("Metadata update failed midway: %s", exc, exc_info=debugging())
-            yield json.dumps({"type": "error", "detail": upload._http_exc(exc).detail}) + "\n"
+            detail = upload._http_exc(exc).detail
+            recorder.fail(str(detail))
+            yield json.dumps({"type": "error", "detail": detail}) + "\n"
         finally:
             events.close()
+            recorder.save()
 
     return StreamingResponse(lines(), media_type="application/x-ndjson")

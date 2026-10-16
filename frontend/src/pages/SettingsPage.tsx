@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { api } from '../api'
+import ReportsList from '../components/ReportsList'
 import type { AppSettings, AppSettingsUpdate, ConfigInfo, LogLevel, UpdateCheck } from '../types'
 
 const hintClass = 'text-xs text-zinc-500 dark:text-zinc-400'
@@ -59,6 +60,13 @@ const FileIcon = () => (
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
     <path d="M14 2v6h6" />
     <path d="M16 13H8" /><path d="M16 17H8" />
+  </Icon>
+)
+const ReportIcon = () => (
+  <Icon>
+    <rect x="8" y="2" width="8" height="4" rx="1" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <path d="M9 12h6" /><path d="M9 16h6" />
   </Icon>
 )
 const FolderIcon = () => (
@@ -146,6 +154,7 @@ function numberIn(value: string, { min, max, decimal }: Limits): number | null {
 const NUMBER_FIELDS: Record<SectionId, [NumberKey, Limits][]> = {
   general: [],
   config: [],
+  reports: [],
   trapper: [['downloadWorkers', LIMITS.workers], ['downloadAttempts', LIMITS.attempts], ['downloadDelay', LIMITS.delay]],
   zooniverse: [
     ['uploadWorkers', LIMITS.workers], ['uploadAttempts', LIMITS.attempts], ['uploadDelay', LIMITS.delay],
@@ -185,13 +194,14 @@ function toUpdate(d: Draft): AppSettingsUpdate | null {
 
 // ── Layout pieces ───────────────────────────────────────────────────────
 
-type SectionId = 'general' | 'trapper' | 'zooniverse' | 'sequences' | 'config'
+type SectionId = 'general' | 'trapper' | 'zooniverse' | 'sequences' | 'reports' | 'config'
 
 const SECTIONS: { id: SectionId; label: string; icon: () => ReactNode }[] = [
   { id: 'general', label: 'General', icon: SlidersIcon },
   { id: 'trapper', label: 'Trapper', icon: CameraIcon },
   { id: 'zooniverse', label: 'Zooniverse', icon: GlobeIcon },
   { id: 'sequences', label: 'Sequences', icon: LayersIcon },
+  { id: 'reports', label: 'Reports', icon: ReportIcon },
   { id: 'config', label: 'Config', icon: FileIcon },
 ]
 
@@ -714,18 +724,22 @@ export default function SettingsPage({ onClose }: Props) {
           </div>
         )}
 
+        {section === 'reports' && <ReportsList />}
+
         {section === 'config' && (
           <ConfigsEditor onSwitched={reloadSettings} onError={(message) => setStatus({ kind: 'error', message })} />
         )}
 
-        <div className="flex items-center justify-end gap-4 pt-5 mt-2 border-t border-zinc-200 dark:border-zinc-800">
-          {status.kind === 'error' && <p className="text-sm text-red-600 dark:text-red-400 mr-auto">{status.message}</p>}
-          {status.kind === 'saved' && <p className="text-sm text-emerald-700 dark:text-emerald-400 mr-auto">Settings saved.</p>}
-          {draft && !update && <p className="text-sm text-red-600 dark:text-red-400 mr-auto">Fix the values marked in red first.</p>}
-          <button type="button" className={btnPrimary} disabled={!update || status.kind === 'saving'} onClick={handleSave}>
-            {status.kind === 'saving' ? 'Saving…' : 'Save'}
-          </button>
-        </div>
+        {section !== 'reports' && (
+          <div className="flex items-center justify-end gap-4 pt-5 mt-2 border-t border-zinc-200 dark:border-zinc-800">
+            {status.kind === 'error' && <p className="text-sm text-red-600 dark:text-red-400 mr-auto">{status.message}</p>}
+            {status.kind === 'saved' && <p className="text-sm text-emerald-700 dark:text-emerald-400 mr-auto">Settings saved.</p>}
+            {draft && !update && <p className="text-sm text-red-600 dark:text-red-400 mr-auto">Fix the values marked in red first.</p>}
+            <button type="button" className={btnPrimary} disabled={!update || status.kind === 'saving'} onClick={handleSave}>
+              {status.kind === 'saving' ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -15,3 +15,16 @@ os.environ["XDG_CONFIG_HOME"] = str(_FAKE_HOME / ".config")
 os.environ["XDG_DOCUMENTS_DIR"] = str(_FAKE_HOME / "Documents")
 os.environ["APPDATA"] = str(_FAKE_HOME / "AppData" / "Roaming")
 atexit.register(shutil.rmtree, _FAKE_HOME, True)
+
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def reports_dir(tmp_path_factory, monkeypatch):
+    """Every test with its own reports folder: the runs the endpoints make leave their reports there."""
+    from wildintel_zooniverse.core import config
+
+    folder = tmp_path_factory.mktemp("reports")
+    monkeypatch.setattr(config, "get_reports_dir", lambda: folder)
+    return folder
