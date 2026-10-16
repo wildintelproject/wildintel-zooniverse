@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
 import { api, type WorkflowExport } from '../api'
+import BackButton from '../components/BackButton'
+import ChoiceCard from '../components/ChoiceCard'
+import { BigNumber, DetailsPanel } from '../components/RunPanels'
 import Combobox from '../components/Combobox'
 import FieldLabel from '../components/FieldLabel'
-import ProgressBar from '../components/ProgressBar'
 import TrapperImportPanel from '../components/TrapperImportPanel'
 import { formatAgo, formatBytes, formatDateTime, formatDuration } from '../lib/format'
 import TrapperSelectionForm from '../components/TrapperSelectionForm'
@@ -73,36 +74,6 @@ function reduce(run: Run, event: ExportEvent): Run {
   return { ...reduceEvent(run, event), lastEventAt: Date.now() }
 }
 
-/** One choice of the export: a card with a radio — or a checkbox. */
-function ExportOption({ name, selected, onSelect, type = 'radio', disabled = false, badge, badgeTone = 'zinc', children }: {
-  name: string; type?: 'radio' | 'checkbox'; selected: boolean; onSelect: () => void; disabled?: boolean
-  badge?: string; badgeTone?: 'emerald' | 'amber' | 'zinc'; children?: ReactNode
-}) {
-  const tones = {
-    emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-    zinc: 'bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300',
-  }
-  return (
-    <label
-      className={[
-        'flex items-start gap-3 p-4 rounded-lg border',
-        selected ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-zinc-200 dark:border-zinc-700',
-        disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
-      ].join(' ')}
-    >
-      <input type={type} name={type === 'radio' ? 'classification-export' : undefined} className="mt-1" checked={selected} disabled={disabled} onChange={onSelect} />
-      <span className="flex-1 min-w-0">
-        <span className="flex items-center justify-between gap-3">
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{name}</span>
-          {badge && <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${tones[badgeTone]}`}>{badge}</span>}
-        </span>
-        {children}
-      </span>
-    </label>
-  )
-}
-
 /** Where the run is, as the running and failed views show it. */
 function progressOf(run: Run, now: number) {
   const pct = (done: number, total: number) => (total ? Math.min(100, Math.round((done / total) * 100)) : 100)
@@ -151,48 +122,6 @@ function detailRows(run: Run, now: number): [string, string][] {
   if (run.endedAt) rows.push([run.status === 'done' ? 'Finished' : 'Interrupted', formatDateTime(run.endedAt, { seconds: true })])
   else rows.push(['Last activity', `${formatAgo(new Date(run.lastEventAt).toISOString(), now) || 'just now'}`])
   return rows
-}
-
-/** The technical side of an export, folded away. */
-function DetailsPanel({ rows, defaultOpen = false, children }: { rows: [string, string][]; defaultOpen?: boolean; children?: ReactNode }) {
-  const [shown, setShown] = useState(defaultOpen)
-  return (
-    <div className="mt-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <button
-        type="button" aria-expanded={shown} onClick={() => setShown((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-zinc-800 dark:text-zinc-100"
-      >
-        Details
-        <svg aria-hidden="true" className={`w-4 h-4 transition-transform ${shown ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
-        </svg>
-      </button>
-      {shown && (
-        <div className="px-4 pb-3">
-          <dl className="divide-y divide-zinc-100 dark:divide-zinc-800 text-sm">
-            {rows.map(([label, value]) => (
-              <div key={label} className="flex justify-between gap-4 py-2">
-                <dt className="text-zinc-500 dark:text-zinc-400">{label}</dt>
-                <dd className="text-zinc-800 dark:text-zinc-200 text-right break-words min-w-0">{value}</dd>
-              </div>
-            ))}
-          </dl>
-          {children}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function BigNumber({ label, value, percent, caption, tone }: { label: string; value: number; percent: number | null; caption: string; tone: 'blue' | 'emerald' | 'red' }) {
-  return (
-    <div className="mt-3 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
-      <p className="text-4xl font-bold text-zinc-900 dark:text-zinc-100 my-1">{value.toLocaleString()}</p>
-      {percent !== null && <ProgressBar percent={percent} label={label} tone={tone} />}
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{caption}</p>
-    </div>
-  )
 }
 
 /** The export under way: what it's doing, how far, and how long it takes. */
@@ -541,8 +470,8 @@ export default function ExportClassificationsPage({ onBack }: Props) {
                 : (
                   <div className="space-y-3">
                     {hasFile && (
-                      <ExportOption
-                        name="Use the available export" selected={!(regenerate && !cooling)} onSelect={() => setRegenerate(false)}
+                      <ChoiceCard
+                        group="classification-export" name="Use the available export" selected={!(regenerate && !cooling)} onSelect={() => setRegenerate(false)}
                         badge="Available" badgeTone="emerald"
                       >
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -556,10 +485,10 @@ export default function ExportClassificationsPage({ onBack }: Props) {
                               : `A newer one was requested ${formatAgo(latestExport!.updated_at)} and never finished — it can be asked again.`}
                           </p>
                         )}
-                      </ExportOption>
+                      </ChoiceCard>
                     )}
-                    <ExportOption
-                      name="Generate a new export" selected={!hasFile || (regenerate && !cooling)} onSelect={() => setRegenerate(true)}
+                    <ChoiceCard
+                      group="classification-export" name="Generate a new export" selected={!hasFile || (regenerate && !cooling)} onSelect={() => setRegenerate(true)}
                       disabled={!hasFile || cooling}
                       badge={hasFile ? undefined : latestExport ? 'Pending' : 'None'} badgeTone={latestExport ? 'amber' : 'zinc'}
                     >
@@ -574,14 +503,15 @@ export default function ExportClassificationsPage({ onBack }: Props) {
                               : `The last request (${formatAgo(latestExport.updated_at)}) never finished — a new export will be made first.`
                             : 'One will be made first — it can take a few minutes.'}
                       </p>
-                    </ExportOption>
+                    </ChoiceCard>
                   </div>
                 )}
             </fieldset>
           )}
         </div>
       </ZooniverseProjectPicker>
-        <div className="flex justify-end mt-4">
+        <div className="flex items-center justify-between gap-3 mt-4">
+          <BackButton onClick={onBack} />
           <button type="button" className={btnPrimary} disabled={!workflow?.exportable || latest.loading} onClick={() => next(2)}>Continue to Trapper deployments</button>
         </div>
       </Step>
@@ -595,7 +525,8 @@ export default function ExportClassificationsPage({ onBack }: Props) {
         </>}
       >
         <TrapperSelectionForm onSelectionChange={handleSelectionChange} useSavedConnection />
-        <div className="flex justify-end mt-4">
+        <div className="flex items-center justify-between gap-3 mt-4">
+          <BackButton onClick={() => setOpen(1)} />
           <button type="button" className={btnPrimary} disabled={!selection} onClick={() => next(3)}>Continue to export</button>
         </div>
       </Step>
@@ -608,28 +539,31 @@ export default function ExportClassificationsPage({ onBack }: Props) {
         {workflow && selection && (
           <>
           <div className="space-y-3 mb-4">
-            <ExportOption name="Also save each volunteer’s answer" type="checkbox" selected={saveZoo} disabled={running} onSelect={() => setSaveZoo((v) => !v)}>
+            <ChoiceCard name="Also save each volunteer’s answer" type="checkbox" selected={saveZoo} disabled={running} onSelect={() => setSaveZoo((v) => !v)}>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                 Keeps every answer before the vote, so you can check how each observation was decided.
               </p>
-            </ExportOption>
-            <ExportOption name="Also keep the original Zooniverse data" type="checkbox" selected={saveRaw} disabled={running} onSelect={() => setSaveRaw((v) => !v)}>
+            </ChoiceCard>
+            <ChoiceCard name="Also keep the original Zooniverse data" type="checkbox" selected={saveRaw} disabled={running} onSelect={() => setSaveRaw((v) => !v)}>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                 A copy exactly as Zooniverse provided it, saved in the export folder. It can be large — hundreds of MB.
               </p>
-            </ExportOption>
-            <ExportOption name="Import into Trapper when finished" type="checkbox" selected={autoImport} disabled={running} onSelect={() => setAutoImport((v) => !v)}>
+            </ChoiceCard>
+            <ChoiceCard name="Import into Trapper when finished" type="checkbox" selected={autoImport} disabled={running} onSelect={() => setAutoImport((v) => !v)}>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                 Imports the result automatically, as expert classifications (not approved). If you leave this off, you can import it later from the result screen.
               </p>
-            </ExportOption>
+            </ChoiceCard>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
             You’ll get: the final result for Trapper{saveZoo && ' · each volunteer’s answer'}{saveRaw && ' · the original Zooniverse data'}
           </p>
-            <button type="button" className={`${btnPrimary} w-full justify-center py-3 text-base`} disabled={!ready} onClick={handleExport}>
-              {run ? 'Export again' : 'Export classifications'}
-            </button>
+            <div className="flex items-center justify-between gap-3">
+              <BackButton onClick={() => setOpen(2)} disabled={running} />
+              <button type="button" className={btnPrimary} disabled={!ready} onClick={handleExport}>
+                {run ? 'Export again' : 'Export classifications'}
+              </button>
+            </div>
           </>
         )}
       </Step>
@@ -644,12 +578,8 @@ export default function ExportClassificationsPage({ onBack }: Props) {
         {run?.status === 'running' && <RunningView run={run} now={now} onStop={stop} />}
         {run && (run.status === 'error' || run.status === 'stopped') && <FailedView run={run} now={now} onRetry={handleExport} disabled={!ready} />}
         {run?.result && exportedSelection && <Result run={run} result={run.result} selection={exportedSelection} autoImport={autoImport} now={now} />}
+        <div className="mt-4"><BackButton onClick={() => setOpen(3)} disabled={running} /></div>
       </Step>
-
-      <div className="mt-10">
-        <button type="button" className={btnOutline} onClick={onBack} disabled={running}>Back</button>
-        {running && <p className={hintClass}>Stop the export to go back.</p>}
-      </div>
     </div>
   )
 }

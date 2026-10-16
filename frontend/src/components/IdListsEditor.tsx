@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { parseIds } from '../lib/mediaIds'
+import ChoiceCard from './ChoiceCard'
 import type { IdKind } from '../lib/mediaIds'
 
 const hintClass = 'text-xs text-zinc-500 dark:text-zinc-400 mt-1'
@@ -20,8 +21,8 @@ const WORDS: Record<IdKind, { title: string; noun: string; plural: string; actio
   subject: { title: 'Subject lists', noun: 'subject', plural: 'subjects', action: 'Process', idName: 'Subject ids' },
 }
 
-function IdList({ id, label, hint, text, kind, onText, onCommit, disabled }: {
-  id: string; label: string; hint: string; text: string; kind: IdKind
+function IdList({ id, label, hint, text, kind, onText, onCommit, disabled, variant = 'plain' }: {
+  id: string; label: string; hint: string; text: string; kind: IdKind; variant?: 'plain' | 'field'
   onText: (text: string) => void; onCommit: (text: string) => void; disabled: boolean
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -33,6 +34,31 @@ function IdList({ id, label, hint, text, kind, onText, onCommit, disabled }: {
     const listed = parseIds(await file.text(), kind).ids.join('\n')
     onText(listed)
     onCommit(listed)
+  }
+
+  if (variant === 'field') {
+    return (
+      <div>
+        <label className="sr-only" htmlFor={id}>{label}</label>
+        <textarea
+          id={id} className={`${textareaClass} h-24 !text-sm`} value={text} disabled={disabled}
+          placeholder={`${words.idName} — one per line, or separated by commas or spaces`}
+          onChange={(e) => onText(e.target.value)} onBlur={(e) => onCommit(e.target.value)}
+        />
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <input
+            ref={fileRef} type="file" accept=".txt,.csv,.tsv,.json,text/plain,text/csv,application/json" className="hidden"
+            aria-label={`${label} file`} onChange={(e) => { loadFile(e.target.files?.[0]); e.target.value = '' }}
+          />
+          <button type="button" className={btnSmall} disabled={disabled} onClick={() => fileRef.current?.click()}>Load from file…</button>
+          <button type="button" className={btnSmall} disabled={disabled || !text} onClick={() => { onText(''); onCommit('') }}>Clear</button>
+          <span className="ml-auto text-xs text-zinc-600 dark:text-zinc-300">
+            <strong>{ids.length.toLocaleString()}</strong> {ids.length === 1 ? words.noun : words.plural}
+            {ignored > 0 && <span className="text-amber-700 dark:text-amber-400"> · {ignored} not an id, ignored</span>}
+          </span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -73,7 +99,7 @@ interface Props {
   className?: string
   /** 'cards': always open, the two lists side by side — a list is on while it
    * has ids (no checkbox) — with a note on how they combine. */
-  layout?: 'collapsible' | 'cards'
+  layout?: 'collapsible' | 'cards' | 'choices'
 }
 
 /** A collapsible whitelist and blacklist of ids — an upload's Trapper
@@ -87,6 +113,8 @@ export default function IdListsEditor({ kind, initial, onCommit, intro, status, 
   const [includeText, setIncludeText] = useState((initial.include ?? []).join('\n'))
   const [excludeText, setExcludeText] = useState(initial.exclude.join('\n'))
   const [open, setOpen] = useState(initial.include != null || initial.exclude.length > 0)
+  // The 'choices' layout: whether the exclusion list is switched on (the whitelist is, with whitelistOn).
+  const [excludeOn, setExcludeOn] = useState(initial.exclude.length > 0)
 
   function commit(on: boolean, include: string, exclude: string) {
     onCommit({ include: on ? parseIds(include, kind).ids : null, exclude: parseIds(exclude, kind).ids })
@@ -109,6 +137,51 @@ export default function IdListsEditor({ kind, initial, onCommit, intro, status, 
       <span className="font-mono">{inBoth.slice(0, 10).join(', ')}{inBoth.length > 10 ? '…' : ''}</span>
     </p>
   )
+
+  if (layout === 'choices') {
+    const commitChoices = (specific: boolean, include: string, leaveOut: boolean, exclude: string) =>
+      onCommit({ include: specific ? parseIds(include, kind).ids : null, exclude: leaveOut ? parseIds(exclude, kind).ids : [] })
+    const note = `Will process ${whitelistOn ? `only the ${words.plural} on your list` : `every eligible ${words.noun}`}${excludeOn ? `, minus the ones you leave out` : ''}.`
+    return (
+      <div className={className}>
+        <div className="space-y-3">
+          <ChoiceCard
+            group={`${kind}-scope`} name={`All eligible ${words.plural}`} selected={!whitelistOn} disabled={disabled}
+            onSelect={() => { setWhitelistOn(false); commitChoices(false, includeText, excludeOn, excludeText) }}
+          >
+            <p className={hintClass}>Every {words.noun} that can be updated is processed.</p>
+          </ChoiceCard>
+          <ChoiceCard
+            group={`${kind}-scope`} name={`Only specific ${words.plural}`} selected={whitelistOn} disabled={disabled}
+            onSelect={() => { setWhitelistOn(true); commitChoices(true, includeText, excludeOn, excludeText) }}
+            extra={whitelistOn && (
+              <IdList
+                id={`${kind}-whitelist`} kind={kind} label={`Only these ${words.plural}`} disabled={disabled} hint="" variant="field"
+                text={includeText} onText={setIncludeText} onCommit={(t) => commitChoices(true, t, excludeOn, excludeText)}
+              />
+            )}
+          >
+            <p className={hintClass}>Everything that isn&rsquo;t on your list is skipped.</p>
+          </ChoiceCard>
+          <ChoiceCard
+            type="checkbox" name={`Leave some ${words.plural} out`} selected={excludeOn} disabled={disabled}
+            onSelect={() => { setExcludeOn(!excludeOn); commitChoices(whitelistOn, includeText, !excludeOn, excludeText) }}
+            extra={excludeOn && (
+              <IdList
+                id={`${kind}-blacklist`} kind={kind} label={`Never these ${words.plural}`} disabled={disabled} hint="" variant="field"
+                text={excludeText} onText={setExcludeText} onCommit={(t) => commitChoices(whitelistOn, includeText, true, t)}
+              />
+            )}
+          >
+            <p className={hintClass}>These are always skipped, even if they&rsquo;re on the list above.</p>
+          </ChoiceCard>
+        </div>
+        <p className="mt-3 px-4 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-xs text-zinc-600 dark:text-zinc-300">{note}</p>
+        {whitelistOn && excludeOn && inBothNote}
+        {status}
+      </div>
+    )
+  }
 
   if (layout === 'cards') {
     const card = 'p-4 rounded-lg border border-zinc-200 dark:border-zinc-700'
