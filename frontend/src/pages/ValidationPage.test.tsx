@@ -71,7 +71,7 @@ async function chooseSubjectSet() {
   await userEvent.click(await screen.findByRole('option', { name: /European Camera Trap Project/ }))
   await userEvent.click(await screen.findByLabelText('Subject set'))
   await userEvent.click(await screen.findByRole('option', { name: /#128950/ }))
-  await userEvent.click(screen.getByRole('button', { name: /continue to validation/i }))
+  await userEvent.click(screen.getByRole('button', { name: /continue to the checks/i }))
 }
 
 describe('ValidationPage', () => {
@@ -79,7 +79,7 @@ describe('ValidationPage', () => {
     const run = controlledValidation()
     render(<ValidationPage onBack={vi.fn()} />)
     await chooseSubjectSet()
-    await userEvent.click(screen.getByRole('button', { name: /^validate$/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^run check$/i }))
 
     expect(mockedApi.validateSubjectSet).toHaveBeenCalledWith(
       { username: '', password: '' }, 128950, null, expect.any(Function), expect.any(AbortSignal),
@@ -89,12 +89,12 @@ describe('ValidationPage', () => {
     expect(screen.getByRole('progressbar', { name: 'Subjects listed' })).toHaveAttribute('aria-valuenow', '40')
 
     const { missing: _m, extra: _e, deployments: _d, expected: _x, ...alone } = REPORT
-    expect(screen.queryByRole('button', { name: /^compare$/i })).not.toBeInTheDocument()
     run.send({ type: 'report', ...alone, compared: false })
     run.send({ type: 'done' })
     await run.finish()
 
-    expect(screen.getByText(/Subject set Kittehs: 3 finding\(s\)/)).toBeInTheDocument()
+    expect(screen.getByText('Check completed')).toBeInTheDocument()
+    expect(screen.getByText(/Kittehs: 3 finding\(s\)/)).toBeInTheDocument()
     expect(screen.queryByText('Missing')).not.toBeInTheDocument()
     expect(screen.getByText('Duplicated media')).toBeInTheDocument()
     expect(screen.getByText('101, 102')).toBeInTheDocument()
@@ -106,16 +106,18 @@ describe('ValidationPage', () => {
     const run = controlledValidation()
     render(<ValidationPage onBack={vi.fn()} />)
     await chooseSubjectSet()
-    await userEvent.click(screen.getByRole('button', { name: /^validate$/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^run check$/i }))
     const { missing: _m, extra: _e, deployments: _d, expected: _x, ...alone } = REPORT
     run.send({ type: 'report', ...alone, compared: false })
     run.send({ type: 'done' })
     await run.finish()
     expect(mockedApi.validateSubjectSet).toHaveBeenLastCalledWith(expect.anything(), 128950, null, expect.any(Function), expect.any(AbortSignal))
 
-    await userEvent.click(screen.getByRole('button', { name: /continue to comparison/i }))
-    expect(await screen.findByRole('heading', { name: 'Compare with Trapper' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^compare$/i })).toBeDisabled()
+    // Back to the choice of what to run: the comparison needs a Trapper selection first.
+    await userEvent.click(screen.getAllByRole('button', { name: /^back$/i }).at(-1)!)
+    expect(screen.getByText('Compare with Trapper')).toBeInTheDocument()
+    expect(screen.getByText(/subject set checked — the comparison reuses what was found/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^run comparison$/i })).toBeDisabled()
     expect(screen.queryByRole('button', { name: /test connection/i })).not.toBeInTheDocument()
     await userEvent.type(await screen.findByLabelText('Research project'), 'Doñana')
     await userEvent.click(await screen.findByRole('option', { name: 'DONA — Doñana' }))
@@ -127,7 +129,7 @@ describe('ValidationPage', () => {
     expect(await screen.findByLabelText(/max\. gap within a sequence/i)).toHaveValue('300')
 
     const comparing = controlledValidation()
-    await userEvent.click(screen.getByRole('button', { name: /^compare$/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^run comparison$/i }))
     expect(mockedApi.validateSubjectSet).toHaveBeenLastCalledWith(
       { username: '', password: '' }, 128950,
       { selection: expect.objectContaining({ collection: { pk: 33, name: 'R0033' } }), criteria: expect.objectContaining({ max_interval: 300 }) },
@@ -135,11 +137,12 @@ describe('ValidationPage', () => {
     )
     comparing.send({ type: 'trapper', total: 2 })
     comparing.send({ type: 'deployment', deployment_id: 'R0033-DONA_0001_A', images: 3, candidates: 3, sequences: 3, removed_middle: 0, selected: 3 })
-    expect(screen.getByRole('progressbar', { name: 'Trapper deployments fetched' })).toHaveAttribute('aria-valuenow', '50')
+    expect(screen.getByRole('progressbar', { name: 'Deployments fetched' })).toHaveAttribute('aria-valuenow', '50')
 
     comparing.send({ type: 'report', ...REPORT })
     comparing.send({ type: 'done' })
     await comparing.finish()
+    expect(screen.getByText('Comparison completed')).toBeInTheDocument()
     expect(screen.getByText(/5 finding\(s\)/)).toBeInTheDocument()
     expect(screen.getByText('Missing media')).toBeInTheDocument()
     expect(screen.getByText('IMG_3.JPG')).toBeInTheDocument()
@@ -150,18 +153,20 @@ describe('ValidationPage', () => {
     const run = controlledValidation()
     render(<ValidationPage onBack={vi.fn()} />)
     await chooseSubjectSet()
-    await userEvent.click(screen.getByRole('button', { name: /^validate$/i }))
+    await userEvent.click(screen.getByRole('button', { name: /^run check$/i }))
     run.send({ type: 'report', ...REPORT, compared: false, duplicated: [], unmatched: [], metadata_issues: [], missing: undefined, extra: undefined })
     run.send({ type: 'done' })
     await run.finish()
-    expect(screen.getByText('Subject set Kittehs: no problems found.')).toBeInTheDocument()
+    expect(screen.getByText('Kittehs: no problems found.')).toBeInTheDocument()
   })
 
   it('shows why it failed', async () => {
     mockedApi.validateSubjectSet.mockRejectedValue(new Error("Could not find subject_set with id='128950'"))
     render(<ValidationPage onBack={vi.fn()} />)
     await chooseSubjectSet()
-    await userEvent.click(screen.getByRole('button', { name: /^validate$/i }))
-    expect(await screen.findByText(/Could not find subject_set/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /^run check$/i }))
+    expect((await screen.findAllByText(/Could not find subject_set/)).length).toBeGreaterThan(0)
+    expect(screen.getByText('The validation was interrupted')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeEnabled()
   })
 })
