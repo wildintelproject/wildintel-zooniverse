@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { api } from '../api'
 import type { ZooniverseCredentials } from '../api'
 import Combobox from './Combobox'
+import ErrorText from './ErrorText'
 import type { TrapperSelection, ZooniverseDestination, ZooniverseProject, ZooniverseSubjectSet } from '../types'
 
 const inputClass = 'w-full px-3 py-2 text-sm rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono'
@@ -123,7 +124,7 @@ export default function ZooniverseDestinationForm({ selection, initial, onDestin
           }
           clearLabel="Clear project"
         />
-        {conn.status === 'error' && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{conn.message}</p>}
+        {conn.status === 'error' && <ErrorText message={conn.message} className="mt-1" />}
         <p className={hintClass}>Only the projects you own or collaborate on.</p>
       </div>
 
@@ -151,7 +152,7 @@ export default function ZooniverseDestinationForm({ selection, initial, onDestin
               </div>
               {!trimmed && <p className="text-sm text-red-600 dark:text-red-400">Give the subject set a name.</p>}
               {trimmed && subjectSets.loading && <p className={hintClass}>Checking the project's subject sets…</p>}
-              {subjectSets.error && <p className="text-sm text-red-600 dark:text-red-400">{subjectSets.error}</p>}
+              {subjectSets.error && <ErrorText message={subjectSets.error} />}
               {trimmed && !subjectSets.loading && !subjectSets.error && (
                 existing
                   ? (
@@ -167,7 +168,7 @@ export default function ZooniverseDestinationForm({ selection, initial, onDestin
           {mode === 'existing' && (
             <div className="mb-2">
               {subjectSets.loading && <p className={hintClass}>Loading the project's subject sets…</p>}
-              {subjectSets.error && <p className="text-sm text-red-600 dark:text-red-400">{subjectSets.error}</p>}
+              {subjectSets.error && <ErrorText message={subjectSets.error} />}
               {!subjectSets.loading && !subjectSets.error && subjectSets.items.length === 0 && (
                 <p className="text-sm text-zinc-600 dark:text-zinc-300">This project has no subject sets yet — create a new one.</p>
               )}

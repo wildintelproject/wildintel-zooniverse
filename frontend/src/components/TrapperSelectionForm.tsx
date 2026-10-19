@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { api } from '../api'
 import type { TrapperCredentials } from '../api'
 import Combobox from './Combobox'
+import ErrorText from './ErrorText'
 import FieldLabel from './FieldLabel'
 import type { ClassificationProject, Collection, Deployment, ResearchProject, TrapperSelection } from '../types'
 
@@ -284,7 +285,7 @@ export default function TrapperSelectionForm({ onSelectionChange, useSavedConnec
               {conn.message}
             </div>
           )}
-          {conn.status === 'error' && <div className="mt-2 text-sm text-red-600 dark:text-red-400 text-right">{conn.message}</div>}
+          {conn.status === 'error' && <ErrorText message={conn.message} className="mt-2 text-right" />}
         </div>
         </>
       )}
@@ -306,7 +307,7 @@ export default function TrapperSelectionForm({ onSelectionChange, useSavedConnec
               }
               clearLabel="Clear research project"
             />
-            {researchProjects.error && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{researchProjects.error}</p>}
+            {researchProjects.error && <ErrorText message={researchProjects.error} className="mt-1" />}
           </div>
         </>
       )}
@@ -330,7 +331,7 @@ export default function TrapperSelectionForm({ onSelectionChange, useSavedConnec
               }
               clearLabel="Clear classification project"
             />
-            {classificationProjects.error && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{classificationProjects.error}</p>}
+            {classificationProjects.error && <ErrorText message={classificationProjects.error} className="mt-1" />}
             {classificationHint && <p className={hintClass}>{classificationHint}</p>}
           </div>
         </>
@@ -375,7 +376,7 @@ export default function TrapperSelectionForm({ onSelectionChange, useSavedConnec
                 ))}
               </select>
               )}
-            {collections.error && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{collections.error}</p>}
+            {collections.error && <ErrorText message={collections.error} className="mt-1" />}
           </div>
         </>
       )}
@@ -396,7 +397,7 @@ export default function TrapperSelectionForm({ onSelectionChange, useSavedConnec
           {deployments.loading && (
             <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><SmallSpinner /> Loading deployments…</p>
           )}
-          {deployments.error && <p className="text-sm text-red-600 dark:text-red-400">{deployments.error}</p>}
+          {deployments.error && <ErrorText message={deployments.error} />}
           {!deployments.loading && !deployments.error && deployments.items.length === 0 && (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               None of this research project's deployments has images in this collection.

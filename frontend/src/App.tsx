@@ -6,6 +6,7 @@ import SettingsPage from './pages/SettingsPage'
 import WelcomePage from './pages/WelcomePage'
 import WizardPage from './pages/WizardPage'
 import { api } from './api'
+import { OPEN_SETTINGS_EVENT } from './components/ErrorText'
 import type { SessionSummary } from './types'
 
 export default function App() {
@@ -32,6 +33,12 @@ export default function App() {
     ping()
     const interval = setInterval(ping, 10_000)
     return () => { cancelled = true; clearInterval(interval) }
+  }, [])
+
+  useEffect(() => {
+    const open = () => setSettingsOpen(true)
+    window.addEventListener(OPEN_SETTINGS_EVENT, open)
+    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, open)
   }, [])
 
   useEffect(() => {

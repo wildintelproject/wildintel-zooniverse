@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { api } from '../api'
 import type { ZooniverseCredentials } from '../api'
 import Combobox from './Combobox'
+import ErrorText from './ErrorText'
 import FieldLabel from './FieldLabel'
 import type { ZooniverseProject, ZooniverseSubjectSet } from '../types'
 
@@ -213,7 +214,7 @@ export default function ZooniverseProjectPicker({ title, disabled = false, loadS
               </button>
             </div>
             {conn.status === 'ok' && <div className="mt-2 text-sm text-emerald-600 dark:text-emerald-400 text-right">{conn.message}</div>}
-            {conn.status === 'error' && <div className="mt-2 text-sm text-red-600 dark:text-red-400 text-right">{conn.message}</div>}
+            {conn.status === 'error' && <ErrorText message={conn.message} className="mt-2 text-right" />}
           </div>
         </>
       )}
@@ -226,10 +227,10 @@ export default function ZooniverseProjectPicker({ title, disabled = false, loadS
             <div className="mb-4">
               <FieldLabel htmlFor="zoo-pick-project" done={useSavedConnection && Boolean(projectId)}>{useSavedConnection ? 'Project' : 'Zooniverse project'}</FieldLabel>
               {projectField}
-              {useSavedConnection && conn.status === 'error' && <p className="text-sm text-red-600 dark:text-red-400 mt-1">{conn.message}</p>}
+              {useSavedConnection && conn.status === 'error' && <ErrorText message={conn.message} className="mt-1" />}
             </div>
             {subjectSets.loading && <p className={hintClass}>Loading the project&rsquo;s subject sets…</p>}
-            {subjectSets.error && <p className="text-sm text-red-600 dark:text-red-400">{subjectSets.error}</p>}
+            {subjectSets.error && <ErrorText message={subjectSets.error} />}
             {projectId && !loadSubjectSets && children}
             {projectId && loadSubjectSets && !subjectSets.loading && !subjectSets.error && (
               subjectSets.items.length === 0
