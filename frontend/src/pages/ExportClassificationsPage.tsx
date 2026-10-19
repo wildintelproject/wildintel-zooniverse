@@ -518,7 +518,7 @@ export default function ExportClassificationsPage({ onBack }: Props) {
 
       <Step
         n={2} title="Trapper deployments" status={status(2)} canEdit={!running} onEdit={() => setOpen(2)}
-        description="The collection and deployments whose observations get the classifications — the ones the subjects were uploaded from. Subjects of other images are skipped."
+        description="The classification project in Trapper that the Zooniverse classifications are matched to. It must already exist, be linked to a classifier that includes every species the Zooniverse workflow can return, and contain the resources (images) you uploaded as subjects. Then pick the collection and deployments to restrict it to; subjects of other images are skipped."
         summary={selection && <>
           {selection.research_project.name} · {selection.classification_project.name}<br />
           {selection.collection.name} · {deploymentsSummary(selection)}
