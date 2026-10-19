@@ -278,7 +278,7 @@ export default function UploadRunPanel({ session }: Props) {
           <p>
             Upload the images to <strong>{session.destination?.project.name}</strong>, subject set{' '}
             <span className="font-mono">{session.destination?.subject_set_name}</span>? This creates the subjects in
-            Zooniverse — this app can&rsquo;t remove them afterwards. Images this session already uploaded are skipped
+            Zooniverse — this app can&rsquo;t remove them afterwards. Images that this session has already uploaded are skipped
             {skipInSubjectSet ? ', and so are those already in the subject set' : ''}.
           </p>
           <p className={hintClass}>Keep this page open while it runs: closing it or pressing Stop stops the upload.</p>
