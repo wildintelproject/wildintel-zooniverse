@@ -261,9 +261,10 @@ export default function UploadRunPanel({ session }: Props) {
             onChange={(e) => setSkipInSubjectSet(e.target.checked)}
           />
           <span>
-            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Skip images already in the subject set</span>
+            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Also skip images uploaded in earlier sessions</span>
             <span className={`block ${hintClass}`}>
-              Without it, only this session&rsquo;s own uploads are skipped.{' '}
+              Use this if the subject set already has images from a previous upload (another session or computer), so
+              they aren&rsquo;t uploaded twice. Images uploaded in this session are always skipped.{' '}
               <strong className="text-amber-700 dark:text-amber-400">
                 Slow: every subject of the subject set is listed from Zooniverse first, 100 at a time — minutes for one
                 with tens of thousands.
@@ -279,7 +280,7 @@ export default function UploadRunPanel({ session }: Props) {
             Upload the images to <strong>{session.destination?.project.name}</strong>, subject set{' '}
             <span className="font-mono">{session.destination?.subject_set_name}</span>? This creates the subjects in
             Zooniverse — this app can&rsquo;t remove them afterwards. Images that this session has already uploaded are skipped
-            {skipInSubjectSet ? ', and so are those already in the subject set' : ''}.
+            {skipInSubjectSet ? ', and so are those uploaded in earlier sessions' : ''}.
           </p>
           <p className={hintClass}>Keep this page open while it runs: closing it or pressing Stop stops the upload.</p>
           <div className="flex gap-2 mt-3">

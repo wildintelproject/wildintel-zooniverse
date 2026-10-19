@@ -122,13 +122,13 @@ describe('UploadRunPanel', () => {
   it('can skip the images already in the subject set — slowly, with its own progress', async () => {
     const run = controlledRun('uploadStart')
     render(<UploadRunPanel session={DESTINATION_SESSION} />)
-    const option = screen.getByRole('checkbox', { name: /skip images already in the subject set/i })
+    const option = screen.getByRole('checkbox', { name: /also skip images uploaded in earlier sessions/i })
     expect(option).not.toBeChecked()
     expect(screen.getByText(/Slow: every subject of the subject set is listed/)).toBeInTheDocument()
 
     await userEvent.click(option)
     await userEvent.click(screen.getByRole('button', { name: /upload to zooniverse/i }))
-    expect(screen.getByText(/and so are those already in the subject set/)).toBeInTheDocument()
+    expect(screen.getByText(/and so are those uploaded in earlier sessions/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /yes, upload/i }))
     expect(mockedApi.uploadStart).toHaveBeenCalledWith(
       'task-1', expect.any(Function), expect.any(AbortSignal), { skipInSubjectSet: true },
