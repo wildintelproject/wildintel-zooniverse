@@ -9,6 +9,16 @@ body {
   transition: background-color 0.2s, color 0.2s;
 }
 
+/* Native controls (select popups, scrollbars) follow the theme */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark option {
+  background-color: #27272a; /* zinc-800 */
+  color: #f4f4f5;            /* zinc-100 */
+}
+
 html.dark body {
   background-color: #09090b; /* zinc-950 */
   color: #f4f4f5;            /* zinc-100 */
