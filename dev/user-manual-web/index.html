@@ -1602,6 +1602,10 @@ elsewhere in the app isn't lost while you're here: <strong>Back</strong> returns
 <td>Largest CSV</td>
 <td>Classification exports bigger than this are split into several files (1.5 MB).</td>
 </tr>
+<tr>
+<td>Import timeout</td>
+<td>Seconds the app waits for Trapper to import each CSV (600). Trapper imports a file before it answers, which takes minutes for a big one.</td>
+</tr>
 </tbody>
 </table>
 <h3 id="sequences">Sequences<a class="headerlink" href="#sequences" title="Permanent link">&para;</a></h3>
@@ -1817,7 +1821,7 @@ there is nothing to fill in or test. Every dropdown can be typed in to narrow it
 shows a spinner while they load.</p>
 <h3 id="step-1-zooniverse">Step 1 — Zooniverse<a class="headerlink" href="#step-1-zooniverse" title="Permanent link">&para;</a></h3>
 <p>Choose the <strong>project</strong> and the <strong>workflow</strong>. Only workflows the app knows how to vote can be
-chosen — each has its own species and questions (17553, 29186 and 29187). The app shows when the
+chosen — each has its own species and questions (17553, 29186, 29187 and 31813). The app shows when the
 workflow's latest <strong>classifications export</strong> was made (in UTC, marked <em>Available</em>) — the date of
 its file, which can be used even if Zooniverse still says it's being made.</p>
 <ul>

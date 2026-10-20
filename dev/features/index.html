@@ -1163,12 +1163,16 @@ when the app starts, to resume or discard. Sessions never store passwords.</p>
 </ol>
 <p>Big exports are split into several CSVs (1.5 MB each by default — Trapper's import has a size
 limit), and the volunteers' raw answers can be saved alongside.</p>
-<p>Workflows 17553, 29186 and 29187 can be exported. Compared with wildintel-tools, these voting
+<p>Workflows 17553, 29186, 29187 and 31813 can be exported. Compared with wildintel-tools, these voting
 errors are fixed: workflow 17553's voter works (wildintel-tools' couldn't be loaded), and humans
 are voted as <em>Homo sapiens</em> in every workflow; workflows 29186/17553 keep the <em>k</em> most voted
 species (wildintel-tools kept <em>k+1</em>); and "no animal" votes are ignored when volunteers saw
 several species, as intended. Every workflow votes the same way — only how a tie is broken
-differs — and each observation gets its <code>classificationProbability</code>.</p>
+differs — and each observation gets its <code>classificationProbability</code>: its votes over its votes plus
+those of the next species in the ranking (so species sharing a photo don't penalise each other).
+Subjects that are the same Trapper image (uploaded twice) vote together, once, and a volunteer who
+classified it in both counts once, with their first valid classification. Classifications that mix "no animal"
+with a species are discarded, and a HOWMANY range ("11-50", "51+") counts its lower bound.</p>
 <p>The CSVs are then imported into Trapper through its API — as expert classifications, approved
 only if asked — right away if asked, or from the result, file by file. (wildintel-tools filled in
 Trapper's web form with a browser instead.)

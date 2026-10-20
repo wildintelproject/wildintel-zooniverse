@@ -865,17 +865,24 @@ adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>
 <li><strong>Retrieve classifications</strong>: a workflow's Zooniverse classifications, voted into
   observations, written as a CSV for Trapper's classification import (split by size) — and
   <strong>imported into Trapper</strong> through its API, from the result or right when the export ends.
-  Workflows 17553, 29186 and 29187.</li>
+  Workflows 17553, 29186, 29187 and 31813 (Oder Delta).</li>
 <li><strong>Utils</strong>: <em>Download subject sets</em>, <em>Validation &amp; audit</em> (duplicated, unmatched, missing and
   extra images, metadata — and every image uploaded, downloadable as a list of media ids),
   <em>Update metadata</em> (with a dry run) and <em>Subjects</em> (look subjects up by id, or browse a subject
   set's). <em>Download subject sets</em> and <em>Update metadata</em> take subject lists: only some subjects,
   or never some.</li>
+<li>A volunteer counts once per image in the export's votes — their first valid classification, in the order
+  they were made — also when several subjects of the same image (uploaded twice) vote together. Classifications
+  that mix "no animal" with a species are discarded, and the HOWMANY ranges ("11-50", "51+") count their
+  lower bound, not their digits.</li>
+<li>Listing a subject set's subjects (Update metadata, Validation, Download) asks again for a page Zooniverse
+  fails to give (a 502, a dropped connection), as the settings' upload retries say, instead of stopping the run.</li>
 <li><strong>Settings</strong> page (⚙️): Trapper and Zooniverse accounts, parallel transfers and retries, the
   export's defaults, and the sequence criteria new uploads start from.</li>
-<li>The CSV's <strong>classificationProbability</strong> column: each observation's probability, chained over the
-  voted species (the first runner-up included, even when it is not kept) — the same in every workflow, and the one in the
-  observation's comment.</li>
+<li>The CSV's <strong>classificationProbability</strong> column: each observation's probability: its votes over its
+  votes plus those of the next species in the ranking (the first runner-up included, even when it is not
+  kept) — the same in every workflow, and the one in the observation's comment. Species sharing a photo
+  don't penalise each other: with 6 cows, 4 birds and 2 horses the birds get 4 / (4 + 2).</li>
 <li>Importing into Trapper checks each CSV's scientific names against Trapper's species catalog first,
   and reports the unknown ones (with their rows) instead of sending a file Trapper answers with a 500.
   Trapper's HTML error pages are shown as one line.</li>
