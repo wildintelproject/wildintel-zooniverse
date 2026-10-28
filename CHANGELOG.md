@@ -16,7 +16,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Upcoming release
 
-### Added
+*Nothing yet.*
+
+## Released
+
+**Note:** The information in past release notes may have been superseded by newer releases.
+Please refer to the latest release for the most up-to-date information.
+
+### [0.1.0] - 2026-10-28
+
+#### Added
 - **Several configs**: the settings page has a new *Config* section listing the settings files, the
   active one marked. The **+** button creates a new file with the default values (stored in
   `configs/` next to `settings.toml`), and each card can be activated, opened in the file manager
@@ -83,7 +92,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   release packages: Linux AppImage, Windows portable
   .exe and macOS .dmg.
 
-### Fixed (compared with wildintel-tools)
+#### Fixed (compared with wildintel-tools)
 - Subjects' `Filename`/`image_name` are `{media id}_x_{file}` from the upload on — no
   `update-metadata` pass needed to trace them back to Trapper.
 - *Update metadata* saves the metadata (panoptes-client only saves assigned attributes), and
@@ -96,10 +105,3 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Every workflow's voter knows the same observation types (animal, human, vehicle, blank,
   unclassified, unknown) and differs only in how it breaks a tie.
 - A subject whose classifications were all discarded no longer stops the whole export.
-
-## Released
-
-**Note:** The information in past release notes may have been superseded by newer releases.
-Please refer to the latest release for the most up-to-date information.
-
-*No release yet.*
