@@ -69,7 +69,7 @@ class UploadCriteria(BaseModel):
     # Seconds between two consecutive images that still keep them in the
     # same sequence.
     max_interval: int = Field(default=90, ge=1)
-    # Images kept from each sequence, evenly spaced.
+    # Images kept from each sequence: the first ones, one halfway to the last, and the last.
     images_per_sequence: int = Field(default=5, ge=1)
     # Only images with an observation other than "unclassified".
     only_classified: bool = True

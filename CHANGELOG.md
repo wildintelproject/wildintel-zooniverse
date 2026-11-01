@@ -16,7 +16,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Upcoming release
 
-*Nothing yet.*
+#### Changed
+- **Sampling**: a sequence of more images than *Images per sequence* keeps its first images (the 3
+  first, by default), one halfway between those and the last, and the last, instead of images evenly
+  spaced. Fast-crossing species, such as carnivores, are best seen in the first photos.
 
 ## Released
 

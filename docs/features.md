@@ -24,8 +24,8 @@ deployment:
 3. **Middle sequences** — images with humans (and, optionally, vehicles) are removed from every
    sequence but a deployment's first and last — the camera being set up and collected. Removing
    vehicles is new: wildintel-tools only removed humans.
-4. **Sampling** — each sequence keeps a few evenly spaced images (5 by default), first and last
-   included; shorter ones are kept whole.
+4. **Sampling** — each sequence keeps a few images (5 by default): its first three, one halfway
+   between the third and the last, and the last; shorter ones are kept whole.
 
 A **preview** counts, deployment by deployment, how many images each step keeps — before
 anything is uploaded. **Analyze sequences** goes further — wildintel-tools' `analyze-sequences`,
