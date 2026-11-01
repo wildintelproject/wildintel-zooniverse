@@ -14,8 +14,10 @@ selection wildintel-tools' TrapperZooniverseConnector makes
      (any of them, not just the middle ones) left with more than one image,
      all with no detection (NO_DETECTION_OBSERVATION_TYPES: "empty" or
      Camtrap DP's own "blank"), is reduced to its second image.
-  5. Sampling: each sequence keeps images_per_sequence images, evenly spaced
-     (first and last always included); shorter ones are kept whole.
+  5. Sampling: each sequence keeps images_per_sequence images: its first
+     images_per_sequence - 2 (the 3 first, by default — where fast-crossing
+     species are best seen), one halfway between those and the last, and the
+     last; shorter ones are kept whole.
 
 Only remove_middle_vehicles is new here — wildintel-tools filters humans
 alone. collapse_empty_sequences is wildintel-tools' own too.
@@ -128,8 +130,13 @@ def filter_middle_sequences(sequences: list[list[Candidate]], removed_types: set
 def sample_sequence(sequence: list[Candidate], n: int) -> list[Candidate]:
     if len(sequence) <= n:
         return sequence
-    step = (len(sequence) - 1) / (n - 1) if n > 1 else 0
-    return [sequence[round(i * step)] for i in range(n)]
+    if n <= 2:
+        return [sequence[0], sequence[-1]][:n]
+    head = n - 2
+    # Halfway between the last of the first images and the last image; with
+    # more than n images there is always at least one in between.
+    middle = (head - 1 + len(sequence) - 1) // 2
+    return [*sequence[:head], sequence[middle], sequence[-1]]
 
 
 # wildintel-tools' own collapse_empty_sequences only checked for "empty" —

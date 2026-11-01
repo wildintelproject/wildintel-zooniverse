@@ -21,11 +21,21 @@ def test_sequences_split_where_the_gap_exceeds_max_interval():
     assert [_ids(s) for s in split_sequences(images, 90)] == [[1, 2], [3], [4]]
 
 
-def test_sampling_keeps_evenly_spaced_images_including_first_and_last():
+def test_sampling_keeps_the_first_images_one_in_between_and_the_last():
     seq = [_img(i, i) for i in range(10)]
-    assert _ids(sample_sequence(seq, 5)) == [0, 2, 4, 7, 9]
-    assert _ids(sample_sequence(seq, 1)) == [0]
+    assert _ids(sample_sequence(seq, 5)) == [0, 1, 2, 5, 9]
+    assert _ids(sample_sequence(seq[:6], 5)) == [0, 1, 2, 3, 5]
+    assert _ids(sample_sequence(seq[:7], 5)) == [0, 1, 2, 4, 6]
     assert _ids(sample_sequence(seq[:3], 5)) == [0, 1, 2]
+    assert _ids(sample_sequence(seq[:5], 5)) == [0, 1, 2, 3, 4]
+
+
+def test_sampling_with_other_image_counts():
+    seq = [_img(i, i) for i in range(10)]
+    assert _ids(sample_sequence(seq, 1)) == [0]
+    assert _ids(sample_sequence(seq, 2)) == [0, 9]
+    assert _ids(sample_sequence(seq, 3)) == [0, 4, 9]
+    assert _ids(sample_sequence(seq, 7)) == [0, 1, 2, 3, 4, 6, 9]
 
 
 def test_unclassified_and_non_public_images_are_not_candidates():
@@ -158,3 +168,9 @@ def test_a_middle_sequence_left_empty_is_still_listed():
     result = select_deployment("D1", images, UploadCriteria(), detail=True)
     assert [d.to_dict()["uploaded"] for d in result.sequences_detail] == [[1], [], [3]]
     assert result.sequences_detail[1].to_dict()["removed_human"] == [2]
+
+
+def test_a_long_sequence_uploads_its_first_three_images_one_in_between_and_the_last():
+    images = [_img(i, i, "animal") for i in range(10)]
+    result = select_deployment("D1", images, UploadCriteria())
+    assert _ids(result.selected) == [0, 1, 2, 5, 9]

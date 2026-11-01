@@ -145,7 +145,7 @@ Which of those images are uploaded:
 | Criterion | Default |
 |---|---|
 | **Max. gap within a sequence** — a longer gap between two consecutive images starts a new sequence | 90 s |
-| **Images per sequence** — kept from each sequence, evenly spaced, first and last included | 5 |
+| **Images per sequence** — kept from each sequence: the first ones, one halfway to the last, and the last | 5 |
 | **Only classified images** — skip images with no observation, or only *unclassified* ones | on |
 | **Remove humans from middle sequences** — a deployment's first and last sequences (setting up and collecting the camera) keep them | on |
 | **Remove vehicles from middle sequences** — the same, for vehicles | off |
