@@ -24,6 +24,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   out, as before. Unclassified images can contain people or vehicles, and they are uploaded.
 
 #### Changed
+- **Settings › General** follows the layout of WildINTEL Uploader: an *About* block with the app's
+  name and version, the update check and the links (report a problem, documentation, GitHub, release
+  notes), and the log level and the log file together in an *Activity log* card. The log level is
+  now picked from option cards instead of a drop-down. Nothing else changes.
 - **Sampling**: a sequence of more images than *Images per sequence* keeps its first images (the 3
   first, by default), one halfway between those and the last, and the last, instead of images evenly
   spaced. Fast-crossing species, such as carnivores, are best seen in the first photos.

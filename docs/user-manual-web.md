@@ -84,9 +84,13 @@ Changes apply to the next upload, dry run, download or export — not to one alr
 
 ### General
 
+It opens with the app's name and version, **Check for updates**, and four links: **Report a problem**
+(opens a GitHub issue already filled in with the version and the browser), **Documentation**,
+**GitHub** and **What's new** (the release notes). Below, the **Activity log** card:
+
 | Setting | What it is |
 |---|---|
-| Log level | How much the app writes to its log: **Error**, **Warning**, **Info** (the default) or **Debug** — everything: each image downloaded and uploaded, each Trapper and Zooniverse query, full error tracebacks. Applied as soon as it's saved. |
+| Level | How much the app writes to its log: **Error**, **Warning**, **Info** (the default) or **Debug** — everything: each image downloaded and uploaded, each Trapper and Zooniverse query, full error tracebacks. Applied as soon as it's saved. |
 | Log file | Where the log is — see [below](#7-where-the-app-keeps-its-files). **Download log** saves a copy, to attach to a bug report; **Clear log** deletes it and its older copies, after confirming — logging goes on into a new one. |
 
 ### Trapper
