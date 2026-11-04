@@ -173,7 +173,7 @@ export default function UploadCriteriaForm({ selection, initial, onCriteriaChang
             id="criteria-per-sequence" className={inputClass} inputMode="numeric"
             value={draft.images_per_sequence} onChange={(e) => set('images_per_sequence', e.target.value)}
           />
-          <p className={hintClass}>Evenly spaced, first and last included. Shorter sequences are kept whole.</p>
+          <p className={hintClass}>The first ones, one halfway to the last, and the last. Shorter sequences are kept whole.</p>
         </div>
       </div>
       {!criteria && <p className="text-sm text-red-600 dark:text-red-400 mb-4">Both numbers must be whole numbers of at least 1.</p>}
@@ -182,7 +182,7 @@ export default function UploadCriteriaForm({ selection, initial, onCriteriaChang
         <Checkbox
           checked={draft.only_classified} onChange={(v) => set('only_classified', v)}
           label="Only classified images"
-          hint={'Skip images with no observation, or only "unclassified" ones, in the classification project.'}
+          hint={'Skip images with no observation, or only "unclassified" ones, in the classification project. Off, they take part in the sequences and can be uploaded; on, they are left out and the sequences get shorter.'}
         />
         <Checkbox
           checked={draft.remove_middle_humans} onChange={(v) => set('remove_middle_humans', v)}

@@ -146,9 +146,19 @@ Which of those images are uploaded:
 |---|---|
 | **Max. gap within a sequence** — a longer gap between two consecutive images starts a new sequence | 90 s |
 | **Images per sequence** — kept from each sequence: the first ones, one halfway to the last, and the last | 5 |
-| **Only classified images** — skip images with no observation, or only *unclassified* ones | on |
+| **Only classified images** — skip images with no observation, or only *unclassified* ones (see the note below) | off |
 | **Remove humans from middle sequences** — a deployment's first and last sequences (setting up and collecting the camera) keep them | on |
 | **Remove vehicles from middle sequences** — the same, for vehicles | off |
+
+**About *Only classified images*.** An *unclassified* image has no detections: its objects were
+below the confidence threshold when the classifications were approved in Trapper, or it has not
+been processed yet. With the option **off** (the default) these images take part in the sequences
+and can be uploaded, so a sequence keeps its real length and a sequence with any unclassified
+image is never collapsed as empty. With it **on** they are left out *before* the sequences are
+built: the sequences get shorter, and what is left can look like an all-*empty* sequence and be
+collapsed. Unclassified images can contain people or vehicles that the detection missed, and they
+are uploaded as they are. A deployment that has not been processed yet is not skipped either; turn
+the option on, or process it in Trapper first, to avoid it.
 
 **Preview** counts, deployment by deployment, how many images each criterion keeps:
 
