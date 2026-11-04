@@ -711,7 +711,7 @@ export default function SettingsPage({ onClose }: Props) {
               <NumberBox label="Max. gap within a sequence" value={draft.maxInterval} limits={LIMITS.positive} onChange={text('maxInterval')} unit="seconds" />
               <NumberBox label="Images per sequence" value={draft.imagesPerSequence} limits={LIMITS.positive} onChange={text('imagesPerSequence')} />
             </Row>
-            <Row label="Images" description={'Skip images with no observation, or only "unclassified" ones.'}>
+            <Row label="Images" description={'Skip images with no observation, or only "unclassified" ones. Off, they take part in the sequences and can be uploaded.'}>
               <CheckOption label="Only classified images" checked={draft.onlyClassified} onChange={flag('onlyClassified')} />
             </Row>
             <Row label="Middle sequences" description="A deployment's first and last sequences (setting up and collecting the camera) keep them.">

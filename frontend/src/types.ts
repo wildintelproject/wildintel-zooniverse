@@ -47,7 +47,7 @@ export interface TrapperSelection {
 }
 
 /** Which of the selection's images get uploaded (see the backend's
- * services/sampling.py) — the defaults are wildintel-tools' own. */
+ * services/sampling.py) — the defaults are wildintel-tools' own, except only_classified: off here. */
 export interface UploadCriteria {
   /** Seconds between consecutive images that keep them in one sequence. */
   max_interval: number
@@ -62,7 +62,7 @@ export interface UploadCriteria {
 export const DEFAULT_CRITERIA: UploadCriteria = {
   max_interval: 90,
   images_per_sequence: 5,
-  only_classified: true,
+  only_classified: false,
   remove_middle_humans: true,
   remove_middle_vehicles: false,
   collapse_empty_sequences: false,

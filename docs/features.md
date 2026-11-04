@@ -17,8 +17,8 @@ collection's" rule, which also listed deployments with no images in the collecti
 Not every image of a collection is uploaded. The same selection wildintel-tools makes, per
 deployment:
 
-1. **Candidates** — images whose file is public in Trapper and, optionally, that have at least one
-   observation other than *unclassified*.
+1. **Candidates** — images whose file is public in Trapper and, optionally (*Only classified
+   images*, off by default), that have at least one observation other than *unclassified*.
 2. **Sequences** — a deployment's candidates, by time, split wherever two consecutive images are
    more than *N* seconds apart (90 by default).
 3. **Middle sequences** — images with humans (and, optionally, vehicles) are removed from every

@@ -38,13 +38,39 @@ def test_sampling_with_other_image_counts():
     assert _ids(sample_sequence(seq, 7)) == [0, 1, 2, 3, 4, 6, 9]
 
 
-def test_unclassified_and_non_public_images_are_not_candidates():
+def test_only_classified_leaves_unclassified_and_non_public_images_out():
     images = [_img(1, 0, "animal"), _img(2, 1, "unclassified"), _img(3, 2), _img(4, 3, "animal", public=False)]
-    result = select_deployment("D1", images, UploadCriteria())
+    result = select_deployment("D1", images, UploadCriteria(only_classified=True))
     assert (result.images, result.candidates, _ids(result.selected)) == (4, 1, [1])
 
-    everything_public = select_deployment("D1", images, UploadCriteria(only_classified=False))
+    # Off by default: every public image is a candidate.
+    everything_public = select_deployment("D1", images, UploadCriteria())
+    assert UploadCriteria().only_classified is False
     assert _ids(everything_public.selected) == [1, 2, 3]
+
+
+def _unclassified_then_empty():
+    # The first three images lost their classification in the approval.
+    return [*(_img(i, i, "unclassified") for i in (72, 73, 74)), *(_img(i, i, "empty") for i in (75, 76, 77))]
+
+
+def test_a_sequence_with_unclassified_images_is_not_collapsed_by_default():
+    result = select_deployment("D1", _unclassified_then_empty(), UploadCriteria(collapse_empty_sequences=True))
+    assert (result.sequences, result.candidates) == (1, 6)
+    assert _ids(result.selected) == [72, 73, 74, 75, 77]
+
+
+def test_only_classified_shortens_the_sequence_and_collapses_it():
+    criteria = UploadCriteria(only_classified=True, collapse_empty_sequences=True)
+    result = select_deployment("D1", _unclassified_then_empty(), criteria)
+    assert (result.sequences, result.candidates) == (1, 3)
+    assert _ids(result.selected) == [76]
+
+
+def test_a_sequence_of_empty_images_is_still_collapsed():
+    images = [_img(i, i, "empty") for i in range(6)]
+    result = select_deployment("D1", images, UploadCriteria(collapse_empty_sequences=True))
+    assert _ids(result.selected) == [1]
 
 
 def _deployment_with_people():

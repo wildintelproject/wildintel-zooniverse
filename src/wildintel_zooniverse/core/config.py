@@ -109,11 +109,11 @@ class ZooniverseSettings(BaseModel):
 class SequencesSettings(BaseModel):
     """The upload criteria a new wizard run starts from (see
     schemas.requests.UploadCriteria and services.sampling) — each run can
-    still change its own. The defaults are wildintel-tools' own."""
+    still change its own. The defaults are wildintel-tools' own, except only_classified: off here."""
 
     max_interval: int = Field(default=90, ge=1, description="Max. seconds between images of a sequence. (SEQUENCES.max_interval)")
     images_per_sequence: int = Field(default=5, ge=1, description="Images kept from each sequence. (SEQUENCES.images_per_sequence)")
-    only_classified: bool = Field(default=True, description="Only images with a real observation. (SEQUENCES.only_classified)")
+    only_classified: bool = Field(default=False, description="Only images with a real observation. (SEQUENCES.only_classified)")
     remove_middle_humans: bool = Field(default=True, description="Remove humans from middle sequences. (SEQUENCES.remove_middle_humans)")
     remove_middle_vehicles: bool = Field(
         default=False, description="Remove vehicles from middle sequences. (SEQUENCES.remove_middle_vehicles)",

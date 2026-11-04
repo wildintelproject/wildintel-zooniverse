@@ -92,12 +92,12 @@ describe('UploadCriteriaForm', () => {
     renderForm()
     await userEvent.click(screen.getByRole('button', { name: /preview/i }))
     preview.send(PREVIEW_ROWS[0])
-    expect(await screen.findByText(/can be uploaded: their file is public/)).toHaveTextContent(/other than .unclassified/)
+    expect(await screen.findByText(/can be uploaded: their file is public/)).toHaveTextContent('(classified or not)')
 
     await userEvent.click(screen.getByRole('checkbox', { name: /only classified/i }))
     await userEvent.click(screen.getByRole('button', { name: /^preview$/i }))
     preview.send(PREVIEW_ROWS[0])
-    expect(await screen.findByText(/can be uploaded: their file is public/)).toHaveTextContent('(classified or not)')
+    expect(await screen.findByText(/can be uploaded: their file is public/)).toHaveTextContent(/other than .unclassified/)
   })
 
   it('can be stopped, keeping what was already counted', async () => {

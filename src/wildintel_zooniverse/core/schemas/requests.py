@@ -71,8 +71,10 @@ class UploadCriteria(BaseModel):
     max_interval: int = Field(default=90, ge=1)
     # Images kept from each sequence: the first ones, one halfway to the last, and the last.
     images_per_sequence: int = Field(default=5, ge=1)
-    # Only images with an observation other than "unclassified".
-    only_classified: bool = True
+    # Only images with an observation other than "unclassified". Off by default:
+    # an unclassified image has no detections (below the approval threshold, or
+    # not processed yet), and leaving it out would shorten its sequence.
+    only_classified: bool = False
     # Remove images with humans / vehicles from every sequence but a
     # deployment's first and last.
     remove_middle_humans: bool = True

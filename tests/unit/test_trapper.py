@@ -161,7 +161,7 @@ def test_upload_preview_streams_what_the_criteria_keep_deployment_by_deployment(
         {"pk": 4, "deployment_id": "R0033-DONA_0001_A"}, {"pk": 5, "deployment_id": "R0033-DONA_0007_B"},
     ]}
 
-    response = _client().post("/api/trapper/upload-preview", json={**CREDS, "selection": selection, "criteria": {"max_interval": 60}})
+    response = _client().post("/api/trapper/upload-preview", json={**CREDS, "selection": selection, "criteria": {"max_interval": 60, "only_classified": True}})
 
     # R0033-DONA_0001_A: candidates 1, 2, 4 — one sequence each; 2 is a
     # middle one with a human.

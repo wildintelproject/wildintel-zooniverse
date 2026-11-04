@@ -52,7 +52,7 @@ def test_saving_the_criteria_moves_the_session_on_and_a_new_selection_keeps_them
 
     assert filtered["phase"] == "filtered"
     assert filtered["criteria"] == {
-        "max_interval": 120, "images_per_sequence": 5, "only_classified": True,
+        "max_interval": 120, "images_per_sequence": 5, "only_classified": False,
         "remove_middle_humans": True, "remove_middle_vehicles": True, "collapse_empty_sequences": False,
     }
     reselected = client.post("/api/sessions/selection", json={"task_id": saved["task_id"], "selection": SELECTION}).json()

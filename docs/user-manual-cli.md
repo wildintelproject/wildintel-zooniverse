@@ -241,7 +241,7 @@ for how it chooses.
 |---|---|
 | `--max-interval` | Max. seconds between two images of the same sequence. |
 | `--n-images-seq` | Images kept from each sequence. |
-| `--only-classified` / `--all-images` | Only images with an observation other than *unclassified*. |
+| `--only-classified` / `--all-images` | Only images with an observation other than *unclassified* (default: all images). |
 | `--remove-middle-humans` / `--keep-middle-humans` | Humans in middle sequences. |
 | `--remove-middle-vehicles` / `--keep-middle-vehicles` | Vehicles in middle sequences. |
 

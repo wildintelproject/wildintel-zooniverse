@@ -16,6 +16,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Upcoming release
 
+#### Fixed
+- **Sampling**: images with no detections (*unclassified*: below the approval threshold in Trapper,
+  or not processed yet) are no longer left out of the sequences by default. *Only classified
+  images* is now off by default, so a sequence keeps its real length and is not wrongly collapsed
+  as empty when some of its images lost their classification. Turn the option on to leave them
+  out, as before. Unclassified images can contain people or vehicles, and they are uploaded.
+
 #### Changed
 - **Sampling**: a sequence of more images than *Images per sequence* keeps its first images (the 3
   first, by default), one halfway between those and the last, and the last, instead of images evenly
