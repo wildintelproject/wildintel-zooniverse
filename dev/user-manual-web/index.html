@@ -1520,6 +1520,9 @@ elsewhere in the app isn't lost while you're here: <strong>Back</strong> returns
 <p>Changes apply to the next upload, dry run, download or export — not to one already running.</p>
 <p><img alt="The settings page, Trapper section" loading="lazy" src="../img/screenshots/settings.png" /></p>
 <h3 id="general">General<a class="headerlink" href="#general" title="Permanent link">&para;</a></h3>
+<p>It opens with the app's name and version, <strong>Check for updates</strong>, and four links: <strong>Report a problem</strong>
+(opens a GitHub issue already filled in with the version and the browser), <strong>Documentation</strong>,
+<strong>GitHub</strong> and <strong>What's new</strong> (the release notes). Below, the <strong>Activity log</strong> card:</p>
 <table>
 <thead>
 <tr>
@@ -1529,7 +1532,7 @@ elsewhere in the app isn't lost while you're here: <strong>Back</strong> returns
 </thead>
 <tbody>
 <tr>
-<td>Log level</td>
+<td>Level</td>
 <td>How much the app writes to its log: <strong>Error</strong>, <strong>Warning</strong>, <strong>Info</strong> (the default) or <strong>Debug</strong> — everything: each image downloaded and uploaded, each Trapper and Zooniverse query, full error tracebacks. Applied as soon as it's saved.</td>
 </tr>
 <tr>
@@ -1641,12 +1644,12 @@ dropdown can be typed in to narrow its options, and shows a spinner while they l
 <td>90 s</td>
 </tr>
 <tr>
-<td><strong>Images per sequence</strong> — kept from each sequence, evenly spaced, first and last included</td>
+<td><strong>Images per sequence</strong> — kept from each sequence: the first ones, one halfway to the last, and the last</td>
 <td>5</td>
 </tr>
 <tr>
-<td><strong>Only classified images</strong> — skip images with no observation, or only <em>unclassified</em> ones</td>
-<td>on</td>
+<td><strong>Only classified images</strong> — skip images with no observation, or only <em>unclassified</em> ones (see the note below)</td>
+<td>off</td>
 </tr>
 <tr>
 <td><strong>Remove humans from middle sequences</strong> — a deployment's first and last sequences (setting up and collecting the camera) keep them</td>
@@ -1658,6 +1661,15 @@ dropdown can be typed in to narrow its options, and shows a spinner while they l
 </tr>
 </tbody>
 </table>
+<p><strong>About <em>Only classified images</em>.</strong> An <em>unclassified</em> image has no detections: its objects were
+below the confidence threshold when the classifications were approved in Trapper, or it has not
+been processed yet. With the option <strong>off</strong> (the default) these images take part in the sequences
+and can be uploaded, so a sequence keeps its real length and a sequence with any unclassified
+image is never collapsed as empty. With it <strong>on</strong> they are left out <em>before</em> the sequences are
+built: the sequences get shorter, and what is left can look like an all-<em>empty</em> sequence and be
+collapsed. Unclassified images can contain people or vehicles that the detection missed, and they
+are uploaded as they are. A deployment that has not been processed yet is not skipped either; turn
+the option on, or process it in Trapper first, to avoid it.</p>
 <p><strong>Preview</strong> counts, deployment by deployment, how many images each criterion keeps:</p>
 <table>
 <thead>

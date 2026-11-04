@@ -1099,15 +1099,15 @@ collection's" rule, which also listed deployments with no images in the collecti
 <p>Not every image of a collection is uploaded. The same selection wildintel-tools makes, per
 deployment:</p>
 <ol>
-<li><strong>Candidates</strong> — images whose file is public in Trapper and, optionally, that have at least one
-   observation other than <em>unclassified</em>.</li>
+<li><strong>Candidates</strong> — images whose file is public in Trapper and, optionally (<em>Only classified
+   images</em>, off by default), that have at least one observation other than <em>unclassified</em>.</li>
 <li><strong>Sequences</strong> — a deployment's candidates, by time, split wherever two consecutive images are
    more than <em>N</em> seconds apart (90 by default).</li>
 <li><strong>Middle sequences</strong> — images with humans (and, optionally, vehicles) are removed from every
    sequence but a deployment's first and last — the camera being set up and collected. Removing
    vehicles is new: wildintel-tools only removed humans.</li>
-<li><strong>Sampling</strong> — each sequence keeps a few evenly spaced images (5 by default), first and last
-   included; shorter ones are kept whole.</li>
+<li><strong>Sampling</strong> — each sequence keeps a few images (5 by default): its first three, one halfway
+   between the third and the last, and the last; shorter ones are kept whole.</li>
 </ol>
 <p>A <strong>preview</strong> counts, deployment by deployment, how many images each step keeps — before
 anything is uploaded. <strong>Analyze sequences</strong> goes further — wildintel-tools' <code>analyze-sequences</code>,
