@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { api } from '../api'
+import { DOCS_URL } from '../components/Navbar'
 import ReportsList from '../components/ReportsList'
 import type { AppSettings, AppSettingsUpdate, ConfigInfo, LogLevel, UpdateCheck } from '../types'
 
 const hintClass = 'text-xs text-zinc-500 dark:text-zinc-400'
+const REPO_URL = 'https://github.com/wildintelproject/wildintel-zooniverse'
 const btnPrimary = 'px-6 py-2.5 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
 
 /** The same limits the backend enforces (config.py). */
@@ -205,6 +207,19 @@ const SECTIONS: { id: SectionId; label: string; icon: () => ReactNode }[] = [
   { id: 'config', label: 'Config', icon: FileIcon },
 ]
 
+/** A card of settings of its own, with its title and what it is for. */
+function GroupCard({ title, description, children }: { title: string; description?: ReactNode; children: ReactNode }) {
+  return (
+    <section aria-label={title} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 px-6 py-5 space-y-4">
+      <div>
+        <h5 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h5>
+        {description && <p className={`${hintClass} mt-1 leading-relaxed max-w-prose`}>{description}</p>}
+      </div>
+      {children}
+    </section>
+  )
+}
+
 /** One setting: its name and what it does on the left, its controls on the
  * right — stacked on narrow screens. */
 function Row({ label, description, children }: { label: string; description?: ReactNode; children: ReactNode }) {
@@ -276,22 +291,6 @@ const LOG_LEVELS: { value: LogLevel; label: string; hint: string }[] = [
   { value: 'DEBUG', label: 'Debug', hint: 'Everything: each image downloaded and uploaded, each Trapper and Zooniverse query, full tracebacks. Big logs — for tracking a problem down.' },
 ]
 
-/** A filled, rounded select with its label inside — like BoxField. */
-function SelectBox<T extends string>({ label, value, options, onChange }: {
-  label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void
-}) {
-  return (
-    <BoxField label={label}>
-      <select
-        className={`${boxInput} cursor-pointer`} value={value} aria-label={label}
-        onChange={(e) => onChange(e.target.value as T)}
-      >
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </BoxField>
-  )
-}
-
 function CheckOption({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="flex items-center gap-3 cursor-pointer py-1">
@@ -337,7 +336,15 @@ function TestConnectionButton({ test }: { test: () => Promise<string> }) {
 type UpdateState =
   | { kind: 'idle' } | { kind: 'checking' } | { kind: 'error'; message: string } | { kind: 'result'; check: UpdateCheck }
 
-/** One button that walks through the update check: "Check updates" → (if a newer
+function RefreshIcon({ spinning = false }: { spinning?: boolean }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={`h-4 w-4 fill-none stroke-current ${spinning ? 'animate-spin' : ''}`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12a9 9 0 0 0-15.5-6.2L3 8" /><path d="M3 3v5h5" /><path d="M3 12a9 9 0 0 0 15.5 6.2L21 16" /><path d="M16 16h5v5" />
+    </svg>
+  )
+}
+
+/** One button that walks through the update check: "Check for updates" → (if a newer
  * release exists) "Tap to download vX" → or "Tap to retry" when it couldn't tell. */
 function UpdateCheckButton() {
   const [state, setState] = useState<UpdateState>({ kind: 'idle' })
@@ -353,16 +360,16 @@ function UpdateCheckButton() {
   }
 
   const result = state.kind === 'result' ? state.check : null
-  const buttonClass = `${outlineBtn} w-full`
+  const buttonClass = `${outlineBtn} gap-2`
   return (
     <>
       {result?.update_available ? (
         <a href={result.download_url ?? result.release_url ?? '#'} target="_blank" rel="noreferrer" className={`${buttonClass} no-underline`}>
-          Tap to download {result.latest}
+          <RefreshIcon />Tap to download {result.latest}
         </a>
       ) : (
         <button type="button" className={buttonClass} disabled={state.kind === 'checking'} onClick={check}>
-          {state.kind === 'checking' ? 'Checking…' : state.kind === 'error' ? 'Tap to retry' : 'Check updates'}
+          <RefreshIcon spinning={state.kind === 'checking'} />{state.kind === 'checking' ? 'Checking…' : state.kind === 'error' ? 'Tap to retry' : 'Check for updates'}
         </button>
       )}
       {state.kind === 'error' && <p className="text-xs text-red-600 dark:text-red-400 px-1">{state.message}</p>}
@@ -375,6 +382,67 @@ function UpdateCheckButton() {
         <p className={`${hintClass} px-1`} role="status">Version {result.latest} is available — you have {result.current}.</p>
       )}
     </>
+  )
+}
+
+const LINK_ICONS: Record<string, ReactNode> = {
+  bug: <><path d="m8 2 1.9 1.9" /><path d="M14.1 3.9 16 2" /><path d="M9 7.1V6a3 3 0 0 1 6 0v1.1" /><path d="M12 20a6 6 0 0 1-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3a6 6 0 0 1-6 6Z" /><path d="M12 20v-9" /><path d="M6.5 13H2" /><path d="M17.5 13H22" /><path d="M3 21c0-2.1 1.7-3.9 3.8-4" /><path d="M20.2 17c2.1.1 3.8 1.9 3.8 4" /></>,
+  book: <><path d="M12 7v14" /><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></>,
+  code: <><path d="m16 18 6-6-6-6" /><path d="m8 6-6 6 6 6" /></>,
+  notes: <><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /></>,
+}
+
+/** The app, its version and the places to go for help: the update check on the left, the links on the right. */
+function AboutBlock() {
+  const [version, setVersion] = useState<string | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    Promise.resolve().then(() => api.checkVersion()).then((v) => { if (!cancelled) setVersion(v.current) }).catch(() => { /* the version is just not shown */ })
+    return () => { cancelled = true }
+  }, [])
+  const issue = `${REPO_URL}/issues/new?body=${encodeURIComponent(
+    `**Version:** ${version ?? 'unknown'}\n**Browser:** ${navigator.userAgent}\n\n**What happened?**\n\n**What did you expect?**\n\n**How to reproduce it**\n1. \n\n_Attach the log file (Settings › General › Log file) if you can._\n`,
+  )}`
+  const links = [
+    { icon: 'bug', title: 'Report a problem', subtitle: 'Opens a GitHub issue directly filled in', href: issue },
+    { icon: 'book', title: 'Documentation', subtitle: 'The user manual', href: DOCS_URL },
+    { icon: 'code', title: 'GitHub', subtitle: 'Source code', href: REPO_URL },
+    { icon: 'notes', title: 'What’s new', subtitle: 'Release notes', href: `${REPO_URL}/releases` },
+  ]
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 p-6" aria-label="About the app" role="group">
+      <div>
+        <div className="flex items-center gap-3">
+          <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white">
+            <svg viewBox="0 0 24 24" className="h-8 w-8 fill-current">
+              <circle cx="5.5" cy="11" r="2" /><circle cx="9.5" cy="6.5" r="2" /><circle cx="14.5" cy="6.5" r="2" /><circle cx="18.5" cy="11" r="2" />
+              <path d="M12 12c-3 0-6 3-6 5.5 0 1.7 1.5 2.5 3 2.5 1.2 0 2-.5 3-.5s1.8.5 3 .5c1.5 0 3-.8 3-2.5 0-2.5-3-5.5-6-5.5z" />
+            </svg>
+          </span>
+          <div>
+            <h4 className="text-2xl font-semibold leading-tight">WildINTEL Zooniverse</h4>
+            {version !== null && (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400" aria-label="Version">{version === 'dev' ? 'Development build' : `Version ${version}`}</p>
+            )}
+          </div>
+        </div>
+        <div className="mt-5 space-y-2"><UpdateCheckButton /></div>
+      </div>
+      <ul className="grid grid-cols-2 gap-3">
+        {links.map((l) => (
+          <li key={l.title}>
+            <a href={l.href} target="_blank" rel="noreferrer"
+               className="flex h-full items-start gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 px-4 py-3 no-underline text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors">
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0 fill-none stroke-current text-zinc-600 dark:text-zinc-300" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{LINK_ICONS[l.icon]}</svg>
+              <span>
+                <span className="block text-sm font-semibold leading-tight">{l.title}</span>
+                <span className="block text-xs text-zinc-500 dark:text-zinc-400">{l.subtitle}</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 
@@ -579,62 +647,60 @@ export default function SettingsPage({ onClose }: Props) {
         {!draft && status.kind !== 'error' && <p className="text-sm text-zinc-500 dark:text-zinc-400 py-5">Loading…</p>}
 
         {draft && saved && section === 'general' && (
-          <div className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-            <Row label="Update" description="Looks for a newer version of the app.">
-              <UpdateCheckButton />
-            </Row>
-            <Row
-              label="Log level"
-              description="How much the app writes to its log — raise it to Debug to track a problem down, then lower it again. Applied as soon as it's saved."
-            >
-              <SelectBox
-                label="Level" value={draft.logLevel} options={LOG_LEVELS}
-                onChange={(v) => set('logLevel', v)}
-              />
-              <p className={`${hintClass} px-1`}>{LOG_LEVELS.find((l) => l.value === draft.logLevel)?.hint}</p>
+          <div className="space-y-5 pt-5">
+            <AboutBlock />
+            <GroupCard title="Activity log" description="The app writes down what it does, so a problem can be tracked down. Raise the detail only while you look for one, then lower it again. It applies right away.">
+              <div role="radiogroup" aria-label="Level" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {LOG_LEVELS.map((l) => (
+                  <button key={l.value} type="button" role="radio" aria-checked={draft.logLevel === l.value} onClick={() => set('logLevel', l.value)}
+                          className={`text-left rounded-xl px-4 py-3 border transition-colors ${draft.logLevel === l.value ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+                    <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-100">{l.label}</span>
+                    <span className={`block ${hintClass}`}>{l.hint}</span>
+                  </button>
+                ))}
+              </div>
               {saved.GENERAL.log_level_override && (
-                <p className="text-xs text-amber-700 dark:text-amber-400 px-1">
+                <p className="text-xs text-amber-700 dark:text-amber-400">
                   The environment variable <span className="font-mono">WILDINTEL_ZOONIVERSE_WEB_LOG_LEVEL</span> sets it
                   to <strong>{saved.GENERAL.log_level_override}</strong> for now — it wins over this setting.
                 </p>
               )}
-            </Row>
-            <Row label="Log file" description="Rotated at 5 MB, keeping the last 5. Attach it to a bug report.">
-              <BoxField label="Location">
-                <span className="block font-mono text-sm text-zinc-900 dark:text-zinc-100 break-all py-0.5">{saved.GENERAL.log_file}</span>
-              </BoxField>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href="/api/settings/log" download
-                  className="inline-flex items-center px-4 py-2 text-sm rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                >
-                  Download log
-                </a>
-                {clearLog.kind !== 'confirming' && (
-                  <button
-                    type="button" disabled={clearLog.kind === 'clearing'} onClick={() => setClearLog({ kind: 'confirming' })}
-                    className="inline-flex items-center px-4 py-2 text-sm rounded-xl bg-zinc-100 dark:bg-zinc-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors disabled:opacity-50"
-                  >
-                    {clearLog.kind === 'clearing' ? 'Clearing…' : 'Clear log'}
-                  </button>
-                )}
-              </div>
-              {clearLog.kind === 'confirming' && (
-                <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-3 text-sm text-zinc-700 dark:text-zinc-300">
-                  <p>Delete the log file and its older copies? This can&rsquo;t be undone — download it first if you need it.</p>
-                  <div className="flex gap-2 mt-2">
-                    <button type="button" onClick={handleClearLog} className="px-4 py-1.5 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors">
-                      Yes, clear it
-                    </button>
-                    <button type="button" onClick={() => setClearLog({ kind: 'idle' })} className="px-4 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                      Cancel
-                    </button>
-                  </div>
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+                <div>
+                  <h6 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Log file</h6>
+                  <p className={hintClass}>Rotated at 5 MB, keeping the last 5. Attach it to a bug report.</p>
                 </div>
-              )}
-              {clearLog.kind === 'cleared' && <p className="text-xs text-emerald-700 dark:text-emerald-400 px-1">Log cleared — a new one starts now.</p>}
-              {clearLog.kind === 'error' && <p className="text-xs text-red-600 dark:text-red-400 px-1">{clearLog.message}</p>}
-            </Row>
+                <BoxField label="Location">
+                  <span className="block font-mono text-sm text-zinc-900 dark:text-zinc-100 break-all py-0.5">{saved.GENERAL.log_file}</span>
+                </BoxField>
+                <div className="flex flex-wrap gap-2">
+                  <a href="/api/settings/log" download className={`${outlineBtn} no-underline`}>Download log</a>
+                  {clearLog.kind !== 'confirming' && (
+                    <button
+                      type="button" disabled={clearLog.kind === 'clearing'} onClick={() => setClearLog({ kind: 'confirming' })}
+                      className="inline-flex items-center px-4 py-2 text-sm rounded-xl bg-zinc-100 dark:bg-zinc-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors disabled:opacity-50"
+                    >
+                      {clearLog.kind === 'clearing' ? 'Clearing…' : 'Clear log'}
+                    </button>
+                  )}
+                </div>
+                {clearLog.kind === 'confirming' && (
+                  <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-3 text-sm text-zinc-700 dark:text-zinc-300">
+                    <p>Delete the log file and its older copies? This can&rsquo;t be undone — download it first if you need it.</p>
+                    <div className="flex gap-2 mt-2">
+                      <button type="button" onClick={handleClearLog} className="px-4 py-1.5 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors">
+                        Yes, clear it
+                      </button>
+                      <button type="button" onClick={() => setClearLog({ kind: 'idle' })} className="px-4 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {clearLog.kind === 'cleared' && <p className="text-xs text-emerald-700 dark:text-emerald-400 px-1">Log cleared — a new one starts now.</p>}
+                {clearLog.kind === 'error' && <p className="text-xs text-red-600 dark:text-red-400 px-1">{clearLog.message}</p>}
+              </div>
+            </GroupCard>
           </div>
         )}
 

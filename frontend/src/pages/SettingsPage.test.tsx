@@ -8,7 +8,7 @@ import { APP_SETTINGS } from '../test/fixtures'
 vi.mock('../api', () => ({
   api: {
     getSettings: vi.fn(), saveSettings: vi.fn(), clearLog: vi.fn(),
-    checkForUpdate: vi.fn(), trapperTestConnection: vi.fn(), zooniverseTestConnection: vi.fn(), configs: vi.fn(), listReports: vi.fn(), addConfig: vi.fn(), activateConfig: vi.fn(), openConfigFolder: vi.fn(),
+    checkForUpdate: vi.fn(), checkVersion: vi.fn(), trapperTestConnection: vi.fn(), zooniverseTestConnection: vi.fn(), configs: vi.fn(), listReports: vi.fn(), addConfig: vi.fn(), activateConfig: vi.fn(), openConfigFolder: vi.fn(),
   },
 }))
 
@@ -17,6 +17,7 @@ const mockedApi = vi.mocked(api)
 beforeEach(() => {
   vi.clearAllMocks()
   mockedApi.getSettings.mockResolvedValue(APP_SETTINGS)
+  mockedApi.checkVersion.mockResolvedValue({ current: '0.1.0' })
   mockedApi.saveSettings.mockImplementation(async (update) => ({
     GENERAL: { ...APP_SETTINGS.GENERAL, ...update.GENERAL },
     TRAPPER: { ...APP_SETTINGS.TRAPPER, ...update.TRAPPER },
@@ -31,7 +32,7 @@ describe('SettingsPage', () => {
   it('has a Reports section, with no Save button', async () => {
     mockedApi.listReports.mockResolvedValue([])
     render(<SettingsPage onClose={vi.fn()} />)
-    await screen.findByLabelText('Level')
+    await screen.findByRole('radiogroup', { name: 'Level' })
     await section('Reports')
     expect(await screen.findByText(/no reports yet/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
@@ -40,7 +41,7 @@ describe('SettingsPage', () => {
 
   it('shows one section at a time, from the sidebar', async () => {
     render(<SettingsPage onClose={vi.fn()} />)
-    expect(await screen.findByLabelText('Level')).toHaveValue('INFO')
+    expect(await screen.findByRole('radio', { name: /^Info/ })).toBeChecked()
     expect(screen.getByRole('button', { name: 'General' })).toHaveAttribute('aria-current', 'page')
     await section('Trapper')
     expect(screen.getByLabelText('URL')).toHaveValue('https://trapper.example.org')
@@ -62,7 +63,7 @@ describe('SettingsPage', () => {
 
   it('saves every section at once, a blank password keeping the saved one', async () => {
     render(<SettingsPage onClose={vi.fn()} />)
-    await screen.findByLabelText('Level')
+    await screen.findByRole('radiogroup', { name: 'Level' })
     await section('Trapper')
     const workers = screen.getByLabelText('Parallel downloads')
     await userEvent.clear(workers)
@@ -95,7 +96,7 @@ describe('SettingsPage', () => {
 
   it('marks an invalid value, and its section in the sidebar, and cannot save', async () => {
     render(<SettingsPage onClose={vi.fn()} />)
-    await screen.findByLabelText('Level')
+    await screen.findByRole('radiogroup', { name: 'Level' })
     await section('Trapper')
     const attempts = screen.getByLabelText('Attempts per download')
     await userEvent.clear(attempts)
@@ -112,12 +113,12 @@ describe('SettingsPage', () => {
 
   it('sets the log level, and shows where the log file is', async () => {
     render(<SettingsPage onClose={vi.fn()} />)
-    const level = await screen.findByLabelText('Level')
+    await screen.findByRole('radiogroup', { name: 'Level' })
     expect(screen.getByText(APP_SETTINGS.GENERAL.log_file)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /download log/i })).toHaveAttribute('href', '/api/settings/log')
 
-    await userEvent.selectOptions(level, 'DEBUG')
-    expect(screen.getByText(/each image downloaded and uploaded/i)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('radio', { name: /^Debug/ }))
+    expect(screen.getByRole('radio', { name: /^Debug/ })).toBeChecked()
     await userEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(mockedApi.saveSettings.mock.calls[0][0].GENERAL).toEqual({ log_level: 'DEBUG' })
   })
@@ -142,6 +143,19 @@ describe('SettingsPage', () => {
     mockedApi.getSettings.mockResolvedValue({ ...APP_SETTINGS, GENERAL: { ...APP_SETTINGS.GENERAL, log_level_override: 'DEBUG' } })
     render(<SettingsPage onClose={vi.fn()} />)
     expect(await screen.findByText(/WILDINTEL_ZOONIVERSE_WEB_LOG_LEVEL/)).toBeInTheDocument()
+  })
+
+  it('opens with the app, its version and the places to go for help', async () => {
+    render(<SettingsPage onClose={vi.fn()} />)
+    expect(await screen.findByRole('heading', { name: 'WildINTEL Zooniverse' })).toBeInTheDocument()
+    expect(await screen.findByLabelText('Version')).toHaveTextContent('Version 0.1.0')
+    expect(screen.getByRole('button', { name: 'Check for updates' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /documentation/i })).toHaveAttribute('href', expect.stringContaining('wildintelproject.github.io'))
+    expect(screen.getByRole('link', { name: /^GitHub/ })).toHaveAttribute('href', 'https://github.com/wildintelproject/wildintel-zooniverse')
+    expect(screen.getByRole('link', { name: /what.s new/i })).toHaveAttribute('href', 'https://github.com/wildintelproject/wildintel-zooniverse/releases')
+    const report = screen.getByRole('link', { name: /report a problem/i })
+    expect(report).toHaveAttribute('href', expect.stringContaining('/issues/new?body='))
+    expect(decodeURIComponent(report.getAttribute('href') ?? '')).toContain('**Version:** 0.1.0')
   })
 
   it('goes back', async () => {
@@ -204,7 +218,7 @@ describe('SettingsPage', () => {
     mockedApi.checkForUpdate.mockResolvedValue(CHECK)
     render(<SettingsPage onClose={vi.fn()} />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Check updates' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Check for updates' }))
 
     expect(await screen.findByText(/up to date \(version 0\.1\.0\)/)).toBeInTheDocument()
   })
@@ -216,7 +230,7 @@ describe('SettingsPage', () => {
     })
     render(<SettingsPage onClose={vi.fn()} />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Check updates' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Check for updates' }))
 
     expect(await screen.findByRole('link', { name: 'Tap to download 0.2.0' })).toHaveAttribute('href', 'https://dl/app-0.2.0-linux-x86_64.AppImage')
   })
@@ -226,7 +240,7 @@ describe('SettingsPage', () => {
     mockedApi.checkForUpdate.mockResolvedValueOnce(CHECK)
     render(<SettingsPage onClose={vi.fn()} />)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Check updates' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Check for updates' }))
     expect(await screen.findByText(/offline/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Tap to retry' }))
 
