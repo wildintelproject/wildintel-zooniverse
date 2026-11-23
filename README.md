@@ -1,4 +1,4 @@
-# <img src="docs/img/wildintel_zooniverse_logo.webp" alt="WildINTEL Zooniverse Logo" height="60"> wildintel-zooniverse
+# <img src="docs/img/wildIntel_logo_cropped.webp" alt="WildINTEL logo" height="52" align="absmiddle"> <img src="docs/img/wildintel_zooniverse_icon.png" alt="wildintel-zooniverse icon" height="52" align="absmiddle"> wildintel-zooniverse
 
 ![License](https://img.shields.io/badge/license-GPLv3-blue.svg)
 [![WildINTEL](https://img.shields.io/badge/WildINTEL-v1.0-blue)](https://wildintel.eu/)
