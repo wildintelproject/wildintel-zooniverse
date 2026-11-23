@@ -11,8 +11,8 @@ site_dir: site
 theme:
   name: material
   language: en
-  logo: img/wildIntel_logo.webp
-  favicon: img/wildIntel_logo.webp
+  logo: img/wildintel_zooniverse_logo.webp
+  favicon: img/wildintel_zooniverse_logo.webp
 
   palette:
     - scheme: default
