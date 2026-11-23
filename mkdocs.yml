@@ -11,8 +11,9 @@ site_dir: site
 theme:
   name: material
   language: en
-  logo: img/wildintel_zooniverse_logo.webp
-  favicon: img/wildintel_zooniverse_logo.webp
+  custom_dir: overrides            # partials/logo.html shows two logos in the header
+  logo: img/wildIntel_logo_cropped.webp
+  favicon: img/wildintel_zooniverse_icon.png
 
   palette:
     - scheme: default
@@ -37,6 +38,7 @@ theme:
     - content.code.annotate
 
 extra:
+  zooniverse_logo: img/wildintel_zooniverse_icon.png
   version:
     provider: mike
   social:
