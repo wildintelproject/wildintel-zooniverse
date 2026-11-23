@@ -1,6 +1,6 @@
 # WildINTEL Zooniverse
 
-![WildINTEL](img/wildIntel_logo.webp){ style="display: block; margin: 0 auto;" }
+![WildINTEL Zooniverse](img/wildintel_zooniverse_logo.webp){ style="display: block; margin: 0 auto;" }
 
 **WildINTEL Zooniverse** is an open-source desktop web application that takes the WildINTEL
 project's camera-trap images from [Trapper](https://gitlab.com/trapper-project/trapper) to
